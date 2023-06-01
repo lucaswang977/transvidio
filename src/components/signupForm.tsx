@@ -15,6 +15,7 @@ import {
   FormMessage,
 } from "~/components/ui/form"
 import { Input } from "~/components/ui/input"
+import { Checkbox } from "~/components/ui/checkbox"
 
 const formSchema = z.object({
   email: z.string().min(3, {
@@ -22,17 +23,23 @@ const formSchema = z.object({
   }).email("This is not a valid email."),
   password: z.string().min(6, {
     message: "Password must be at least 6 characters.",
-  })
+  }),
+  confirmPassword: z.string().min(6, {
+    message: "Password must be at least 6 characters.",
+  }),
+  acceptTerms: z.boolean()
 })
 
-export function SigninForm() {
+export function SignupForm() {
   const router = useRouter()
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       email: "",
-      password: ""
+      password: "",
+      confirmPassword: "",
+      acceptTerms: false
     },
   })
 
@@ -42,7 +49,7 @@ export function SigninForm() {
 
   return (
     <Form {...form}>
-      <h3 className="text-lg font-medium">Sign in to your account.</h3>
+      <h3 className="text-lg font-medium">Create an account</h3>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
         <FormField
           control={form.control}
@@ -70,9 +77,37 @@ export function SigninForm() {
             </FormItem>
           )}
         />
+        <FormField
+          control={form.control}
+          name="confirmPassword"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Password confirm</FormLabel>
+              <FormControl>
+                <Input placeholder="••••••••" type="password" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="acceptTerms"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+              <FormControl>
+                <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+              </FormControl>
+              <FormLabel>
+                Accept terms and conditions
+              </FormLabel>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-        <Button className="w-full" type="submit">Sign In</Button>
-        <p>Don't have an account yet? <Button variant="link" onClick={() => router.push("/signup")}>Sign up</Button></p>
+        <Button className="w-full" type="submit">Sign Up</Button>
+        <p>Already have an account? <Button variant="link" onClick={() => router.push("/signin")}>Sign in</Button></p>
       </form>
     </Form>
   )
