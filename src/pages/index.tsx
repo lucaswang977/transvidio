@@ -1,3 +1,6 @@
+// TODO: 
+// 1. Use Metadata to replace the Head tag
+
 import { type NextPage } from "next";
 import Head from "next/head";
 import { useRouter } from "next/router"

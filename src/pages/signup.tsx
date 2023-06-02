@@ -1,6 +1,6 @@
 import { type NextPage } from "next";
 import Head from "next/head";
-import { SignupForm } from "~/components/signupForm"
+import { SignupForm } from "~/components/signup-form"
 
 const SignUp: NextPage = () => {
   return (

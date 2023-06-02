@@ -1,7 +1,6 @@
 import { type NextPage } from "next";
 import Head from "next/head";
-import { useRouter } from "next/router"
-import { SigninForm } from "~/components/signinForm"
+import { SigninForm } from "~/components/signin-form"
 
 const SignIn: NextPage = () => {
   return (
@@ -16,7 +15,7 @@ const SignIn: NextPage = () => {
       </main>
     </>
 
-  )
+  );
 }
 
 export default SignIn;
