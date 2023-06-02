@@ -1,6 +1,7 @@
 import { type NextPage } from "next";
 import Head from "next/head";
 import { SignupForm } from "~/components/signup-form"
+import { Logo } from "~/components/logo-with-name"
 
 const SignUp: NextPage = () => {
   return (
@@ -10,7 +11,8 @@ const SignUp: NextPage = () => {
         <meta name="description" content="Help your courses to go global." />
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      <main className="flex min-h-screen flex-col items-center justify-center">
+      <main className="flex min-h-screen flex-col items-center justify-center space-y-4">
+        <Logo />
         <SignupForm />
       </main>
     </>
