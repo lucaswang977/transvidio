@@ -42,7 +42,6 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     session: ({ session, user }) => ({
       ...session,
-      strategy: "jwt",
       user: {
         ...session.user,
         id: user.id,
@@ -57,7 +56,8 @@ export const authOptions: NextAuthOptions = {
     }),
     EmailProvider({
       server: env.EMAIL_SERVER,
-      from: env.EMAIL_FROM
+      from: env.EMAIL_FROM,
+
     }),
     CredentialsProvider({
       name: "Sign in",
@@ -65,14 +65,24 @@ export const authOptions: NextAuthOptions = {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" }
       },
-      async authorize(credentials, req) {
+      async authorize(credentials,) {
         if (credentials) {
           const user = await prisma.user.findUnique({
             where: {
               email: credentials.email
             }
           })
+          if (!user || !user.emailVerified) return null
 
+          const credential = await prisma.credential.findUnique({
+            where: {
+              email: credentials.email
+            }
+          })
+
+          if (credential && credential.pwd === credentials.password) {
+            return user
+          }
         }
 
         return null

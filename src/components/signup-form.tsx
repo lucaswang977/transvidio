@@ -3,6 +3,8 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useRouter } from "next/router"
 import { useForm } from "react-hook-form"
+import { signIn } from "next-auth/react"
+import { api } from "~/utils/api";
 import * as z from "zod"
 
 import { Button } from "~/components/ui/button"
@@ -33,6 +35,7 @@ const formSchema = z.object({
 
 export function SignupForm() {
   const router = useRouter()
+  const mutation = api.user.register.useMutation()
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -46,6 +49,17 @@ export function SignupForm() {
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     console.log(values)
+
+    mutation.mutate({
+      email: values.email,
+      password: values.password
+    })
+
+    signIn("email", { email: values.email, redirect: false }).then((result) => {
+      if (result && result.ok) {
+        console.log("ok")
+      }
+    })
   }
 
   return (
