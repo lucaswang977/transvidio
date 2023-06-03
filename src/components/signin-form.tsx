@@ -3,6 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useRouter } from "next/router"
 import { useForm } from "react-hook-form"
+import { signIn } from "next-auth/react"
 import * as z from "zod"
 
 import { Button } from "~/components/ui/button"
@@ -39,6 +40,17 @@ export function SigninForm() {
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     console.log(values)
+    signIn("credentials", {
+      email: values.email,
+      password: values.password,
+      redirect: false,
+    }).then((result) => {
+      if (result && result.ok) {
+        router.push("/")
+      } else {
+        console.log(result)
+      }
+    })
   }
 
   return (

@@ -7,6 +7,8 @@ import {
 } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import EmailProvider from "next-auth/providers/email";
+import CredentialsProvider from "next-auth/providers/credentials";
+
 import { env } from "~/env.mjs";
 import { prisma } from "~/server/db";
 
@@ -40,6 +42,7 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     session: ({ session, user }) => ({
       ...session,
+      strategy: "jwt",
       user: {
         ...session.user,
         id: user.id,
@@ -55,6 +58,25 @@ export const authOptions: NextAuthOptions = {
     EmailProvider({
       server: env.EMAIL_SERVER,
       from: env.EMAIL_FROM
+    }),
+    CredentialsProvider({
+      name: "Sign in",
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" }
+      },
+      async authorize(credentials, req) {
+        if (credentials) {
+          const user = await prisma.user.findUnique({
+            where: {
+              email: credentials.email
+            }
+          })
+
+        }
+
+        return null
+      }
     }),
     /**
      * ...add more providers here.
