@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useRouter } from "next/router"
 import { useForm } from "react-hook-form"
 import { signIn } from "next-auth/react"
+import { Icons } from "~/components/ui/icons"
 import * as z from "zod"
 
 import { Button } from "~/components/ui/button"
@@ -46,6 +47,7 @@ export function SigninForm() {
       redirect: false,
     }).then((result) => {
       if (result && result.ok) {
+        console.log(result)
         router.push("/")
       } else {
         console.log(result)
@@ -81,7 +83,7 @@ export function SigninForm() {
                 <FormItem>
                   <FormLabel>Password</FormLabel>
                   <FormControl>
-                    <Input placeholder="••••••••" type="password" {...field} />
+                    <Input placeholder="•••" type="password" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -89,9 +91,15 @@ export function SigninForm() {
             />
 
             <Button className="w-full" type="submit">Sign In</Button>
+            <Button variant="outline" type="button" className="w-full" onClick={() => signIn("google", { redirect: false })}>
+              <Icons.google className="mr-2 h-4 w-4" />
+              Google
+            </Button>
             <p>Don't have an account yet? <Button variant="link" onClick={() => router.push("/signup")}>Sign up</Button></p>
+
           </form>
         </Form>
+
       </CardContent>
     </Card>
   )

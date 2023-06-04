@@ -7,11 +7,13 @@ import { useRouter } from "next/router"
 import { signIn, signOut, useSession } from "next-auth/react";
 import { api } from "~/utils/api";
 import { Button } from "~/components/ui/button"
+import { Label } from "~/components/ui/label"
 import { Mail } from "lucide-react"
 
 const Home: NextPage = () => {
-  const hello = api.example.hello.useQuery({ text: "from tRPC" });
   const router = useRouter();
+  const { data: sessionData, status: status } = useSession();
+  console.log(sessionData, status)
 
   return (
     <>
@@ -20,10 +22,18 @@ const Home: NextPage = () => {
         <meta name="description" content="Help your courses to go global." />
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      <main className="flex min-h-screen flex-col items-center justify-center">
-        <Button variant="outline" onClick={() => router.push("/signin")}>
-          <Mail className="mr-2 h-4 w-4" /> Login with Email
+      <main className="flex min-h-screen flex-col items-center justify-center space-y-4">
+        <Button variant="outline" onClick={() => {
+          if (status === "authenticated") {
+            signOut()
+          } else {
+            router.push("/signin")
+          }
+        }}
+          disabled={status === "loading"}>
+          <Mail className="mr-2 h-4 w-4" /> {status === "authenticated" ? "Logout" : "Login"}
         </Button>
+        <Label>{status === "authenticated" ? sessionData.user.email : "not logged in"}</Label>
       </main>
     </>
   );

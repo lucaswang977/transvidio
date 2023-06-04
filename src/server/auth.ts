@@ -11,6 +11,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 
 import { env } from "~/env.mjs";
 import { prisma } from "~/server/db";
+import { randomUUID, randomBytes } from "crypto";
 
 /**
  * Module augmentation for `next-auth` types. Allows us to add custom properties to the `session`
@@ -39,16 +40,39 @@ declare module "next-auth" {
  * @see https://next-auth.js.org/configuration/options
  */
 export const authOptions: NextAuthOptions = {
+  session: {
+    strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60,
+    generateSessionToken: () => {
+      return randomUUID?.() ?? randomBytes(32).toString("hex")
+    }
+  },
   callbacks: {
-    session: ({ session, user }) => ({
-      ...session,
-      user: {
-        ...session.user,
-        id: user.id,
-      },
-    }),
+    jwt: async ({ token, user, profile }) => {
+      if (user) {
+        token.email = user.email
+        token.name = user.name
+        token.id = user.id
+      }
+      console.log("jwt", token, profile)
+      return token
+    },
+    session: ({ session, token, user }) => {
+      const newSession = {
+        ...session,
+        user: {
+          ...session.user,
+          id: token.id,
+        }
+      }
+      console.log("session", session, newSession, user)
+      return newSession
+    },
   },
   adapter: PrismaAdapter(prisma),
+  pages: {
+    signIn: "/signin"
+  },
   providers: [
     GoogleProvider({
       clientId: env.GOOGLE_CLIENT_ID,
@@ -81,6 +105,7 @@ export const authOptions: NextAuthOptions = {
           })
 
           if (credential && credential.pwd === credentials.password) {
+            console.log("success", user)
             return user
           }
         }
