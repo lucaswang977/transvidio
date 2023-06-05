@@ -101,13 +101,7 @@ export const authOptions: NextAuthOptions = {
           })
           if (!user || !user.emailVerified) return null
 
-          const credential = await prisma.credential.findUnique({
-            where: {
-              email: credentials.email
-            }
-          })
-
-          if (credential && credential.pwd === credentials.password) {
+          if (user && user.pwd === credentials.password) {
             console.log("success", user)
             return user
           }

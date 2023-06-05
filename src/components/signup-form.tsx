@@ -18,12 +18,18 @@ import {
 } from "~/components/ui/form"
 import { Input } from "~/components/ui/input"
 import { Checkbox } from "~/components/ui/checkbox"
-import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/card"
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent
+} from "~/components/ui/card"
 
 const formSchema = z.object({
   email: z.string().min(3, {
     message: "Username must be at least 3 characters.",
   }).email("This is not a valid email."),
+  name: z.string(),
   password: z.string().min(6, {
     message: "Password must be at least 6 characters.",
   }),
@@ -31,6 +37,14 @@ const formSchema = z.object({
     message: "Password must be at least 6 characters.",
   }),
   acceptTerms: z.boolean()
+}).superRefine(({ password, confirmPassword }, ctx) => {
+  if (password !== confirmPassword) {
+    ctx.addIssue({
+      path: ["confirmPassword"],
+      code: "custom",
+      message: "Passwords not the same."
+    })
+  }
 })
 
 export function SignupForm() {
@@ -41,6 +55,7 @@ export function SignupForm() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       email: "",
+      name: "",
       password: "",
       confirmPassword: "",
       acceptTerms: false
@@ -52,6 +67,7 @@ export function SignupForm() {
 
     mutation.mutate({
       email: values.email,
+      name: values.name,
       password: values.password
     })
 
@@ -84,6 +100,20 @@ export function SignupForm() {
                 </FormItem>
               )}
             />
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Your name please." {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <FormField
               control={form.control}
               name="password"
@@ -126,13 +156,13 @@ export function SignupForm() {
               )}
             />
 
-            <Button className="w-full" type="submit">Sign Up</Button>
+            <Button className="w-full" type="submit" disabled={!form.watch("acceptTerms")}>Sign Up</Button>
             <p>Already have an account? <Button variant="link" onClick={() => router.push("/signin")}>Sign in</Button></p>
           </form>
         </Form>
 
       </CardContent>
-    </Card>
+    </Card >
   )
 }
 

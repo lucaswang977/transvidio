@@ -1,7 +1,9 @@
 // TODO: 
 // 1. User management & user role
-// 2. File upload support
-// 3. Document and project management
+//  1.1 (OK) User registeration time should be recorded.
+//  1.2 (OK) User can assign a name for himself when signing up.
+// 2. Document and project management
+// 3. File upload support
 // 4. First time deploy
 // 5. Video player & subtitle editor
 // 6. File import & auto transcript/translate
@@ -11,6 +13,7 @@
 // FIX:
 // 1. User should be unable to open signin page after logged in.
 // 2. A notfication should be shown up after signing up with email.
+// 3. Credential is currently saved as plain text in db.
 
 // NOTE:
 // 1. Use Metadata to replace the Head tag
