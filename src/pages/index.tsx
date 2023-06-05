@@ -1,5 +1,17 @@
 // TODO: 
 // 1. Use Metadata to replace the Head tag
+// 2. User management & user role
+// 3. File upload support
+// 4. Document and project management
+// 5. First time deploy
+// 6. Video player & subtitle editor
+// 7. File import & auto transcript/translate
+// 8. Test & optimize
+// 9. First version release
+
+// FIX:
+// 1. User should be unable to open signin page after logged in.
+// 2. A notfication should be shown up after signing up with email.
 
 import { type NextPage } from "next";
 import Head from "next/head";

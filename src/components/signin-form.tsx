@@ -48,7 +48,7 @@ export function SigninForm() {
     }).then((result) => {
       if (result && result.ok) {
         console.log(result)
-        router.push("/")
+        router.push("/admin")
       } else {
         console.log(result)
       }
@@ -91,7 +91,8 @@ export function SigninForm() {
             />
 
             <Button className="w-full" type="submit">Sign In</Button>
-            <Button variant="outline" type="button" className="w-full" onClick={() => signIn("google", { redirect: false })}>
+            <Button variant="outline" type="button" className="w-full"
+              onClick={() => signIn("google", { callbackUrl: "/admin" })}>
               <Icons.google className="mr-2 h-4 w-4" />
               Google
             </Button>

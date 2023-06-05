@@ -8,6 +8,7 @@ import {
 import GoogleProvider from "next-auth/providers/google";
 import EmailProvider from "next-auth/providers/email";
 import CredentialsProvider from "next-auth/providers/credentials";
+import { UserRole } from "@prisma/client"
 
 import { env } from "~/env.mjs";
 import { prisma } from "~/server/db";
@@ -23,15 +24,15 @@ declare module "next-auth" {
   interface Session extends DefaultSession {
     user: {
       id: string;
+      role: UserRole;
       // ...other properties
-      // role: UserRole;
     } & DefaultSession["user"];
   }
 
-  // interface User {
-  //   // ...other properties
-  //   // role: UserRole;
-  // }
+  interface User {
+    // ...other properties
+    role: UserRole;
+  }
 }
 
 /**
@@ -52,6 +53,7 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.email = user.email
         token.name = user.name
+        token.role = user.role
         token.id = user.id
       }
       console.log("jwt", token, profile)
@@ -63,6 +65,7 @@ export const authOptions: NextAuthOptions = {
         user: {
           ...session.user,
           id: token.id,
+          role: token.role
         }
       }
       console.log("session", session, newSession, user)
