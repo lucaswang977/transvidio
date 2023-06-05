@@ -2,6 +2,7 @@ import { z } from "zod";
 import {
   createTRPCRouter,
   publicProcedure,
+  protectedProcedure,
 } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server"
 
@@ -33,4 +34,7 @@ export const userRouter = createTRPCRouter({
 
       return result
     }),
+  getAll: protectedProcedure.query(({ ctx }) => {
+    return ctx.prisma.user.findMany();
+  }),
 });
