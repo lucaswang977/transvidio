@@ -3,6 +3,8 @@
 //  1.1 (OK) User registeration time should be recorded.
 //  1.2 (OK) User can assign a name for himself when signing up.
 // 2. Document and project management
+//  2.1 Project & document & user data schema definition.
+//  2.2 
 // 3. File upload support
 // 4. First time deploy
 // 5. Video player & subtitle editor

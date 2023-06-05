@@ -29,10 +29,10 @@ export function MainNav({
         </Link> : <></>
       }
       <Link
-        href="/admin/projects"
+        href="/admin/documents"
         className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
       >
-        Projects
+        Documents
       </Link>
     </nav>
   )
