@@ -6,9 +6,10 @@ import { Avatar, AvatarImage, AvatarFallback } from "~/components/ui/avatar"
 export type UserColumn = {
   id: string
   name: string
-  role: "admin" | "editor"
+  role: string
   email: string
   image: string
+  created: string
 }
 
 export const columns: ColumnDef<UserColumn>[] = [
@@ -36,4 +37,8 @@ export const columns: ColumnDef<UserColumn>[] = [
     accessorKey: "role",
     header: "Role"
   },
+  {
+    accessorKey: "created",
+    header: "Created time"
+  }
 ]

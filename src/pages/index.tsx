@@ -3,14 +3,16 @@
 //  1.1 (OK) User registeration time should be recorded.
 //  1.2 (OK) User can assign a name for himself when signing up.
 // 2. Document and project management
-//  2.1 Project & document & user data schema definition.
-//  2.2 
+//  2.1 (OK) Project & document & user data schema definition.
+//  2.2 Project creation & management & permission control
+//  2.3 Document creation & management & claim / permission control / state control
+//  2.4 Document editors: intro, curriculum, quiz, doc support
 // 3. File upload support
-// 4. First time deploy
-// 5. Video player & subtitle editor
-// 6. File import & auto transcript/translate
-// 7. Test & optimize
-// 8. First version release
+//  3.1 Attachment editor
+// 4. Video player & subtitle editor
+// 5. File import & auto transcript/translate
+// 6. Test & optimize
+// 7. First version release
 
 // FIX:
 // 1. User should be unable to open signin page after logged in.
