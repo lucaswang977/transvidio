@@ -5,8 +5,8 @@ import {
 
 export type ProjectRelatedUser = {
   id: string,
-  name: string,
-  image: string
+  name: string | null,
+  image: string | null
 }
 
 export const projectRouter = createTRPCRouter({

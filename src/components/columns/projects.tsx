@@ -30,10 +30,10 @@ export const columns: ColumnDef<ProjectColumn>[] = [
     accessorKey: "users",
     header: "Users",
     cell: ({ row }) => {
-      const users: { user: ProjectRelatedUser }[] = row.getValue("users")
-      return users.map(({ user: userData }) => {
-        return (<div key={userData.id}><Avatar className="h-8 w-8">
-          <AvatarImage src={userData.image ? userData.image : ""} alt={userData.name ? userData.name : ""} />
+      const users: ProjectRelatedUser[] = row.getValue("users")
+      return users.map((user) => {
+        return (<div key={user.id}><Avatar className="h-8 w-8">
+          <AvatarImage src={user.image ? user.image : ""} alt={user.name ? user.name : ""} />
           <AvatarFallback>TV</AvatarFallback>
         </Avatar></div>)
       })

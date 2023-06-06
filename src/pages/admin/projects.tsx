@@ -1,9 +1,8 @@
 import { type NextPage } from "next"
 import { useSession } from "next-auth/react"
-import { Button } from "~/components/ui/button"
-import { PlusCircle } from "lucide-react"
 import { ProjectColumn, columns } from "~/components/columns/projects"
 import { DataTable } from "~/components/ui/data-table"
+import { ProjectCreateDialog } from "~/components/create-project-dialog"
 import Layout from "./layout"
 import { api } from "~/utils/api";
 
@@ -22,7 +21,13 @@ const getData = () => {
       name: project.name ? project.name : "",
       srcLang: project.srcLang,
       dstLang: project.dstLang,
-      users: project.users,
+      users: project.users.map((user) => {
+        return {
+          id: user.user.id,
+          image: user.user.image,
+          name: user.user.name
+        }
+      }),
       documents: project.documents.length
     }
 
@@ -31,7 +36,6 @@ const getData = () => {
 
   return projectsData
 }
-
 
 const ProjectManagement: NextPage = () => {
   const { data: session } = useSession()
@@ -44,10 +48,7 @@ const ProjectManagement: NextPage = () => {
           <h2 className="text-3xl font-bold tracking-tight">All projects</h2>
           {
             session?.user.role === "ADMIN" ?
-              <Button size="sm" variant="outline">
-                <PlusCircle className="mr-2 h-4 w-4" />
-                New project
-              </Button>
+              <ProjectCreateDialog />
               : <></>
           }
         </div>
