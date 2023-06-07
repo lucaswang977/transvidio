@@ -1,10 +1,14 @@
 "use client"
 
+import * as React from "react"
+
 import {
   ColumnDef,
+  RowSelectionState,
   flexRender,
   getCoreRowModel,
   useReactTable,
+  type OnChangeFn
 } from "@tanstack/react-table"
 
 import {
@@ -18,17 +22,25 @@ import {
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
-  data: TData[]
+  data: TData[],
+  rowSelection: RowSelectionState | undefined,
+  setRowSelection: OnChangeFn<RowSelectionState> | undefined
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
+  rowSelection,
+  setRowSelection
 }: DataTableProps<TData, TValue>) {
   const table = useReactTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
+    onRowSelectionChange: setRowSelection,
+    state: {
+      rowSelection
+    }
   })
   return (
     <div className="rounded-md border">

@@ -16,7 +16,7 @@ export const userRouter = createTRPCRouter({
       password: z.string()
     }))
     .mutation(async ({ input }) => {
-      const user = await prisma.user.findUnique({
+      const user = await prisma.user.findFirst({
         where: {
           email: input.email
         }

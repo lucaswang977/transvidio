@@ -18,6 +18,8 @@
 // 1. User should be unable to open signin page after logged in.
 // 2. A notfication should be shown up after signing up with email.
 // 3. Credential is currently saved as plain text in db.
+// 4. Table auto refresh.
+// 5. user.getAll() returns everything to the client including the passwords.
 
 // NOTE:
 // 1. Use Metadata to replace the Head tag

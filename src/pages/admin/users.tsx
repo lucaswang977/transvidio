@@ -1,3 +1,4 @@
+import * as React from "react"
 import { NextPage } from "next"
 import Layout from "./layout"
 import { DataTable } from "~/components/ui/data-table"
@@ -31,6 +32,7 @@ const getData = () => {
 }
 
 const UserManagement: NextPage = () => {
+  const [rowSelection, setRowSelection] = React.useState({})
   const data = getData()
 
   return (
@@ -40,7 +42,12 @@ const UserManagement: NextPage = () => {
           <h2 className="text-3xl font-bold tracking-tight">All users</h2>
         </div>
         <div>
-          <DataTable columns={columns} data={data} />
+          <DataTable
+            columns={columns}
+            data={data}
+            rowSelection={rowSelection}
+            setRowSelection={setRowSelection}
+          />
         </div>
       </div>
     </Layout>

@@ -84,6 +84,7 @@ model Project {
     name          String
     srcLang       Language
     dstLang       Language
+    memo          String?
     createdAt     DateTime  @default(now())
     updatedAt     DateTime  @updatedAt
 
@@ -123,6 +124,7 @@ model Document {
     srcJson       Json?
     dstJson       Json?
     state         DocumentState    @default(OPEN)
+    memo          String?
 
     createdAt     DateTime         @default(now())
     updatedAt     DateTime         @updatedAt
