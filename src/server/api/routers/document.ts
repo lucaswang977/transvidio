@@ -127,5 +127,81 @@ export const documentRouter = createTRPCRouter({
         }
       })
     }),
+  save: protectedProcedure
+    .input(z.object({
+      documentId: z.string().nonempty(),
+      target: z.enum(["source", "destination"]),
+      data: z.string()
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const document = await prisma.document.findFirst({
+        where: {
+          id: input.documentId,
+        }
+      })
+
+      if (!document) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Document not existed."
+        })
+      }
+      if (ctx.session.user.role !== "ADMIN" && document.userId != ctx.session.user.id) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Document not claimed by this user."
+        })
+      }
+
+      if (input.target === "source") {
+        await prisma.document.update({
+          where: {
+            id: input.documentId
+          },
+          data: {
+            srcJson: input.data
+          }
+        })
+      } else if (input.target === "destination") {
+        await prisma.document.update({
+          where: {
+            id: input.documentId
+          },
+          data: {
+            dstJson: input.data
+          }
+        })
+      }
+    }),
+  load: protectedProcedure
+    .input(z.object({
+      documentId: z.string().nonempty(),
+    }))
+    .query(async ({ ctx, input }) => {
+      const document = await prisma.document.findFirst({
+        where: {
+          id: input.documentId,
+        }
+      })
+
+      if (!document) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Document not existed."
+        })
+      }
+      if (ctx.session.user.role !== "ADMIN" && document.userId != ctx.session.user.id) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Document not claimed by this user."
+        })
+      }
+      return prisma.document.findUnique({
+        where: {
+          id: input.documentId
+        },
+      })
+    }),
+
 
 });
