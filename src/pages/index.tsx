@@ -4,7 +4,7 @@
 //  1.2 (OK) User can assign a name for himself when signing up.
 // 2. Document and project management
 //  2.1 (OK) Project & document & user data schema definition.
-//  2.2 Project creation & management & permission control
+//  2.2 (OK) Project creation & management & permission control
 //  2.3 Document creation & management & claim / permission control / state control
 //  2.4 Document editors: intro, curriculum, quiz, doc support
 // 3. File upload support

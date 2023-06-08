@@ -132,6 +132,6 @@ model Document {
     projectId     String
     project       Project          @relation(fields: [projectId], references: [id], onDelete: NoAction)
 
-    userId        String
-    user          User             @relation(fields: [userId], references: [id], onDelete: NoAction)
+    userId        String?
+    user          User?            @relation(fields: [userId], references: [id], onDelete: NoAction)
 }
