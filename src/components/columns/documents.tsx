@@ -105,35 +105,51 @@ export const columns: ColumnDef<DocumentColumn>[] = [
     id: "actions",
     cell: ({ row }) => {
       const data = row.original
+      let editorUrl = "/"
+      if (data.type === "INTRODUCTION") {
+        editorUrl = "/editor/introduction/" + data.id
+      } else if (data.type === "CURRICULUM") {
+        editorUrl = "/editor/curriculum/" + data.id
+      } else if (data.type === "SUBTITLE") {
+        editorUrl = "/editor/subtitle/" + data.id
+      } else if (data.type === "DOC") {
+        editorUrl = "/editor/doc/" + data.id
+      } else if (data.type === "QUIZ") {
+        editorUrl = "/editor/quiz/" + data.id
+      } else if (data.type === "ATTACHMENT") {
+        editorUrl = "/editor/attachment/" + data.id
+      }
 
       return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={() => navigator.clipboard.writeText(data.id)}
-            >
-              <Edit className="mr-2 h-4 w-4" />
-              <span>Edit</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem>
+        <div className="flex space-x-1 place-items-center">
+          <a href={editorUrl} target="_blank">
+            <Button variant="ghost">
               <ExternalLink className="mr-2 h-4 w-4" />
-              <span>Document Json Editor</span>
-            </DropdownMenuItem>
-
-            <DropdownMenuItem>
-              <Trash className="mr-2 h-4 w-4" />
-              <span>Delete</span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+            </Button>
+          </a>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <span className="sr-only">Open menu</span>
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => navigator.clipboard.writeText(data.id)}
+              >
+                <Edit className="mr-2 h-4 w-4" />
+                <span>Edit</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Trash className="mr-2 h-4 w-4" />
+                <span>Delete</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       )
     },
   }
