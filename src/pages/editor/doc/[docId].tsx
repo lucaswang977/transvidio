@@ -1,14 +1,5 @@
-// https://www.udemy.com/api-2.0/courses/673654/?fields[course]=
-//   title,headline,description,prerequisites,objectives,target_audiences
 // {
-// "_class": "course",
-// "id", 12345,
-// "title": "text",
-// "headeline": "text",
-// "description": "HTML",
-// "prerequisites": [text, text],
-// "objectives": [text, text],
-// "target_audiences": [text, text]
+// "html": "<html></html>",
 // }
 
 import { type NextPage } from "next"
@@ -20,36 +11,24 @@ import { useSession } from "next-auth/react"
 import { Button } from "~/components/ui/button"
 import { Save } from "lucide-react"
 import {
-  ComparativeInput,
   ComparativeHtmlEditor,
-  ComparativeArrayEditor
 } from "~/components/ui/comparatives"
 
 type PageSchema = {
-  title: string,
-  headline: string,
-  description: string,
-  prerequisites: string[],
-  objectives: string[],
-  target_audiences: string[]
+  html: string,
 }
 
 const pageDefaultValue: PageSchema = {
-  title: "",
-  headline: "",
-  description: "",
-  prerequisites: [],
-  objectives: [],
-  target_audiences: []
+  html: "",
 }
 
-type IntroductionEditorProps = {
+type CourseDocEditorProps = {
   docId: string,
   src: PageSchema,
   dst: PageSchema
 }
 
-const IntroductionEditor = (props: IntroductionEditorProps) => {
+const CourseDocEditor = (props: CourseDocEditorProps) => {
   const mutation = api.document.save.useMutation()
   const [editorValues, setEditorValues] = React.useState({ src: props.src, dst: props.dst })
   const [contentChanged, setContentChanged] = React.useState(false)
@@ -82,35 +61,10 @@ const IntroductionEditor = (props: IntroductionEditorProps) => {
         <Save className="h-4 w-4" />
         <span className="sr-only">Save</span>
       </Button>
-      <ComparativeInput
-        label="title"
-        src={editorValues.src.title}
-        dst={editorValues.dst.title}
-        onChange={onInputChange} />
-      <ComparativeInput
-        label="headline"
-        src={editorValues.src.headline}
-        dst={editorValues.dst.headline}
-        onChange={onInputChange} />
       <ComparativeHtmlEditor
-        label="description"
-        src={editorValues.src.description}
-        dst={editorValues.dst.description}
-        onChange={onInputChange} />
-      <ComparativeArrayEditor
-        label="prerequisites"
-        src={editorValues.src.prerequisites}
-        dst={editorValues.dst.prerequisites}
-        onChange={onInputChange} />
-      <ComparativeArrayEditor
-        label="objectives"
-        src={editorValues.src.objectives}
-        dst={editorValues.dst.objectives}
-        onChange={onInputChange} />
-      <ComparativeArrayEditor
-        label="target_audiences"
-        src={editorValues.src.target_audiences}
-        dst={editorValues.dst.target_audiences}
+        label="html"
+        src={editorValues.src.html}
+        dst={editorValues.dst.html}
         onChange={onInputChange} />
     </div>
   )
@@ -139,7 +93,7 @@ const DocEditor: NextPage = () => {
           <p className="text-sm text-gray-400">saved at {doc?.updatedAt.toLocaleString()}</p>
         </div>
         <div className="flex items-center w-full justify-evenly space-y-2">
-          <IntroductionEditor docId={docId} src={srcObj} dst={dstObj} />
+          <CourseDocEditor docId={docId} src={srcObj} dst={dstObj} />
         </div>
       </div>
   )

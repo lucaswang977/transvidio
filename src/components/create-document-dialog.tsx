@@ -121,7 +121,7 @@ export function DocumentCreateDialog() {
                     <FormLabel>Project</FormLabel>
                     <FormControl>
                       <Select onValueChange={field.onChange} defaultValue="enUS">
-                        <SelectTrigger className="w-[200px]">
+                        <SelectTrigger className="w-full">
                           <SelectValue placeholder="Select a language" />
                         </SelectTrigger>
                         <SelectContent>
