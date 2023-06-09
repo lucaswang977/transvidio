@@ -5,7 +5,7 @@ import {
 
 import { prisma } from "~/server/db";
 import { z } from "zod";
-import { DocumentType, DocumentState } from "@prisma/client"
+import { DocumentType } from "@prisma/client"
 import { TRPCError } from "@trpc/server";
 
 export const documentRouter = createTRPCRouter({
@@ -42,7 +42,7 @@ export const documentRouter = createTRPCRouter({
     .input(z.object({
       title: z.string().nonempty(),
       type: z.nativeEnum(DocumentType),
-      memo: z.string(),
+      memo: z.string().optional(),
       projectId: z.string().nonempty()
     }))
     .mutation(async ({ input }) => {
@@ -130,8 +130,7 @@ export const documentRouter = createTRPCRouter({
   save: protectedProcedure
     .input(z.object({
       documentId: z.string().nonempty(),
-      target: z.enum(["source", "destination"]),
-      data: z.string()
+      dst: z.string()
     }))
     .mutation(async ({ ctx, input }) => {
       const document = await prisma.document.findFirst({
@@ -153,25 +152,14 @@ export const documentRouter = createTRPCRouter({
         })
       }
 
-      if (input.target === "source") {
-        await prisma.document.update({
-          where: {
-            id: input.documentId
-          },
-          data: {
-            srcJson: input.data
-          }
-        })
-      } else if (input.target === "destination") {
-        await prisma.document.update({
-          where: {
-            id: input.documentId
-          },
-          data: {
-            dstJson: input.data
-          }
-        })
-      }
+      await prisma.document.update({
+        where: {
+          id: input.documentId
+        },
+        data: {
+          dstJson: JSON.parse(input.dst)
+        }
+      })
     }),
   load: protectedProcedure
     .input(z.object({

@@ -86,6 +86,9 @@ dependencies:
   react-hook-form:
     specifier: ^7.44.2
     version: 7.44.2(react@18.2.0)
+  react-simple-wysiwyg:
+    specifier: ^2.2.5
+    version: 2.2.5(react@18.2.0)
   superjson:
     specifier: 1.12.2
     version: 1.12.2
@@ -3470,6 +3473,14 @@ packages:
       tslib: 2.5.2
       use-callback-ref: 1.3.0(@types/react@18.2.6)(react@18.2.0)
       use-sidecar: 1.1.2(@types/react@18.2.6)(react@18.2.0)
+    dev: false
+
+  /react-simple-wysiwyg@2.2.5(react@18.2.0):
+    resolution: {integrity: sha512-cNut1O8wAavVJKi3cobLlM3VIjiJG4clBSJDEz4Rgc6V+ww7bmjp8KGTuJJw79ZAsJDYGfN1ic/80u2et8GZZg==}
+    peerDependencies:
+      react: '>=16.8'
+    dependencies:
+      react: 18.2.0
     dev: false
 
   /react-ssr-prepass@1.5.0(react@18.2.0):

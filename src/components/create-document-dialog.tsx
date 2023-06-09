@@ -43,7 +43,7 @@ const formSchema = z.object({
   project: z.string().nonempty(),
   title: z.string().nonempty(),
   type: z.nativeEnum(DocumentType),
-  memo: z.string()
+  memo: z.string().optional()
 })
 
 type ProjectInfo = {
