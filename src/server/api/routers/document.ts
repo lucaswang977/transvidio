@@ -130,6 +130,7 @@ export const documentRouter = createTRPCRouter({
   save: protectedProcedure
     .input(z.object({
       documentId: z.string().nonempty(),
+      src: z.string().optional(),
       dst: z.string()
     }))
     .mutation(async ({ ctx, input }) => {
@@ -152,14 +153,26 @@ export const documentRouter = createTRPCRouter({
         })
       }
 
-      await prisma.document.update({
-        where: {
-          id: input.documentId
-        },
-        data: {
-          dstJson: JSON.parse(input.dst)
-        }
-      })
+      if (input.src) {
+        await prisma.document.update({
+          where: {
+            id: input.documentId
+          },
+          data: {
+            dstJson: JSON.parse(input.dst),
+            srcJson: JSON.parse(input.src)
+          }
+        })
+      } else {
+        await prisma.document.update({
+          where: {
+            id: input.documentId
+          },
+          data: {
+            dstJson: JSON.parse(input.dst)
+          }
+        })
+      }
     }),
   load: protectedProcedure
     .input(z.object({

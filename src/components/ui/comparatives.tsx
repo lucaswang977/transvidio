@@ -29,6 +29,7 @@ type ComparativeInputProps =
     label: string,
     src: string | undefined,
     dst: string | undefined,
+    srcEditable?: boolean,
     onChange: (label: string, t: SrcOrDst, v: string) => void
   }
 
@@ -38,7 +39,7 @@ export const ComparativeInput = (props: ComparativeInputProps) => {
     <div className="flex-col space-y-2">
       <Label>{props.label}</Label>
       <Input
-        disabled={true}
+        disabled={props.srcEditable ? !props.srcEditable : true}
         type="text"
         value={content.src}
         onChange={(event) => {
