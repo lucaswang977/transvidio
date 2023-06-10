@@ -6,29 +6,32 @@
 // 2. Video downloading not supported yet
 // 3. Transcript downloading not supported yet
 
+// Find the course ID first
+const COURSE_ID = 1462428;
+
+// Do not touch this URLs unless they are changed.
+const COURSE_INTRO_JSON_URL = `/api-2.0/courses/${COURSE_ID}/?fields[course]=title,headline,description,prerequisites,objectives,target_audiences`
 const CURRICULUM_JSON_URL = `/api-2.0/courses/${COURSE_ID}/subscriber-curriculum-items/?page_size=1000&fields[lecture]=title,description,object_index,is_published,sort_order,created,asset,supplementary_assets,is_free&fields[quiz]=title,object_index,is_published,sort_order,type,num_assessments&fields[practice]=title,object_index,is_published,sort_order&fields[chapter]=title,object_index,is_published,sort_order&fields[asset]=title,filename,asset_type,status,time_estimation,is_external&caching_intent=True`;
 const ATTACHMENT_JSON_URL = `/api-2.0/users/me/subscribed-courses/${COURSE_ID}/lectures/LECTURE_ID/supplementary-assets/ASSET_ID/?fields[asset]=download_urls`
 const ARTICLE_JSON_URL = '/api-2.0/assets/ASSET_ID/?fields[asset]=@min,status,delayed_asset_message,processing_errors,body';
 const VIDEO_DOWNLOADABLE_PATCH_URL = `/api-2.0/users/me/taught-courses/${COURSE_ID}/lectures/LECTURE_ID/?fields[lecture]=is_downloadable`;
 const VIDEO_DOWNLOAD_URL = `https://www.udemy.com/api-2.0/users/me/subscribed-courses/${COURSE_ID}/lectures/LECTURE_ID/?fields[lecture]=asset&fields[asset]=download_urls`
 
-
-// Configurations
-const COURSE_ID = 1462428;
-
 // Default output is JSON
+// Curriculum and supplements can be outputted as CSV
 const OUTPUT_CSV = false;
 
 // Logged in as student is needed
-const DOWNLOAD_INTRODUCTION = false;
-const DOWNLOAD_CURRICULUM = false;
+const DOWNLOAD_INTRODUCTION = true;
+const DOWNLOAD_CURRICULUM = true;
 
-const DOWNLOAD_SUPPLMENT = false;    // Main toggle for attachment, article, video, quiz
+const DOWNLOAD_SUPPLMENT = true;    // Main toggle for attachment, article, video, quiz
+
 const DOWNLOAD_ARTICLE = false;      // as student 
 const DOWNLOAD_ATTACHMENT = false;   // as student
-const DOWNLOAD_VIDEO = false;        // as instructor
-const DOWNLOAD_QUIZ = false;         // as instructor
-const DOWNLOAD_TRANSCRIPT = false;   // as instructor
+const DOWNLOAD_VIDEO = false;        // as instructor, not supported yet
+const DOWNLOAD_QUIZ = false;         // as instructor, not supported yet
+const DOWNLOAD_TRANSCRIPT = false;   // as instructor, not supported yet
 
 let downloadRequests = [];
 
@@ -62,7 +65,27 @@ const processCSV = (data, filename) => {
   downloadCSV(csvData, filename);
 }
 
-const fetchCourseData = async (url) => {
+const fetchCourseIntro = async (url) => {
+  return fetch(url)
+    .then(response => response.json())
+    .then(data => {
+      let item = {
+        id: data.id,
+        title: data.title,
+        description: data.description,
+        headline: data.headline,
+        prerequisites: data.prerequisites,
+        objectives: data.objectives,
+        target_audiences: data.target_audiences,
+      }
+      return item;
+    })
+    .catch(error => {
+      console.error('Error fetching course intro:', error);
+    });
+}
+
+const fetchCurriculum = async (url) => {
   return fetch(url)
     .then(response => response.json())
     .then(data => {
@@ -108,7 +131,7 @@ const fetchCourseData = async (url) => {
       return items;
     })
     .catch(error => {
-      console.error('Error fetching course:', error);
+      console.error('Error fetching course curriculum:', error);
     });
 }
 
@@ -255,12 +278,18 @@ const downloadFile = (url, filename) => {
   });
 }
 
+if (DOWNLOAD_INTRODUCTION) {
+  await fetchCourseIntro(COURSE_INTRO_JSON_URL).then(data => {
+    downloadStringAsFile(JSON.stringify(data), `${COURSE_ID}_course.json`)
+  });
+}
+
 if (DOWNLOAD_CURRICULUM) {
-  await fetchCourseData(CURRICULUM_JSON_URL).then(data => {
+  await fetchCurriculum(CURRICULUM_JSON_URL).then(data => {
     if (OUTPUT_CSV) {
       processCSV(data, `${COURSE_ID}_course.csv`);
     }
-    downloadStringAsFile(JSON.stringify(data), `${COURSE_ID}_course.json`)
+    downloadStringAsFile(JSON.stringify(data), `${COURSE_ID}_curriculum.json`)
   });
 }
 
@@ -288,7 +317,6 @@ if (DOWNLOAD_SUPPLMENT) {
 
     return Promise.all(promises);
   })
-
-
 }
+
 downloadFilesSequentially(downloadRequests);
