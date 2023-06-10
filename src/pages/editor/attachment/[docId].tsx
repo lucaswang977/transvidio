@@ -14,7 +14,6 @@ import { useSession } from "next-auth/react"
 import { Button } from "~/components/ui/button"
 import { Download, Save } from "lucide-react"
 import { ComparativeInput } from "~/components/ui/comparatives"
-import { Label } from "~/components/ui/label"
 import { Input } from "~/components/ui/input";
 import axios from "axios";
 
