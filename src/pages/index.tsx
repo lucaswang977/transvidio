@@ -9,8 +9,9 @@
 //  2.4 Document editors: intro, curriculum, quiz, doc support
 // 3. File upload support
 //  3.1 Attachment editor
-// 4. Video player & subtitle editor
-// 5. File import & auto transcript/translate
+// 4. File import & auto transcript/translate
+//  4.1 Course intro, curriculum, supplement list import
+// 5. Video player & subtitle editor
 // 6. Test & optimize
 // 7. First version release
 

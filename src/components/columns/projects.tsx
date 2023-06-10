@@ -8,7 +8,7 @@ import { MoreHorizontal } from "lucide-react"
 
 import { Button } from "~/components/ui/button"
 import { Checkbox } from "~/components/ui/checkbox"
-import { Edit, Trash, ArrowRightCircle } from "lucide-react"
+import { Import, Edit, Trash, ArrowRightCircle } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -117,9 +117,11 @@ export const columns: ColumnDef<ProjectColumn>[] = [
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={() => navigator.clipboard.writeText(data.id)}
-            >
+            <DropdownMenuItem>
+              <Import className="mr-2 h-4 w-4" />
+              <span>Import</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem>
               <Edit className="mr-2 h-4 w-4" />
               <span>Edit</span>
             </DropdownMenuItem>
