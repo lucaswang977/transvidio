@@ -18,6 +18,8 @@ import {
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu"
 
+import { ProjectImportDialog } from "~/components/import-project-dialog"
+
 export type ProjectColumn = {
   id: string
   name: string
@@ -117,10 +119,7 @@ export const columns: ColumnDef<ProjectColumn>[] = [
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <Import className="mr-2 h-4 w-4" />
-              <span>Import</span>
-            </DropdownMenuItem>
+            <ProjectImportDialog />
             <DropdownMenuItem>
               <Edit className="mr-2 h-4 w-4" />
               <span>Edit</span>
