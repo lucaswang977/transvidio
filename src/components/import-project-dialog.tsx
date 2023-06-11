@@ -5,13 +5,30 @@
 
 import { Import } from "lucide-react";
 import * as React from "react"
-import { Dialog, DialogTrigger, DialogContent } from "~/components/ui/dialog"
+import { Button } from "~/components/ui/button"
+import { Label } from "~/components/ui/label"
+import { Textarea } from "~/components/ui/textarea"
+import {
+  Dialog,
+  DialogHeader,
+  DialogTrigger,
+  DialogContent,
+  DialogTitle,
+} from "~/components/ui/dialog"
 import { DropdownMenuItem } from "~/components/ui/dropdown-menu";
 
 export const ProjectImportDialog = React.forwardRef<
   React.ElementRef<typeof DropdownMenuItem>,
   React.ComponentPropsWithoutRef<typeof DropdownMenuItem>
 >(({ onSelect, ...props }, ref) => {
+  const [loading, setLoading] = React.useState(false)
+  const [intro, setIntro] = React.useState("")
+  const [curriculum, setCurriculum] = React.useState("")
+  const [supplement, setSupplement] = React.useState("")
+
+  const handleImport = () => {
+    setLoading(true)
+  }
 
   return (
     <Dialog>
@@ -29,6 +46,29 @@ export const ProjectImportDialog = React.forwardRef<
         </DropdownMenuItem>
       </DialogTrigger>
       <DialogContent>
+        {loading ? <div>Loading</div> :
+          <>
+            <DialogHeader>
+              <DialogTitle>Import project data</DialogTitle>
+            </DialogHeader>
+            <Label htmlFor="intro">Course intro JSON text</Label>
+            <Textarea
+              id="intro"
+              value={intro}
+              onChange={(event) => setIntro(event.target.value)} />
+            <Label htmlFor="curriculum">Curriculum JSON text</Label>
+            <Textarea
+              id="curriculum"
+              value={curriculum}
+              onChange={(event) => setCurriculum(event.target.value)} />
+            <Label htmlFor="supplement">Supplement JSON text</Label>
+            <Textarea
+              id="supplement"
+              value={supplement}
+              onChange={(event) => setSupplement(event.target.value)} />
+            <Button onClick={handleImport}>Start</Button>
+          </>
+        }
       </DialogContent>
     </Dialog>
   )
