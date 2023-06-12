@@ -1,4 +1,3 @@
-// https://www.udemy.com/api-2.0/course-landing-components/673654/me/?components=curriculum_context
 // {
 //   "sections" : [
 //     {
@@ -27,37 +26,13 @@ import { useSession } from "next-auth/react"
 import { Button } from "~/components/ui/button"
 import { Input } from "~/components/ui/input"
 import { Save } from "lucide-react"
-import {
-  CustomHtmlEditor
-} from "~/components/ui/comparatives"
-
-type LectureType = "lecture" | "quiz" | "article" | "resource"
-
-type Item = {
-  id: number,
-  item_type: LectureType,
-  title: string,
-  description: string
-}
-
-type Section = {
-  index: number,
-  title: string,
-  items: Item[]
-}
-
-type Curriculum = {
-  sections: Section[]
-}
-
+import { Curriculum, SrcOrDst } from "~/types"
 
 type CurriculumEditorProps = {
   docId: string,
   src: Curriculum,
   dst: Curriculum
 }
-
-type SrcOrDst = "src" | "dst"
 
 type CurriculumListEditorProps = {
   where: SrcOrDst,

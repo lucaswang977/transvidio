@@ -25,16 +25,9 @@ import {
   ComparativeArrayEditor
 } from "~/components/ui/comparatives"
 
-type PageSchema = {
-  title: string,
-  headline: string,
-  description: string,
-  prerequisites: string[],
-  objectives: string[],
-  target_audiences: string[]
-}
+import { Introduction } from "~/types"
 
-const pageDefaultValue: PageSchema = {
+const pageDefaultValue: Introduction = {
   title: "",
   headline: "",
   description: "",
@@ -45,8 +38,8 @@ const pageDefaultValue: PageSchema = {
 
 type IntroductionEditorProps = {
   docId: string,
-  src: PageSchema,
-  dst: PageSchema
+  src: Introduction,
+  dst: Introduction
 }
 
 const IntroductionEditor = (props: IntroductionEditorProps) => {
@@ -124,9 +117,9 @@ const DocEditor: NextPage = () => {
     { documentId: docId },
     { enabled: session?.user !== undefined }
   )
-  let srcObj: PageSchema = doc?.srcJson as PageSchema
+  let srcObj = doc?.srcJson as Introduction
   if (srcObj === null) srcObj = pageDefaultValue
-  let dstObj: PageSchema = doc?.dstJson as PageSchema
+  let dstObj = doc?.dstJson as Introduction
   if (dstObj === null) dstObj = pageDefaultValue
 
   return (

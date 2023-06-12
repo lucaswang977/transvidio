@@ -16,18 +16,30 @@ import {
   DialogTitle,
 } from "~/components/ui/dialog"
 import { DropdownMenuItem } from "~/components/ui/dropdown-menu";
+import { api } from "~/utils/api";
 
 export const ProjectImportDialog = React.forwardRef<
   React.ElementRef<typeof DropdownMenuItem>,
-  React.ComponentPropsWithoutRef<typeof DropdownMenuItem>
->(({ onSelect, ...props }, ref) => {
+  React.ComponentPropsWithoutRef<typeof DropdownMenuItem> & { projectId: string }
+>(({ onSelect, projectId, ...props }, ref) => {
   const [loading, setLoading] = React.useState(false)
   const [intro, setIntro] = React.useState("")
   const [curriculum, setCurriculum] = React.useState("")
   const [supplement, setSupplement] = React.useState("")
+  const mutation = api.project.import.useMutation()
 
-  const handleImport = () => {
+  const handleImport = (id: string) => {
     setLoading(true)
+    const result = mutation.mutate({
+      id: id,
+      intro: intro,
+      curriculum: curriculum,
+      supplement: supplement
+    })
+
+    console.log(result)
+
+    setLoading(false)
   }
 
   return (
@@ -66,7 +78,7 @@ export const ProjectImportDialog = React.forwardRef<
               id="supplement"
               value={supplement}
               onChange={(event) => setSupplement(event.target.value)} />
-            <Button onClick={handleImport}>Start</Button>
+            <Button onClick={() => handleImport(projectId)}>Start</Button>
           </>
         }
       </DialogContent>

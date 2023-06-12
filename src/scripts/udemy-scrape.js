@@ -5,6 +5,7 @@
 // 1. Quiz not supported yet
 // 2. Video downloading not supported yet
 // 3. Transcript downloading not supported yet
+// 4. Assignment(type=practice) not supported yet
 
 // Find the course ID first
 const COURSE_ID = 1462428;

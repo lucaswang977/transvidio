@@ -119,7 +119,7 @@ export const columns: ColumnDef<ProjectColumn>[] = [
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <ProjectImportDialog />
+            <ProjectImportDialog projectId={data.id} />
             <DropdownMenuItem>
               <Edit className="mr-2 h-4 w-4" />
               <span>Edit</span>
