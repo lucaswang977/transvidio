@@ -24,9 +24,11 @@ import { api } from "~/utils/api";
 import { useSession } from "next-auth/react"
 
 import { Button } from "~/components/ui/button"
+import { Label } from "~/components/ui/label"
 import { Input } from "~/components/ui/input"
 import { Save } from "lucide-react"
-import { Curriculum, SrcOrDst } from "~/types"
+import { Curriculum, CurriculumItem, SrcOrDst } from "~/types"
+import { RichtextEditor } from "~/components/ui/richtext-editor";
 
 type CurriculumEditorProps = {
   docId: string,
@@ -45,17 +47,61 @@ const CurriculumListEditor = (props: CurriculumListEditorProps) => {
   const onChangeSectionTitle = (index: number, v: string) => {
     setValue((value) => {
       value.sections[index].title = v
+      props.onChange(props.where, value)
       return value
     })
   }
 
+  const onChangeItemTitle = (i: number, j: number, v: string) => {
+    setValue((value) => {
+      value.sections[i].items[j].title = v
+      props.onChange(props.where, value)
+      return value
+    })
+  }
+
+  const onChangeItemDescription = (i: number, j: number, v: string) => {
+    setValue((value) => {
+      value.sections[i].items[j].description = v
+      props.onChange(props.where, value)
+      return value
+    })
+  }
+
+
   return (
-    <div className="space-y-2">
+    <div className="w-[500px] space-y-2">
       {value.sections.map((section, i) => {
         return (
-          <Input key={section.index} value={section.title} onChange={(event) => {
-            onChangeSectionTitle(i, event.target.value)
-          }} />
+          <div key={"section" + section.index} className="flex-col space-y-2">
+            <div className="flex space-x-2 items-center">
+              <Label htmlFor={"section" + section.index}>Section</Label>
+              <Input
+                className="w-full"
+                id={"section" + section.index}
+                value={section.title} onChange={(event) => {
+                  onChangeSectionTitle(i, event.target.value)
+                }} />
+            </div>
+            {section.items.map((item, j) => {
+              return (
+                <div className="ml-10 flex-col space-y-1" key={"item" + item.id}>
+                  <div className="flex space-x-2 items-center" key={item.id}>
+                    <Label htmlFor={"item" + item.id}>{item.item_type}</Label>
+                    <Input
+                      id={"item" + item.id}
+                      value={item.title} onChange={(event) => {
+                        onChangeItemTitle(i, j, event.target.value)
+                      }} />
+                  </div>
+
+                  <RichtextEditor value={item.description} onChange={(event) => {
+                    onChangeItemDescription(i, j, event.target.value)
+                  }} />
+                </div>
+              )
+            })}
+          </div>
         )
       })}
     </div>
@@ -95,10 +141,16 @@ const CurriculumEditor = (props: CurriculumEditorProps) => {
         <Save className="h-4 w-4" />
         <span className="sr-only">Save</span>
       </Button>
-      <CurriculumListEditor
-        where="src"
-        value={editorValues.src}
-        onChange={onInputChange} />
+      <div className="flex space-x-10">
+        <CurriculumListEditor
+          where="src"
+          value={editorValues.src}
+          onChange={onInputChange} />
+        <CurriculumListEditor
+          where="dst"
+          value={editorValues.dst}
+          onChange={onInputChange} />
+      </div>
     </div>
   )
 }
@@ -112,9 +164,40 @@ const DocEditor: NextPage = () => {
     { enabled: session?.user !== undefined }
   )
   let srcObj: Curriculum = doc?.srcJson as Curriculum
-  if (srcObj === null) srcObj = { sections: [] }
+  if (!srcObj) srcObj = { sections: [] }
   let dstObj: Curriculum = doc?.dstJson as Curriculum
-  if (dstObj === null) dstObj = { sections: [] }
+  if (!dstObj) dstObj = { sections: [] }
+
+  srcObj.sections.forEach((section, i) => {
+    if (dstObj.sections[i] === undefined) {
+      const dstItems: CurriculumItem[] = []
+      section.items.forEach((item, j) => {
+        dstItems[j] = {
+          id: item.id,
+          title: "",
+          description: "",
+          item_type: item.item_type
+        }
+      })
+      dstObj.sections[i] = {
+        index: section.index,
+        title: "",
+        items: dstItems
+      }
+    } else {
+      const dstItems: CurriculumItem[] = []
+      section.items.forEach((item, j) => {
+        if (dstItems[j] === undefined) {
+          dstItems[j] = {
+            id: item.id,
+            title: "",
+            description: "",
+            item_type: item.item_type
+          }
+        }
+      })
+    }
+  })
 
   return (
     status === "loading" ? <span>Loading</span> :

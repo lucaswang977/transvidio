@@ -197,7 +197,6 @@ async function createCurriculum(
         title: item.title,
         items: []
       }
-      if (currentSection) curriculumDoc.sections.push(currentSection)
       currentSection = data
       curriculumDoc.sections.push(data)
       console.log("Record a chapter: ", item.title, item.id)
@@ -252,7 +251,6 @@ async function createCurriculum(
       console.log("Unrecognized item type: ", item)
     }
   })
-  if (currentSection) curriculumDoc.sections.push(currentSection)
 
   const result = await prisma.document.create({
     data: {
