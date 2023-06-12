@@ -17,6 +17,9 @@ dependencies:
   '@next-auth/prisma-adapter':
     specifier: ^1.0.5
     version: 1.0.5(@prisma/client@4.15.0)(next-auth@4.22.1)
+  '@plussub/srt-vtt-parser':
+    specifier: ^1.1.0
+    version: 1.1.0
   '@prisma/client':
     specifier: ^4.15.0
     version: 4.15.0(prisma@4.15.0)
@@ -1397,6 +1400,10 @@ packages:
       picocolors: 1.0.0
       tslib: 2.5.2
     dev: true
+
+  /@plussub/srt-vtt-parser@1.1.0:
+    resolution: {integrity: sha512-wDhuvXmTC6E9lxbwX/ashWpvFTH2v5MRT6LqTlGC6+fmragETMzcCubaEiVWWiNVT+HexKe2F6s421OFmfrjiw==}
+    dev: false
 
   /@prisma/client@4.15.0(prisma@4.15.0):
     resolution: {integrity: sha512-xnROvyABcGiwqRNdrObHVZkD9EjkJYHOmVdlKy1yGgI+XOzvMzJ4tRg3dz1pUlsyhKxXGCnjIQjWW+2ur+YXuw==}

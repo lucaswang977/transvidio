@@ -28,4 +28,16 @@ export type Introduction = {
   target_audiences: string[]
 }
 
+export type SubtitleItem = {
+  id: string,
+  from: number,
+  to: number,
+  text: string
+}
+
+export type SubtitleType = {
+  videoUrl: string,
+  originalSubtitleUrl: string,
+  subtitle: SubtitleItem[],
+}
 

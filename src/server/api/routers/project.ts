@@ -12,8 +12,10 @@ import {
   Curriculum,
   CurriculumSection,
   CurriculumItem,
-  CurriculumItemEnum
+  CurriculumItemEnum,
+  SubtitleType,
 } from "~/types"
+import { env } from "~/env.mjs";
 
 export type ProjectRelatedUser = {
   id: string,
@@ -162,7 +164,7 @@ type SupplementItemType = {
 }
 type SupplementType = SupplementItemType[]
 
-async function createIntroDoc(id: string, intro: IntroType) {
+async function createIntroDoc(projectId: string, intro: IntroType) {
   const data: Introduction = intro as Introduction
 
   const result = await prisma.document.create({
@@ -170,7 +172,7 @@ async function createIntroDoc(id: string, intro: IntroType) {
       title: intro.title,
       type: "INTRODUCTION",
       srcJson: data,
-      projectId: id,
+      projectId: projectId,
     }
   })
 
@@ -180,7 +182,7 @@ async function createIntroDoc(id: string, intro: IntroType) {
 }
 
 async function createCurriculum(
-  id: string,
+  projectId: string,
   title: string,
   curriculum: CurriculumType,
   supplement: SupplementType) {
@@ -190,7 +192,7 @@ async function createCurriculum(
   }
 
   let currentSection: CurriculumSection | null = null
-  curriculum.forEach((item) => {
+  curriculum.forEach(async (item) => {
     if (item.type === "chapter") {
       const data: CurriculumSection = {
         index: item.id,
@@ -207,8 +209,29 @@ async function createCurriculum(
       let dataType: CurriculumItemEnum = "lecture"
       if (item.assetType === "Video") {
         dataType = "lecture"
-        // TODO: create subtitle doc
-        console.log("Create a subtitle doc for: ", item.title, item.id)
+
+        const srcData: SubtitleType = {
+          videoUrl: `${env.CDN_BASE_URL}/${projectId}/video/${item.id}-${item.assetId}.mp4`,
+          originalSubtitleUrl: `${env.CDN_BASE_URL}/${projectId}/subtitle/${item.id}-${item.assetId}.src.vtt`,
+          subtitle: []
+        }
+
+        const dstData: SubtitleType = {
+          videoUrl: srcData.videoUrl,
+          originalSubtitleUrl: `${env.CDN_BASE_URL}/${projectId}/subtitle/${item.id}-${item.assetId}.dst.vtt`,
+          subtitle: []
+        }
+        const result = await prisma.document.create({
+          data: {
+            title: item.title,
+            type: "SUBTITLE",
+            srcJson: srcData,
+            dstJson: dstData,
+            projectId: projectId,
+          }
+        })
+
+        console.log("Create a subtitle doc for: ", item.title, item.id, result)
       } else if (item.assetType === "Article") {
         dataType = "article"
         // TODO: create doc type doc
@@ -257,7 +280,7 @@ async function createCurriculum(
       title: title,
       type: "CURRICULUM",
       srcJson: curriculumDoc,
-      projectId: id,
+      projectId: projectId,
     }
   })
 
