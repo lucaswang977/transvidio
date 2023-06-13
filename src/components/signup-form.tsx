@@ -62,7 +62,7 @@ export function SignupForm() {
     },
   })
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: z.infer<typeof formSchema>) {
     console.log(values)
 
     mutation.mutate({
@@ -71,7 +71,7 @@ export function SignupForm() {
       password: values.password
     })
 
-    signIn("email", { email: values.email, redirect: false }).then((result) => {
+    await signIn("email", { email: values.email, redirect: false }).then((result) => {
       if (result && result.ok) {
         console.log("ok")
       }

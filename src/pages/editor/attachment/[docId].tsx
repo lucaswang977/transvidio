@@ -48,19 +48,15 @@ export const Attachment = (props: AttachmentProps) => {
     React.useState<File | null>(null)
 
   const handleUpload = async (uploading: File | null) => {
-    try {
-      if (uploading) {
-        const formData = new FormData();
-        formData.append("myImage", uploading);
-        const { data } = await axios.post("/api/upload",
-          formData,
-          { headers: { 'content-type': 'multipart/form-data' } }
-        );
-        console.log(data);
-        props.onChange("fileurl", props.where, data.files[0].location)
-      }
-    } catch (error: any) {
-      console.log(error.response?.data);
+    if (uploading) {
+      const formData = new FormData();
+      formData.append("myImage", uploading);
+      const response: { location: string } = await axios.post("/api/upload",
+        formData,
+        { headers: { 'content-type': 'multipart/form-data' } }
+      );
+      console.log(response);
+      props.onChange("fileurl", props.where, response.location)
     }
   };
 
@@ -94,7 +90,7 @@ const AttachmentEditor = (props: AttachmentEditorProps) => {
   const [editorValues, setEditorValues] = React.useState({ src: props.src, dst: props.dst })
   const [contentChanged, setContentChanged] = React.useState(false)
 
-  const onInputChange = (label: string, t: "src" | "dst", v: any) => {
+  const onInputChange = (label: string, t: "src" | "dst", v: string) => {
     if (t === "src") {
       setEditorValues((values) => {
         return { ...values, src: { ...values.src, [label]: v } }

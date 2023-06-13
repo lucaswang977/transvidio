@@ -46,11 +46,11 @@ const Home: NextPage = () => {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <main className="flex min-h-screen flex-col items-center justify-center space-y-4">
-        <Button variant="outline" onClick={() => {
+        <Button variant="outline" onClick={async () => {
           if (status === "authenticated") {
-            signOut()
+            await signOut()
           } else {
-            router.push("/signin")
+            await router.push("/signin")
           }
         }}
           disabled={status === "loading"}>

@@ -7,7 +7,7 @@ import { prisma } from "~/server/db";
 import { z } from "zod";
 import { Language } from "@prisma/client"
 import { TRPCError } from "@trpc/server";
-import {
+import type {
   Introduction,
   Curriculum,
   CurriculumSection,
@@ -123,9 +123,9 @@ export const projectRouter = createTRPCRouter({
         })
       }
 
-      const intro: IntroType = JSON.parse(input.intro)
-      const curriculum: CurriculumType = JSON.parse(input.curriculum)
-      const supplement: SupplementType = JSON.parse(input.supplement)
+      const intro = JSON.parse(input.intro) as IntroType
+      const curriculum = JSON.parse(input.curriculum) as CurriculumType
+      const supplement = JSON.parse(input.supplement) as SupplementType
       await createIntroDoc(input.id, intro)
       await createCurriculum(input.id, intro.title, curriculum, supplement)
     }),
@@ -177,8 +177,6 @@ async function createIntroDoc(projectId: string, intro: IntroType) {
   })
 
   console.log("Intro doc created: ", result)
-
-  return result
 }
 
 async function createCurriculum(
@@ -192,7 +190,8 @@ async function createCurriculum(
   }
 
   let currentSection: CurriculumSection | null = null
-  curriculum.forEach(async (item) => {
+
+  for (const item of curriculum) {
     if (item.type === "chapter") {
       const data: CurriculumSection = {
         index: item.id,
@@ -211,14 +210,14 @@ async function createCurriculum(
         dataType = "lecture"
 
         const srcData: SubtitleType = {
-          videoUrl: `${env.CDN_BASE_URL}/${projectId}/video/${item.id}-${item.assetId}.mp4`,
-          originalSubtitleUrl: `${env.CDN_BASE_URL}/${projectId}/subtitle/${item.id}-${item.assetId}.src.vtt`,
+          videoUrl: `${env.CDN_BASE_URL}/${projectId}/video/${item.id}-${item.assetId ? item.assetId : 0}.mp4`,
+          originalSubtitleUrl: `${env.CDN_BASE_URL}/${projectId}/subtitle/${item.id}-${item.assetId ? item.assetId : 0}.src.vtt`,
           subtitle: []
         }
 
         const dstData: SubtitleType = {
           videoUrl: srcData.videoUrl,
-          originalSubtitleUrl: `${env.CDN_BASE_URL}/${projectId}/subtitle/${item.id}-${item.assetId}.dst.vtt`,
+          originalSubtitleUrl: `${env.CDN_BASE_URL}/${projectId}/subtitle/${item.id}-${item.assetId ? item.assetId : 0}.dst.vtt`,
           subtitle: []
         }
         const result = await prisma.document.create({
@@ -273,7 +272,7 @@ async function createCurriculum(
     } else {
       console.log("Unrecognized item type: ", item)
     }
-  })
+  }
 
   const result = await prisma.document.create({
     data: {
@@ -285,8 +284,6 @@ async function createCurriculum(
   })
 
   console.log("Curriculum doc created: ", result)
-
-  return result
 }
 
 

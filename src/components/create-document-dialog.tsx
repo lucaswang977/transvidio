@@ -51,30 +51,27 @@ type ProjectInfo = {
   name: string
 }
 
-const getAllProjects = () => {
+export function DocumentCreateDialog() {
+  const [open, setIsOpen] = React.useState(false)
   const { data: sessionData } = useSession();
-  const { data: projects } = api.project.getAll.useQuery(
+  const mutation = api.document.create.useMutation()
+  const { data: projectData } = api.project.getAll.useQuery(
     undefined, // no input
     { enabled: sessionData?.user !== undefined },
   );
 
-  if (projects === undefined) return null
+  let projects: ProjectInfo[] = []
 
-  const projectData: ProjectInfo[] = projects.map((project) => {
-    const p: ProjectInfo = {
-      id: project.id,
-      name: project.name,
-    }
+  if (projectData) {
+    projects = projectData.map((project) => {
+      const p: ProjectInfo = {
+        id: project.id,
+        name: project.name,
+      }
 
-    return p
-  })
-
-  return projectData
-}
-
-export function DocumentCreateDialog() {
-  const [open, setIsOpen] = React.useState(false)
-  const mutation = api.document.create.useMutation()
+      return p
+    })
+  }
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -95,8 +92,6 @@ export function DocumentCreateDialog() {
 
     setIsOpen(false)
   }
-
-  const projects = getAllProjects()
 
   return (
     <div>

@@ -1,40 +1,36 @@
 import * as React from "react"
-import { NextPage } from "next"
+import type { NextPage } from "next"
 import Layout from "./layout"
 import { DataTable } from "~/components/ui/data-table"
-import { UserColumn, columns } from "~/components/columns/users"
+import { type UserColumn, columns } from "~/components/columns/users"
 import { useSession } from "next-auth/react"
 import { api } from "~/utils/api";
 
-const getData = () => {
+const UserManagement: NextPage = () => {
+  const [rowSelection, setRowSelection] = React.useState({})
   const { data: sessionData } = useSession();
   const { data: users } = api.user.getAll.useQuery(
     undefined, // no input
     { enabled: sessionData?.user !== undefined },
   );
 
-  if (users === undefined) return []
+  let usersData: UserColumn[] = []
 
-  const usersData: UserColumn[] = users.map((user) => {
-    const u: UserColumn = {
-      id: user.id,
-      name: user.name ? user.name : "",
-      role: user.role === "ADMIN" ? "admin" : "editor",
-      email: user.email ? user.email : "",
-      image: user.image ? user.image : "",
-      created: user.createdAt.toLocaleString()
-    }
+  if (users) {
+    usersData = users.map((user) => {
+      const u: UserColumn = {
+        id: user.id,
+        name: user.name ? user.name : "",
+        role: user.role === "ADMIN" ? "admin" : "editor",
+        email: user.email ? user.email : "",
+        image: user.image ? user.image : "",
+        created: user.createdAt.toLocaleString()
+      }
 
-    return u
-  })
+      return u
+    })
 
-  return usersData
-}
-
-const UserManagement: NextPage = () => {
-  const [rowSelection, setRowSelection] = React.useState({})
-  const data = getData()
-
+  }
   return (
     <Layout>
       <div className="flex-1 space-y-4 p-8 pt-6">
@@ -44,7 +40,7 @@ const UserManagement: NextPage = () => {
         <div>
           <DataTable
             columns={columns}
-            data={data}
+            data={usersData}
             rowSelection={rowSelection}
             setRowSelection={setRowSelection}
           />

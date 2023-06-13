@@ -3,8 +3,8 @@
 import * as React from "react"
 
 import {
-  ColumnDef,
-  RowSelectionState,
+  type ColumnDef,
+  type RowSelectionState,
   flexRender,
   getCoreRowModel,
   useReactTable,

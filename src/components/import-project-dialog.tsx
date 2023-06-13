@@ -85,3 +85,5 @@ export const ProjectImportDialog = React.forwardRef<
     </Dialog>
   )
 })
+
+ProjectImportDialog.displayName = "ProjectImportDialog"

@@ -2,7 +2,7 @@
 import * as React from "react"
 import { type NextPage } from "next"
 import { useSession } from "next-auth/react"
-import { DocumentColumn, columns } from "~/components/columns/documents"
+import { type DocumentColumn, columns } from "~/components/columns/documents"
 import { DataTable } from "~/components/ui/data-table"
 import Layout from "./layout"
 import { api } from "~/utils/api";

@@ -1,9 +1,10 @@
-import { NextApiHandler } from "next";
+import type { NextApiHandler } from "next";
 import { S3Client } from "@aws-sdk/client-s3";
 import { Upload } from "@aws-sdk/lib-storage";
 import { v4 as uuid } from 'uuid';
 import * as pechkin from "pechkin"
-import { PassThrough } from "stream";
+import type { Readable } from "stream";
+import { env } from "~/env.mjs"
 
 export const config = {
   api: {
@@ -11,13 +12,13 @@ export const config = {
   },
 }
 
-const uploadFileToS3 = (key: string, stream: PassThrough) => {
+const uploadFileToS3 = (key: string, stream: Readable) => {
   const s3Client = new S3Client(
     {
-      region: "ap-northeast-3",
+      region: env.S3_REGION,
       credentials: {
-        accessKeyId: "AKIA5MBDWKMRJTWLOG7B",
-        secretAccessKey: "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"
+        accessKeyId: env.S3_ACCESS_KEY,
+        secretAccessKey: env.S3_SECRET_KEY,
       },
     });
 
@@ -41,23 +42,24 @@ const handler: NextApiHandler = async (req, res) => {
   })
 
   const results = [];
-  let i = 0;
 
-  for await (const { stream, field } of files) {
+  for await (const file of files) {
     const key = uuid();
+    const item = file as { filename: string, stream: Readable }
 
     results.push(
-      uploadFileToS3(key, stream)
-        .then(({ Location }) => ({ field, location: Location }))
+      uploadFileToS3(key, item.stream)
+        .then((res) => {
+          if ("Location" in res) return {
+            file: item.filename,
+            location: res.Location
+          }
+        })
     );
-
-    i++;
   }
 
   const r = await Promise.all(results)
   res.json({ fields, files: r })
-
-  console.log(r)
 };
 
 export default handler;

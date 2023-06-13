@@ -39,16 +39,16 @@ export function SigninForm() {
     },
   })
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: z.infer<typeof formSchema>) {
     console.log(values)
-    signIn("credentials", {
+    await signIn("credentials", {
       email: values.email,
       password: values.password,
       redirect: false,
-    }).then((result) => {
+    }).then(async (result) => {
       if (result && result.ok) {
         console.log(result)
-        router.push("/admin")
+        await router.push("/admin")
       } else {
         console.log(result)
       }
@@ -96,7 +96,7 @@ export function SigninForm() {
               <Icons.google className="mr-2 h-4 w-4" />
               Google
             </Button>
-            <p>Don't have an account yet? <Button variant="link" onClick={() => router.push("/signup")}>Sign up</Button></p>
+            <p>Don&apos;t have an account yet? <Button variant="link" onClick={() => router.push("/signup")}>Sign up</Button></p>
 
           </form>
         </Form>

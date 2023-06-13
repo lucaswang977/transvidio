@@ -27,7 +27,7 @@ import { Button } from "~/components/ui/button"
 import { Label } from "~/components/ui/label"
 import { Input } from "~/components/ui/input"
 import { Save } from "lucide-react"
-import { Curriculum, CurriculumItem, SrcOrDst } from "~/types"
+import type { Curriculum, CurriculumItem, SrcOrDst } from "~/types"
 import { RichtextEditor } from "~/components/ui/richtext-editor";
 
 type CurriculumEditorProps = {
@@ -43,68 +43,63 @@ type CurriculumListEditorProps = {
 }
 
 const CurriculumListEditor = (props: CurriculumListEditorProps) => {
-  const [value, setValue] = React.useState(props.value)
   const onChangeSectionTitle = (index: number, v: string) => {
-    setValue((value) => {
-      value.sections[index].title = v
-      props.onChange(props.where, value)
-      return value
-    })
+    if (props.value.sections[index])
+      props.value.sections[index]!.title = v
+    props.onChange(props.where, props.value)
   }
 
   const onChangeItemTitle = (i: number, j: number, v: string) => {
-    setValue((value) => {
-      value.sections[i].items[j].title = v
-      props.onChange(props.where, value)
-      return value
-    })
+    if (props.value.sections[i] && props.value.sections[i]!.items[j])
+      props.value.sections[i]!.items[j]!.title = v
+    props.onChange(props.where, props.value)
   }
 
   const onChangeItemDescription = (i: number, j: number, v: string) => {
-    setValue((value) => {
-      value.sections[i].items[j].description = v
-      props.onChange(props.where, value)
-      return value
-    })
+    if (props.value.sections[i] && props.value.sections[i]!.items[j])
+      props.value.sections[i]!.items[j]!.description = v
+    props.onChange(props.where, props.value)
   }
 
 
   return (
     <div className="w-[500px] space-y-2">
-      {value.sections.map((section, i) => {
+      {props.value.sections.map((section, i) => {
         return (
-          <div key={"section" + section.index} className="flex-col space-y-2">
+          <div key={`section${section.index}`} className="flex-col space-y-2">
             <div className="flex space-x-2 items-center">
-              <Label htmlFor={"section" + section.index}>Section</Label>
+              <Label htmlFor={`section${section.index}`} > Section</Label>
               <Input
                 className="w-full"
-                id={"section" + section.index}
+                id={`section${section.index}`}
                 value={section.title} onChange={(event) => {
                   onChangeSectionTitle(i, event.target.value)
                 }} />
             </div>
-            {section.items.map((item, j) => {
-              return (
-                <div className="ml-10 flex-col space-y-1" key={"item" + item.id}>
-                  <div className="flex space-x-2 items-center" key={item.id}>
-                    <Label htmlFor={"item" + item.id}>{item.item_type}</Label>
-                    <Input
-                      id={"item" + item.id}
-                      value={item.title} onChange={(event) => {
-                        onChangeItemTitle(i, j, event.target.value)
-                      }} />
-                  </div>
+            {
+              section.items.map((item, j) => {
+                return (
+                  <div className="ml-10 flex-col space-y-1" key={`item${item.id}`}>
+                    <div className="flex space-x-2 items-center" key={item.id}>
+                      <Label htmlFor={`item${item.id}`}>{item.item_type}</Label>
+                      <Input
+                        id={`item${item.id}`}
+                        value={item.title} onChange={(event) => {
+                          onChangeItemTitle(i, j, event.target.value)
+                        }} />
+                    </div>
 
-                  <RichtextEditor value={item.description} onChange={(event) => {
-                    onChangeItemDescription(i, j, event.target.value)
-                  }} />
-                </div>
-              )
-            })}
+                    <RichtextEditor value={item.description} onChange={(event) => {
+                      onChangeItemDescription(i, j, event.target.value)
+                    }} />
+                  </div>
+                )
+              })
+            }
           </div>
         )
       })}
-    </div>
+    </div >
   )
 }
 

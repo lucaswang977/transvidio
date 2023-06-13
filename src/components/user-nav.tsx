@@ -17,13 +17,24 @@ import { signOut, useSession } from "next-auth/react"
 
 export function UserNav() {
   const { data: sessionData } = useSession()
+  const user = {
+    name: "",
+    image: "",
+    role: "editor"
+  }
+
+  if (sessionData && sessionData.user) {
+    if (sessionData.user.name) user.name = sessionData.user.name
+    if (sessionData.user.image) user.image = sessionData.user.image
+    if (sessionData.user.role) user.role = sessionData.user.role
+  }
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
           <Avatar className="h-8 w-8">
-            <AvatarImage src={sessionData?.user.image} alt={sessionData?.user.name} />
+            <AvatarImage src={user.image} alt={user.name} />
             <AvatarFallback>TV</AvatarFallback>
           </Avatar>
         </Button>
@@ -33,7 +44,7 @@ export function UserNav() {
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium leading-none">{sessionData?.user.name}</p>
             <p className="text-xs leading-none text-muted-foreground">
-              {sessionData?.user.role.toLowerCase()}
+              {user.role.toLowerCase()}
             </p>
           </div>
         </DropdownMenuLabel>

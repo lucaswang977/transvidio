@@ -1,6 +1,6 @@
 "use client"
 
-import { ColumnDef } from "@tanstack/react-table"
+import { type ColumnDef } from "@tanstack/react-table"
 import { Avatar, AvatarImage, AvatarFallback } from "~/components/ui/avatar"
 import { type ProjectRelatedUser } from "~/server/api/routers/project"
 import { AssignProjectToUserDialog } from "~/components/assign-project-to-user-dialog"
@@ -8,7 +8,7 @@ import { MoreHorizontal } from "lucide-react"
 
 import { Button } from "~/components/ui/button"
 import { Checkbox } from "~/components/ui/checkbox"
-import { Import, Edit, Trash, ArrowRightCircle } from "lucide-react"
+import { Edit, Trash, ArrowRightCircle } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,

@@ -159,8 +159,8 @@ export const documentRouter = createTRPCRouter({
             id: input.documentId
           },
           data: {
-            dstJson: JSON.parse(input.dst),
-            srcJson: JSON.parse(input.src)
+            dstJson: input.dst,
+            srcJson: input.src
           }
         })
       } else {
@@ -169,7 +169,7 @@ export const documentRouter = createTRPCRouter({
             id: input.documentId
           },
           data: {
-            dstJson: JSON.parse(input.dst)
+            dstJson: input.dst
           }
         })
       }

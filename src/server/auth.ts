@@ -8,7 +8,7 @@ import {
 import GoogleProvider from "next-auth/providers/google";
 import EmailProvider from "next-auth/providers/email";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { UserRole } from "@prisma/client"
+import type { UserRole } from "@prisma/client"
 
 import { env } from "~/env.mjs";
 import { prisma } from "~/server/db";
@@ -49,7 +49,7 @@ export const authOptions: NextAuthOptions = {
     }
   },
   callbacks: {
-    jwt: async ({ token, user, profile }) => {
+    jwt: ({ token, user, profile }) => {
       if (user) {
         token.email = user.email
         token.name = user.name

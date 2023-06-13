@@ -13,43 +13,37 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "~/components/ui/dialog"
-import { UserColumn, columns } from "./columns/users"
+import { type UserColumn, columns } from "./columns/users"
 import { useSession } from "next-auth/react"
 import { api } from "~/utils/api";
-
-const getData = () => {
-  const { data: sessionData } = useSession();
-  const { data: users } = api.user.getAll.useQuery(
-    undefined, // no input
-    { enabled: sessionData?.user !== undefined },
-  );
-
-  if (users === undefined) return null
-
-  const usersData: UserColumn[] = users.map((user) => {
-    const u: UserColumn = {
-      id: user.id,
-      name: user.name ? user.name : "",
-      role: user.role === "ADMIN" ? "admin" : "editor",
-      email: user.email ? user.email : "",
-      image: user.image ? user.image : "",
-      created: user.createdAt.toLocaleString()
-    }
-
-    return u
-  })
-
-  return usersData
-}
-
 
 export function AssignProjectToUserDialog(props: { selectedUserIds: string[], projectId: string }) {
   const [open, setIsOpen] = React.useState(false)
   const [rowSelection, setRowSelection] = React.useState({})
   const [selectionInitiated, setSelectionInitiated] = React.useState(false)
   const mutation = api.project.assignUsers.useMutation()
+  const { data: sessionData } = useSession();
+  const { data: users } = api.user.getAll.useQuery(
+    undefined, // no input
+    { enabled: sessionData?.user !== undefined },
+  );
 
-  const allUsers = getData()
+  let allUsers: UserColumn[] = []
+
+  if (users) {
+    allUsers = users.map((user) => {
+      const u: UserColumn = {
+        id: user.id,
+        name: user.name ? user.name : "",
+        role: user.role === "ADMIN" ? "admin" : "editor",
+        email: user.email ? user.email : "",
+        image: user.image ? user.image : "",
+        created: user.createdAt.toLocaleString()
+      }
+
+      return u
+    })
+  }
 
   function onSubmit() {
     console.log(rowSelection)
@@ -57,8 +51,8 @@ export function AssignProjectToUserDialog(props: { selectedUserIds: string[], pr
     if (allUsers && rowSelection) {
       Object.keys(rowSelection).forEach((index) => {
         const i: number = +index
-        if (allUsers[i]) {
-          const userId = allUsers[i].id
+        if (allUsers && allUsers[i]) {
+          const userId = (allUsers[i] as { id: string }).id
           data.push(userId)
         }
       })
@@ -73,7 +67,7 @@ export function AssignProjectToUserDialog(props: { selectedUserIds: string[], pr
   }
 
   if (allUsers && !selectionInitiated) {
-    const result: any = {}
+    const result: { [key: number]: boolean } = {}
     allUsers.forEach((item, index) => {
       if (props.selectedUserIds.find((i) => i === item.id))
         result[index] = true

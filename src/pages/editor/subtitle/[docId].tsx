@@ -20,13 +20,13 @@ import { api } from "~/utils/api";
 import { parse } from '@plussub/srt-vtt-parser'
 
 
-import ArtPlayer from "artplayer"
+import type ArtPlayer from "artplayer"
 import { VideoPlayer } from "~/components/ui/video-player"
 import { Button } from "~/components/ui/button"
 import { Label } from "~/components/ui/label"
 import { Textarea } from "~/components/ui/textarea"
 import { Save } from "lucide-react"
-import { SubtitleType, SubtitleItem, SrcOrDst } from "~/types"
+import type { SubtitleType, SubtitleItem, SrcOrDst } from "~/types"
 import { ScrollArea } from "~/components/ui/scroll-area"
 
 import { timeFormat } from "~/utils/helper"
@@ -48,9 +48,9 @@ const SubtitleEditor = (props: SubtitleEditorProps) => {
   const [editorValues, setEditorValues] = React.useState({ src: props.src, dst: props.dst })
   const [contentChanged, setContentChanged] = React.useState(false)
 
-  const result = useQuery({
+  useQuery({
     queryKey: ["vttLoading"], queryFn: async () => {
-      let result = { src: false, dst: false }
+      const result = { src: false, dst: false }
       let srcEntries: SubtitleItem[] = []
       if (props.src && props.src.originalSubtitleUrl && props.src.subtitle.length === 0) {
         const response = await fetch(props.src.originalSubtitleUrl)

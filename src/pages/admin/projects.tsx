@@ -1,12 +1,12 @@
 import * as React from "react"
 import { type NextPage } from "next"
 import { useSession } from "next-auth/react"
-import { ProjectColumn, columns } from "~/components/columns/projects"
+import { type ProjectColumn, columns } from "~/components/columns/projects"
 import { DataTable } from "~/components/ui/data-table"
 import { ProjectCreateDialog } from "~/components/create-project-dialog"
 import Layout from "./layout"
 import { api } from "~/utils/api";
-import { ProjectRelatedUser } from "~/server/api/routers/project"
+import { type ProjectRelatedUser } from "~/server/api/routers/project"
 import { RefreshCcw } from "lucide-react"
 import { Button } from "~/components/ui/button"
 

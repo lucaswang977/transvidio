@@ -25,7 +25,7 @@ import {
   ComparativeArrayEditor
 } from "~/components/ui/comparatives"
 
-import { Introduction } from "~/types"
+import type { Introduction } from "~/types"
 
 const pageDefaultValue: Introduction = {
   title: "",

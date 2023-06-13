@@ -14,7 +14,7 @@ import {
   BtnClearFormatting,
   Editor,
   EditorProvider,
-  EditorProps,
+  type EditorProps,
   Toolbar
 } from 'react-simple-wysiwyg';
 
