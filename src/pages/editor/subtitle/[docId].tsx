@@ -11,19 +11,25 @@
 //   ]
 // }
 
+import * as React from "react"
 import { type NextPage } from "next"
 import { useRouter } from "next/router"
-import * as React from "react"
-import { api } from "~/utils/api";
 import { useSession } from "next-auth/react"
-import { parse } from '@plussub/srt-vtt-parser';
+import { useQuery } from '@tanstack/react-query'
+import { api } from "~/utils/api";
+import { parse } from '@plussub/srt-vtt-parser'
 
+
+import ArtPlayer from "artplayer"
+import { VideoPlayer } from "~/components/ui/video-player"
 import { Button } from "~/components/ui/button"
 import { Label } from "~/components/ui/label"
 import { Textarea } from "~/components/ui/textarea"
 import { Save } from "lucide-react"
 import { SubtitleType, SubtitleItem, SrcOrDst } from "~/types"
-import { useQuery } from '@tanstack/react-query'
+import { ScrollArea } from "~/components/ui/scroll-area"
+
+import { timeFormat } from "~/utils/helper"
 
 const pageDefaultValue: SubtitleType = {
   videoUrl: "",
@@ -41,6 +47,7 @@ const SubtitleEditor = (props: SubtitleEditorProps) => {
   const mutation = api.document.save.useMutation()
   const [editorValues, setEditorValues] = React.useState({ src: props.src, dst: props.dst })
   const [contentChanged, setContentChanged] = React.useState(false)
+
   const result = useQuery({
     queryKey: ["vttLoading"], queryFn: async () => {
       let result = { src: false, dst: false }
@@ -130,6 +137,9 @@ const SubtitleEditor = (props: SubtitleEditorProps) => {
     setContentChanged(false)
   }
 
+  const [captions, setCaptions] = React.useState({ src: "", dst: "" })
+  const [player, setPlayer] = React.useState<ArtPlayer | null>(null)
+
   return (
     <div className="flex-col space-y-2">
       <Button className="fixed right-6 bottom-6 w-10 rounded-full p-0 z-20"
@@ -137,38 +147,81 @@ const SubtitleEditor = (props: SubtitleEditorProps) => {
         <Save className="h-4 w-4" />
         <span className="sr-only">Save</span>
       </Button>
-      <div className="flex space-x-2">
-        <div className="flex-col space-y-2 w-[300px]">
-          {
-            editorValues.src.subtitle.map((item, index) => {
-              return (
-                <div key={item.id} className="flex items-center space-x-1">
-                  <Label>{item.id}</Label>
-                  <Textarea
-                    value={item.text}
-                    onChange={(event) => onInputChange("src", index, event.target.value)}
-                  />
-                </div>
-              )
-            })
-          }
-        </div>
-        <div className="flex-col space-y-2 w-[300px]">
-          {
-            editorValues.dst.subtitle.map((item, index) => {
-              return (
-                <div key={item.id} className="flex items-center space-x-1">
-                  <Label>{item.id}</Label>
-                  <Textarea
-                    value={item.text}
-                    onChange={(event) => onInputChange("dst", index, event.target.value)}
-                  />
-                </div>
-              )
-            })
-          }
+      <div className="flex space-x-2 py-6">
+        <ScrollArea className="h-[90vh] py-1">
+          <div className="flex space-x-6">
+            <div className="flex flex-col space-y-2 w-[300px]">
+              {
+                editorValues.src.subtitle.map((item, index) => {
+                  return (
+                    <div key={item.id} className="flex h-full space-x-1">
+                      <div className="flex flex-col text-slate-300 py-2">
+                        <Label className="text-xs h-full">{timeFormat(item.from)}</Label>
+                        <Label className="text-xs">{timeFormat(item.to)}</Label>
+                      </div>
+                      <Textarea
+                        value={item.text}
+                        className="overflow-hidden"
+                        onChange={(event) => onInputChange("src", index, event.target.value)}
+                        onFocus={() => {
+                          if (player) player.seek = item.from / 1000
+                        }}
+                      />
+                    </div>
+                  )
+                })
+              }
+            </div>
+            <div className="flex flex-col space-y-2 w-[300px]">
+              {
+                editorValues.dst.subtitle.map((item, index) => {
+                  return (
+                    <div key={item.id} className="flex h-full space-x-1">
+                      <div className="flex flex-col text-slate-300 py-2">
+                        <Label className="text-xs h-full">{timeFormat(item.from)}</Label>
+                        <Label className="text-xs">{timeFormat(item.to)}</Label>
+                      </div>
+                      <Textarea
+                        value={item.text}
+                        className="overflow-hidden"
+                        onChange={(event) => onInputChange("dst", index, event.target.value)}
+                        onFocus={() => {
+                          if (player) player.seek = item.from / 1000
+                        }}
+                      />
+                    </div>
+                  )
+                })
+              }
+            </div>
+          </div>
+        </ScrollArea>
+        <div className="flex flex-col items-center space-y-2">
+          <VideoPlayer
+            option={{ url: editorValues.src.videoUrl }}
+            className="w-[600px] h-[400px] my-1"
+            getInstance={(art) => {
+              art.on("ready", () => setPlayer(art))
+              art.on("video:play", () => {
+                console.log("video is playing")
+              })
+              art.on("video:timeupdate", () => {
+                const index = editorValues.src.subtitle.findIndex(
+                  (item) =>
+                    (art.currentTime * 1000 >= item.from) && (art.currentTime * 1000 <= item.to))
+                const srcItem = editorValues.src.subtitle[index]
+                const dstItem = editorValues.dst.subtitle[index]
+                if (srcItem && dstItem)
+                  setCaptions({ src: srcItem.text, dst: dstItem.text })
+              })
+
+            }} >
+          </VideoPlayer>
+          <Label className="text-lg">{captions.dst}</Label>
+          <Label>{captions.src}</Label>
         </div>
       </div>
+
     </div>
   )
 }
