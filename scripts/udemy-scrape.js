@@ -3,12 +3,11 @@
 
 // TODO: 
 // 1. Quiz not supported yet
-// 2. Video downloading not supported yet
-// 3. Transcript downloading not supported yet
-// 4. Assignment(type=practice) not supported yet
+// 2. Assignment(type=practice) not supported yet
+// 3. Promotional video
 
 // Find the course ID first
-const COURSE_ID = 1462428;
+const COURSE_ID = 4958170;
 
 // Do not touch this URLs unless they are changed.
 const COURSE_INTRO_JSON_URL = `/api-2.0/courses/${COURSE_ID}/?fields[course]=title,headline,description,prerequisites,objectives,target_audiences`
@@ -16,23 +15,28 @@ const CURRICULUM_JSON_URL = `/api-2.0/courses/${COURSE_ID}/subscriber-curriculum
 const ATTACHMENT_JSON_URL = `/api-2.0/users/me/subscribed-courses/${COURSE_ID}/lectures/LECTURE_ID/supplementary-assets/ASSET_ID/?fields[asset]=download_urls`
 const ARTICLE_JSON_URL = '/api-2.0/assets/ASSET_ID/?fields[asset]=@min,status,delayed_asset_message,processing_errors,body';
 const VIDEO_DOWNLOADABLE_PATCH_URL = `/api-2.0/users/me/taught-courses/${COURSE_ID}/lectures/LECTURE_ID/?fields[lecture]=is_downloadable`;
-const VIDEO_DOWNLOAD_URL = `https://www.udemy.com/api-2.0/users/me/subscribed-courses/${COURSE_ID}/lectures/LECTURE_ID/?fields[lecture]=asset&fields[asset]=download_urls`
+const VIDEO_DOWNLOAD_URL = `/api-2.0/users/me/subscribed-courses/${COURSE_ID}/lectures/LECTURE_ID/?fields[lecture]=asset&fields[asset]=download_urls`
+const TRANSCRIPT_FETCH_URL = `/api-2.0/users/me/subscribed-courses/${COURSE_ID}/lectures/LECTURE_ID/?fields[lecture]=asset,description,download_url,is_free,last_watched_second&fields[asset]=asset_type,length,media_license_token,course_is_drmed,media_sources,captions,thumbnail_sprite,slides,slide_urls,download_urls,external_url`
 
 // Default output is JSON
 // Curriculum and supplements can be outputted as CSV
 const OUTPUT_CSV = false;
 
 // Logged in as student is needed
-const DOWNLOAD_INTRODUCTION = true;
-const DOWNLOAD_CURRICULUM = true;
+const DOWNLOAD_INTRODUCTION = false;
+const DOWNLOAD_CURRICULUM = false;
 
-const DOWNLOAD_SUPPLMENT = true;    // Main toggle for attachment, article, video, quiz
+const DOWNLOAD_SUPPLEMENT = true;          // Main toggle for attachment, article, video, quiz
 
-const DOWNLOAD_ARTICLE = false;      // as student 
-const DOWNLOAD_ATTACHMENT = false;   // as student
-const DOWNLOAD_VIDEO = false;        // as instructor, not supported yet
-const DOWNLOAD_QUIZ = false;         // as instructor, not supported yet
-const DOWNLOAD_TRANSCRIPT = false;   // as instructor, not supported yet
+const DOWNLOAD_ARTICLE = false;           // as student 
+const DOWNLOAD_ATTACHMENT = false;        // as student
+const DOWNLOAD_VIDEO = false;             // as instructor
+const DOWNLOAD_TRANSCRIPT = true;         // as student
+const DOWNLOAD_AUTO_TRANSLATED = false;   // as student
+const DOWNLOAD_QUIZ = false;              // as instructor, not supported yet
+
+const SOURCE_TRANSCRIPT_LOCALE = "en_US";
+const AUTO_TRANSLATED_LOCALE = "zh_CN";
 
 let downloadRequests = [];
 
@@ -279,6 +283,89 @@ const downloadFile = (url, filename) => {
   });
 }
 
+const delay = (ms) => {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+const downloadVideo = async (lectureId, filename) => {
+  const url = VIDEO_DOWNLOADABLE_PATCH_URL.replace("LECTURE_ID", lectureId);
+
+  return fetch(url, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ is_downloadable: true })
+  })
+    .then(response => {
+      if (response.ok) {
+        console.log('Video ', lectureId, ' downloadable set to true.');
+        const url = VIDEO_DOWNLOAD_URL.replace("LECTURE_ID", lectureId);
+        return delay(1000).then(() => fetch(url).then(response => {
+          if (response.ok) {
+            response.json().then(data => {
+              if ("asset" in data &&
+                "download_urls" in data.asset &&
+                "Video" in data.asset.download_urls) {
+                const video = data.asset.download_urls.Video.find(item => item.label === "480");
+                console.log("video: ", video.file)
+                downloadRequests.push({ url: video.file, filename: filename });
+              }
+            })
+          }
+        }))
+      } else {
+        console.log('Video ', lectureId, ' downloadable setting failed.');
+      }
+    })
+    .finally(async () => {
+      await fetch(url, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ is_downloadable: false })
+      }).then(response => {
+        if (response.ok) {
+          console.log('Video ', lectureId, ' downloadable set to false.');
+        } else {
+          console.log('Video ', lectureId, ' downloadable setting failed.');
+        }
+      })
+    });
+}
+
+const downloadTranscript = async (lectureId, filename) => {
+  const url = TRANSCRIPT_FETCH_URL.replace("LECTURE_ID", lectureId);
+
+  return fetch(url).then(response => {
+    if (response.ok) {
+      response.json().then(data => {
+        if ("asset" in data && "captions" in data.asset) {
+          const srcCaption = data.asset.captions.find((item) =>
+            item.locale_id === SOURCE_TRANSCRIPT_LOCALE);
+          if (srcCaption) {
+            if (srcCaption.source === "auto") {
+              console.log("This transcript is auto generated. lectureID: ", lectureId);
+            }
+            downloadRequests.push({ url: srcCaption.url, filename: `${filename}.src.vtt` });
+          }
+          if (DOWNLOAD_AUTO_TRANSLATED) {
+            const dstCaption = data.asset.captions.find((item) =>
+              item.locale_id === AUTO_TRANSLATED_LOCALE)
+            if (dstCaption) {
+              downloadRequests.push({ url: dstCaption.url, filename: `${filename}.dst.vtt` });
+            }
+          }
+        }
+      })
+    } else {
+      console.log("Transcript not found for lecture: ", lectureId);
+    }
+  })
+}
+
+
 if (DOWNLOAD_INTRODUCTION) {
   await fetchCourseIntro(COURSE_INTRO_JSON_URL).then(data => {
     downloadStringAsFile(JSON.stringify(data), `${COURSE_ID}_course.json`)
@@ -294,7 +381,7 @@ if (DOWNLOAD_CURRICULUM) {
   });
 }
 
-if (DOWNLOAD_SUPPLMENT) {
+if (DOWNLOAD_SUPPLEMENT) {
   await fetchSupplement(CURRICULUM_JSON_URL).then(items => {
     if (OUTPUT_CSV) {
       processCSV(items, `${COURSE_ID}_supplement.csv`)
@@ -303,16 +390,18 @@ if (DOWNLOAD_SUPPLMENT) {
     const promises = [];
 
     items.forEach(item => {
-      if (DOWNLOAD_SUPPLMENT && DOWNLOAD_ARTICLE && item.assetType === 'Article')
+      if (DOWNLOAD_SUPPLEMENT && DOWNLOAD_ARTICLE && item.assetType === 'Article')
         promises.push(downloadArticle(item.assetId, item.assetFilename));
-      else if (DOWNLOAD_SUPPLMENT && DOWNLOAD_ATTACHMENT && item.assetType === 'File')
+      else if (DOWNLOAD_SUPPLEMENT && DOWNLOAD_ATTACHMENT && item.assetType === 'File')
         promises.push(downloadSupplement(
           item.lectureId,
           item.assetId,
-          item.assetId + '-' + item.assetFilename));
-      else if (DOWNLOAD_SUPPLMENT && DOWNLOAD_VIDEO && item.assetType === 'Video') {
-        // TODO: Set video downloadable; Fetch the download URL; Download the video; Set video back to not downloadable
-        // Video link is valid even the video is set to not downloadable
+          item.assetFilename));
+      else if (DOWNLOAD_SUPPLEMENT && item.assetType === 'Video') {
+        if (DOWNLOAD_VIDEO)
+          promises.push(downloadVideo(item.lectureId, item.assetFilename))
+        if (DOWNLOAD_TRANSCRIPT)
+          promises.push(downloadTranscript(item.lectureId, item.assetFilename))
       }
     });
 

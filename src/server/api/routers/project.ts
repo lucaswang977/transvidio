@@ -208,29 +208,39 @@ async function createCurriculum(
       let dataType: CurriculumItemEnum = "lecture"
       if (item.assetType === "Video") {
         dataType = "lecture"
+        const supItem = supplement.find((si) =>
+          si.lectureId === item.id && si.assetId === item.assetId)
 
-        const srcData: SubtitleType = {
-          videoUrl: `${env.CDN_BASE_URL}/${projectId}/video/${item.id}-${item.assetId ? item.assetId : 0}.mp4`,
-          originalSubtitleUrl: `${env.CDN_BASE_URL}/${projectId}/subtitle/${item.id}-${item.assetId ? item.assetId : 0}.src.vtt`,
-          subtitle: []
-        }
-
-        const dstData: SubtitleType = {
-          videoUrl: srcData.videoUrl,
-          originalSubtitleUrl: `${env.CDN_BASE_URL}/${projectId}/subtitle/${item.id}-${item.assetId ? item.assetId : 0}.dst.vtt`,
-          subtitle: []
-        }
-        const result = await prisma.document.create({
-          data: {
-            title: item.title,
-            type: "SUBTITLE",
-            srcJson: srcData,
-            dstJson: dstData,
-            projectId: projectId,
+        if (supItem && supItem.assetFilename) {
+          const srcData: SubtitleType = {
+            videoUrl: `${env.CDN_BASE_URL}/${projectId}/video/${supItem.assetFilename}`,
+            originalSubtitleUrl: `${env.CDN_BASE_URL}/${projectId}/subtitle/${supItem.assetFilename}.src.vtt`,
+            subtitle: []
           }
-        })
 
-        console.log("Create a subtitle doc for: ", item.title, item.id, result)
+          const dstData: SubtitleType = {
+            videoUrl: srcData.videoUrl,
+            originalSubtitleUrl: `${env.CDN_BASE_URL}/${projectId}/subtitle/${supItem.assetFilename}.dst.vtt`,
+            subtitle: []
+          }
+          const result = await prisma.document.create({
+            data: {
+              title: item.title,
+              type: "SUBTITLE",
+              srcJson: srcData,
+              dstJson: dstData,
+              projectId: projectId,
+            }
+          })
+
+          console.log("Create a subtitle doc for: ", item.title, item.id, result)
+        } else {
+          console.log("Subtitle doc creation failed: ", item.title, item.id)
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Lecture video not found."
+          })
+        }
       } else if (item.assetType === "Article") {
         dataType = "article"
         // TODO: create doc type doc
