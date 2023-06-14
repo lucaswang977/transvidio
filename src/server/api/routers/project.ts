@@ -5,7 +5,7 @@ import {
 
 import { prisma } from "~/server/db";
 import { z } from "zod";
-import { Language } from "@prisma/client"
+import { Language, Document } from "@prisma/client"
 import { TRPCError } from "@trpc/server";
 import type {
   Introduction,
@@ -104,10 +104,7 @@ export const projectRouter = createTRPCRouter({
     }),
   import: protectedProcedure
     .input(z.object({
-      id: z.string().nonempty(),
-      intro: z.string(),
-      curriculum: z.string(),
-      supplement: z.string()
+      id: z.string().nonempty()
     }))
     .mutation(async ({ input }) => {
       const project = await prisma.project.findUnique({
@@ -123,11 +120,25 @@ export const projectRouter = createTRPCRouter({
         })
       }
 
-      const intro = JSON.parse(input.intro) as IntroType
-      const curriculum = JSON.parse(input.curriculum) as CurriculumType
-      const supplement = JSON.parse(input.supplement) as SupplementType
-      await createIntroDoc(input.id, intro)
-      await createCurriculum(input.id, intro.title, curriculum, supplement)
+      const introResp = await fetch(`${env.CDN_BASE_URL}/${input.id}/introduction.json`)
+      console.log("fetching intro", introResp.ok)
+      const curriculumResp = await fetch(`${env.CDN_BASE_URL}/${input.id}/curriculum.json`)
+      console.log("fetching curriculum", curriculumResp.ok)
+      const supplementResp = await fetch(`${env.CDN_BASE_URL}/${input.id}/supplement.json`)
+      console.log("fetching supplement", supplementResp.ok)
+      if (introResp.ok && curriculumResp.ok && supplementResp.ok) {
+        const intro = await introResp.json() as IntroType
+        const curriculum = await curriculumResp.json() as CurriculumType
+        const supplement = await supplementResp.json() as SupplementType
+        await createIntroDoc(input.id, intro)
+        await createCurriculum(input.id, intro.title, curriculum, supplement)
+        return { result: "ok" }
+      } else {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Project data incomplete."
+        })
+      }
     }),
 });
 
@@ -243,21 +254,46 @@ async function createCurriculum(
         }
       } else if (item.assetType === "Article") {
         dataType = "article"
-        // TODO: create doc type doc
-        console.log("Create an article doc for: ", item.title, item.id)
+        const docResp = await fetch(`${env.CDN_BASE_URL}/${projectId}/${item.id}.html`)
+        if (docResp.ok) {
+          await prisma.document.create({
+            data: {
+              title: item.title,
+              type: "DOC",
+              srcJson: await docResp.text(),
+              projectId: projectId,
+            }
+          })
+
+          console.log("Create an article doc for: ", item.title, item.id)
+        } else {
+          console.log("Create article doc failed: ", item.title, item.id)
+        }
       } else {
         console.error("Unrecognized assetType: ", item)
       }
 
       if (item.supAssetCount && item.supAssetCount > 0) {
+        const promises: Promise<Document>[] = []
         supplement.forEach((sup) => {
           if (sup.lectureId == item.id) {
             if (sup.assetType === "File") {
-              // TODO: create attachment docs
+              promises.push(prisma.document.create({
+                data: {
+                  title: item.title,
+                  type: "ATTACHMENT",
+                  srcJson: {
+                    filename: sup.assetFilename,
+                    fileurl: `${env.CDN_BASE_URL}/${projectId}/${sup.assetFilename}`
+                  },
+                  projectId: projectId,
+                }
+              }))
               console.log("Create an attachment doc for: ", sup.assetFilename, item.title, item.id)
             }
           }
         })
+        await Promise.all(promises)
       }
 
       const data: CurriculumItem = {
@@ -276,8 +312,20 @@ async function createCurriculum(
         description: item.description ? item.description : ""
       }
 
-      // TODO: create quiz doc
-      console.log("Create a quiz doc for: ", item.title, item.id)
+      const quizResp = await fetch(`${env.CDN_BASE_URL}/${projectId}/quiz_${item.id}.json`)
+      if (quizResp.ok) {
+        await prisma.document.create({
+          data: {
+            title: item.title,
+            type: "QUIZ",
+            srcJson: await quizResp.json(),
+            projectId: projectId,
+          }
+        })
+        console.log("Create a quiz doc for: ", item.title, item.id)
+      } else {
+        console.log("Fetching quiz failed. ", item.id)
+      }
       if (currentSection) currentSection.items.push(data)
     } else {
       console.log("Unrecognized item type: ", item)

@@ -1,8 +1,6 @@
 // {
-// "files": [
-//    {filename: "abcd.doc", fileurl: "/files/32321321321.doc"},
-//    {filename: "kakat.xls", fileurl: "/files/45442313213.xls"}
-// ],
+//   filename: "abcd.doc", 
+//   fileurl: "/files/32321321321.doc",
 // }
 
 import { type NextPage } from "next"

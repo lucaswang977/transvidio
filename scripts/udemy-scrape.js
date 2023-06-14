@@ -6,7 +6,7 @@
 // 2. Promotional video
 
 // Find the course ID first
-const COURSE_ID = 4958170;
+const COURSE_ID = 4958172;
 
 // Do not touch this URLs unless they are changed.
 const COURSE_INTRO_JSON_URL = `/api-2.0/courses/${COURSE_ID}/?fields[course]=title,headline,description,prerequisites,objectives,target_audiences`
@@ -209,11 +209,15 @@ const createStringAsFile = (text) => {
 
 const downloadArticle = async (id, filename) => {
   const url = ARTICLE_JSON_URL.replace('ASSET_ID', id);
+  console.log("downloading article", id)
 
   return fetch(url)
     .then(response => response.json())
     .then(data => {
-      downloadStringAsFile(unescapeHtml(data.body), filename);
+      downloadRequests.push({
+        url: createStringAsFile(unescapeHtml(data.body)),
+        filename: filename
+      })
     })
     .catch(error => {
       console.error('Error fetching article:', error);
@@ -368,7 +372,7 @@ if (DOWNLOAD_INTRODUCTION) {
   await fetchCourseIntro(COURSE_INTRO_JSON_URL).then(data => {
     downloadRequests.push({
       url: createStringAsFile(JSON.stringify(data)),
-      filename: `${COURSE_ID}_course.json`
+      filename: `introduction.json`
     });
   });
 }
@@ -376,12 +380,12 @@ if (DOWNLOAD_INTRODUCTION) {
 if (DOWNLOAD_CURRICULUM || DOWNLOAD_QUIZ) {
   await fetchCurriculum(CURRICULUM_JSON_URL).then(data => {
     if (OUTPUT_CSV) {
-      processCSV(data, `${COURSE_ID}_course.csv`);
+      processCSV(data, `curriculum.csv`);
     }
     if (DOWNLOAD_CURRICULUM)
       downloadRequests.push({
         url: createStringAsFile(JSON.stringify(data)),
-        filename: `${COURSE_ID}_curriculum.json`
+        filename: `curriculum.json`
       });
 
     if (DOWNLOAD_QUIZ) {
@@ -410,18 +414,18 @@ if (DOWNLOAD_CURRICULUM || DOWNLOAD_QUIZ) {
 if (DOWNLOAD_SUPPLEMENT) {
   await fetchSupplement(CURRICULUM_JSON_URL).then(items => {
     if (OUTPUT_CSV) {
-      processCSV(items, `${COURSE_ID}_supplement.csv`)
+      processCSV(items, `supplement.csv`)
     }
     downloadRequests.push({
       url: createStringAsFile(JSON.stringify(items)),
-      filename: `${COURSE_ID}_supplement.json`
+      filename: `supplement.json`
     });
 
     const promises = [];
 
     items.forEach(item => {
       if (DOWNLOAD_SUPPLEMENT && DOWNLOAD_ARTICLE && item.assetType === 'Article')
-        promises.push(downloadArticle(item.assetId, item.assetFilename));
+        promises.push(downloadArticle(item.assetId, `${item.assetId}.html`));
       else if (DOWNLOAD_SUPPLEMENT && DOWNLOAD_ATTACHMENT && item.assetType === 'File')
         promises.push(downloadSupplement(
           item.lectureId,

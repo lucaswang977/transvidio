@@ -7,13 +7,13 @@ import { Import } from "lucide-react";
 import * as React from "react"
 import { Button } from "~/components/ui/button"
 import { Label } from "~/components/ui/label"
-import { Textarea } from "~/components/ui/textarea"
 import {
   Dialog,
   DialogHeader,
   DialogTrigger,
   DialogContent,
   DialogTitle,
+  DialogFooter,
 } from "~/components/ui/dialog"
 import { DropdownMenuItem } from "~/components/ui/dropdown-menu";
 import { api } from "~/utils/api";
@@ -22,28 +22,18 @@ export const ProjectImportDialog = React.forwardRef<
   React.ElementRef<typeof DropdownMenuItem>,
   React.ComponentPropsWithoutRef<typeof DropdownMenuItem> & { projectId: string }
 >(({ onSelect, projectId, ...props }, ref) => {
-  const [loading, setLoading] = React.useState(false)
-  const [intro, setIntro] = React.useState("")
-  const [curriculum, setCurriculum] = React.useState("")
-  const [supplement, setSupplement] = React.useState("")
   const mutation = api.project.import.useMutation()
+  const [open, setOpen] = React.useState(false)
 
   const handleImport = (id: string) => {
-    setLoading(true)
     const result = mutation.mutate({
       id: id,
-      intro: intro,
-      curriculum: curriculum,
-      supplement: supplement
     })
-
     console.log(result)
-
-    setLoading(false)
   }
 
   return (
-    <Dialog>
+    <Dialog onOpenChange={setOpen} open={open}>
       <DialogTrigger asChild>
         <DropdownMenuItem
           {...props}
@@ -58,29 +48,25 @@ export const ProjectImportDialog = React.forwardRef<
         </DropdownMenuItem>
       </DialogTrigger>
       <DialogContent>
-        {loading ? <div>Loading</div> :
-          <>
-            <DialogHeader>
-              <DialogTitle>Import project data</DialogTitle>
-            </DialogHeader>
-            <Label htmlFor="intro">Course intro JSON text</Label>
-            <Textarea
-              id="intro"
-              value={intro}
-              onChange={(event) => setIntro(event.target.value)} />
-            <Label htmlFor="curriculum">Curriculum JSON text</Label>
-            <Textarea
-              id="curriculum"
-              value={curriculum}
-              onChange={(event) => setCurriculum(event.target.value)} />
-            <Label htmlFor="supplement">Supplement JSON text</Label>
-            <Textarea
-              id="supplement"
-              value={supplement}
-              onChange={(event) => setSupplement(event.target.value)} />
-            <Button onClick={() => handleImport(projectId)}>Start</Button>
-          </>
-        }
+        <>
+          <DialogHeader>
+            <DialogTitle>Import project data</DialogTitle>
+          </DialogHeader>
+          <Label>Make sure you have all the data uploaded to the storage.</Label>
+          <DialogFooter>
+            <Button
+              onClick={() => {
+                if (mutation.status === "success") {
+                  setOpen(false)
+                } else {
+                  handleImport(projectId)
+                }
+              }}
+              disabled={mutation.status == "loading"}>
+              {mutation.status === "loading" ? "Waiting..." : mutation.status === "success" ? "Close" : "Yes, just do it!"}
+            </Button>
+          </DialogFooter>
+        </>
       </DialogContent>
     </Dialog>
   )
