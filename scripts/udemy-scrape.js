@@ -2,12 +2,11 @@
 // and have the access to the scraping course.
 
 // TODO: 
-// 1. Quiz not supported yet
-// 2. Assignment(type=practice) not supported yet
-// 3. Promotional video
+// 1. Assignment(type=practice) not supported yet
+// 2. Promotional video
 
 // Find the course ID first
-const COURSE_ID = 4958170;
+const COURSE_ID = 4789522;
 
 // Do not touch this URLs unless they are changed.
 const COURSE_INTRO_JSON_URL = `/api-2.0/courses/${COURSE_ID}/?fields[course]=title,headline,description,prerequisites,objectives,target_audiences`
@@ -17,6 +16,7 @@ const ARTICLE_JSON_URL = '/api-2.0/assets/ASSET_ID/?fields[asset]=@min,status,de
 const VIDEO_DOWNLOADABLE_PATCH_URL = `/api-2.0/users/me/taught-courses/${COURSE_ID}/lectures/LECTURE_ID/?fields[lecture]=is_downloadable`;
 const VIDEO_DOWNLOAD_URL = `/api-2.0/users/me/subscribed-courses/${COURSE_ID}/lectures/LECTURE_ID/?fields[lecture]=asset&fields[asset]=download_urls`
 const TRANSCRIPT_FETCH_URL = `/api-2.0/users/me/subscribed-courses/${COURSE_ID}/lectures/LECTURE_ID/?fields[lecture]=asset,description,download_url,is_free,last_watched_second&fields[asset]=asset_type,length,media_license_token,course_is_drmed,media_sources,captions,thumbnail_sprite,slides,slide_urls,download_urls,external_url`
+const QUIZ_DOWNLOAD_URL = `/api-2.0/quizzes/QUIZ_ID/assessments/?page_size=250&fields[assessment]=assessment_type,prompt,correct_response,section,original_assessment_id&draft=true`
 
 // Default output is JSON
 // Curriculum and supplements can be outputted as CSV
@@ -26,14 +26,14 @@ const OUTPUT_CSV = false;
 const DOWNLOAD_INTRODUCTION = false;
 const DOWNLOAD_CURRICULUM = false;
 
-const DOWNLOAD_SUPPLEMENT = true;          // Main toggle for attachment, article, video, quiz
+const DOWNLOAD_SUPPLEMENT = false;        // Main toggle for attachment, article, video, quiz
 
 const DOWNLOAD_ARTICLE = false;           // as student 
 const DOWNLOAD_ATTACHMENT = false;        // as student
 const DOWNLOAD_VIDEO = false;             // as instructor
-const DOWNLOAD_TRANSCRIPT = true;         // as student
+const DOWNLOAD_TRANSCRIPT = false;        // as student
 const DOWNLOAD_AUTO_TRANSLATED = false;   // as student
-const DOWNLOAD_QUIZ = false;              // as instructor, not supported yet
+const DOWNLOAD_QUIZ = true;               // as instructor
 
 const SOURCE_TRANSCRIPT_LOCALE = "en_US";
 const AUTO_TRANSLATED_LOCALE = "zh_CN";
@@ -202,11 +202,9 @@ const unescapeHtml = (html) => {
   return element.innerHTML;
 }
 
-const downloadStringAsFile = (text, filename) => {
+const createStringAsFile = (text) => {
   const blob = new Blob([text], { type: 'text/plain' });
-  const url = URL.createObjectURL(blob);
-
-  downloadRequests.push({ url: url, filename: filename });
+  return url = URL.createObjectURL(blob);
 }
 
 const downloadArticle = async (id, filename) => {
@@ -368,16 +366,44 @@ const downloadTranscript = async (lectureId, filename) => {
 
 if (DOWNLOAD_INTRODUCTION) {
   await fetchCourseIntro(COURSE_INTRO_JSON_URL).then(data => {
-    downloadStringAsFile(JSON.stringify(data), `${COURSE_ID}_course.json`)
+    downloadRequests.push({
+      url: createStringAsFile(JSON.stringify(data)),
+      filename: `${COURSE_ID}_course.json`
+    });
   });
 }
 
-if (DOWNLOAD_CURRICULUM) {
+if (DOWNLOAD_CURRICULUM || DOWNLOAD_QUIZ) {
   await fetchCurriculum(CURRICULUM_JSON_URL).then(data => {
     if (OUTPUT_CSV) {
       processCSV(data, `${COURSE_ID}_course.csv`);
     }
-    downloadStringAsFile(JSON.stringify(data), `${COURSE_ID}_curriculum.json`)
+    if (DOWNLOAD_CURRICULUM)
+      downloadRequests.push({
+        url: createStringAsFile(JSON.stringify(data)),
+        filename: `${COURSE_ID}_curriculum.json`
+      });
+
+    if (DOWNLOAD_QUIZ) {
+      const promises = [];
+      data.forEach((item) => {
+        if (item.type === "quiz") {
+          promises.push(fetch(QUIZ_DOWNLOAD_URL.replace("QUIZ_ID", item.id)).then(response => {
+            if (response.ok) {
+              response.json().then(data => {
+                downloadRequests.push({
+                  url: createStringAsFile(JSON.stringify(data)),
+                  filename: `quiz_${item.id}.json`
+                });
+              })
+            } else {
+              console.log("Fetching quiz failed: ", item.id)
+            }
+          }))
+        }
+      })
+      return Promise.all(promises)
+    }
   });
 }
 
@@ -386,7 +412,11 @@ if (DOWNLOAD_SUPPLEMENT) {
     if (OUTPUT_CSV) {
       processCSV(items, `${COURSE_ID}_supplement.csv`)
     }
-    downloadStringAsFile(JSON.stringify(items), `${COURSE_ID}_supplement.json`)
+    downloadRequests.push({
+      url: createStringAsFile(JSON.stringify(items)),
+      filename: `${COURSE_ID}_supplement.json`
+    });
+
     const promises = [];
 
     items.forEach(item => {
