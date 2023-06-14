@@ -6,7 +6,7 @@
 // 2. Promotional video
 
 // Find the course ID first
-const COURSE_ID = 4789522;
+const COURSE_ID = 4958170;
 
 // Do not touch this URLs unless they are changed.
 const COURSE_INTRO_JSON_URL = `/api-2.0/courses/${COURSE_ID}/?fields[course]=title,headline,description,prerequisites,objectives,target_audiences`
@@ -23,13 +23,13 @@ const QUIZ_DOWNLOAD_URL = `/api-2.0/quizzes/QUIZ_ID/assessments/?page_size=250&f
 const OUTPUT_CSV = false;
 
 // Logged in as student is needed
-const DOWNLOAD_INTRODUCTION = false;
-const DOWNLOAD_CURRICULUM = false;
+const DOWNLOAD_INTRODUCTION = true;
+const DOWNLOAD_CURRICULUM = true;
 
-const DOWNLOAD_SUPPLEMENT = false;        // Main toggle for attachment, article, video, quiz
+const DOWNLOAD_SUPPLEMENT = true;        // Main toggle for attachment, article, video, quiz
 
-const DOWNLOAD_ARTICLE = false;           // as student 
-const DOWNLOAD_ATTACHMENT = false;        // as student
+const DOWNLOAD_ARTICLE = true;           // as student 
+const DOWNLOAD_ATTACHMENT = true;        // as student
 const DOWNLOAD_VIDEO = false;             // as instructor
 const DOWNLOAD_TRANSCRIPT = false;        // as student
 const DOWNLOAD_AUTO_TRANSLATED = false;   // as student

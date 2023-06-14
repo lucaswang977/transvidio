@@ -7,6 +7,7 @@ import { AssignProjectToUserDialog } from "~/components/assign-project-to-user-d
 import { MoreHorizontal } from "lucide-react"
 
 import { Button } from "~/components/ui/button"
+import { Label } from "~/components/ui/label"
 import { Checkbox } from "~/components/ui/checkbox"
 import { Edit, Trash, ArrowRightCircle } from "lucide-react"
 import {
@@ -53,6 +54,15 @@ export const columns: ColumnDef<ProjectColumn>[] = [
   {
     accessorKey: "name",
     header: "Name",
+    cell: ({ row }) => {
+      const projectId = row.original.id
+      return (
+        < div className="flex flex-col space-y-2" >
+          <Label>{row.getValue("name")}</Label>
+          <Label className="text-xs text-gray-400">{projectId}</Label>
+        </div >
+      )
+    },
   },
   {
     accessorKey: "srcLang",

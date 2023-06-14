@@ -13,18 +13,20 @@ const VideoPlayer = React.forwardRef<HTMLDivElement, VideoPlayerProps>(
     const artRef = React.useRef<HTMLDivElement>(null)
 
     React.useEffect(() => {
-      const art = new Artplayer({
-        ...option,
-        container: artRef.current!
-      })
-      getInstance(art)
+      if (artRef.current) {
+        const art = new Artplayer({
+          ...option,
+          container: artRef.current
+        })
+        getInstance(art)
 
-      return () => {
-        if (art && art.destroy) {
-          art.destroy(false)
+        return () => {
+          if (art && art.destroy) {
+            art.destroy(false)
+          }
         }
       }
-    }, [])
+    }, [option, getInstance])
 
     return (
       <div
