@@ -41,3 +41,20 @@ export type SubtitleType = {
   subtitle: SubtitleItem[],
 }
 
+export type QuizPromptItem = {
+  question: string,
+  answers: string[],
+  feedbacks: string[],
+}
+
+export type QuizItem = {
+  id: string,
+  correct_response: string[],
+  prompt: QuizPromptItem
+}
+
+export type QuizType = {
+  count: number,
+  results: QuizItem[]
+}
+

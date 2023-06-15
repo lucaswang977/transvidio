@@ -5,7 +5,7 @@ import {
 
 import { prisma } from "~/server/db";
 import { z } from "zod";
-import { Language, Document } from "@prisma/client"
+import { Language, type Document } from "@prisma/client"
 import { TRPCError } from "@trpc/server";
 import type {
   Introduction,
@@ -16,6 +16,7 @@ import type {
   SubtitleType,
 } from "~/types"
 import { env } from "~/env.mjs";
+import { type QuizType } from "~/types"
 
 export type ProjectRelatedUser = {
   id: string,
@@ -224,14 +225,14 @@ async function createCurriculum(
 
         if (supItem && supItem.assetFilename) {
           const srcData: SubtitleType = {
-            videoUrl: `${env.CDN_BASE_URL}/${projectId}/video/${supItem.assetFilename}`,
-            originalSubtitleUrl: `${env.CDN_BASE_URL}/${projectId}/subtitle/${supItem.assetFilename}.src.vtt`,
+            videoUrl: `${env.CDN_BASE_URL}/${projectId}/${supItem.assetFilename}`,
+            originalSubtitleUrl: `${env.CDN_BASE_URL}/${projectId}/${supItem.assetFilename}.src.vtt`,
             subtitle: []
           }
 
           const dstData: SubtitleType = {
             videoUrl: srcData.videoUrl,
-            originalSubtitleUrl: `${env.CDN_BASE_URL}/${projectId}/subtitle/${supItem.assetFilename}.dst.vtt`,
+            originalSubtitleUrl: `${env.CDN_BASE_URL}/${projectId}/${supItem.assetFilename}.dst.vtt`,
             subtitle: []
           }
           const result = await prisma.document.create({
@@ -260,7 +261,7 @@ async function createCurriculum(
             data: {
               title: item.title,
               type: "DOC",
-              srcJson: await docResp.text(),
+              srcJson: { html: await docResp.text() },
               projectId: projectId,
             }
           })
@@ -314,11 +315,12 @@ async function createCurriculum(
 
       const quizResp = await fetch(`${env.CDN_BASE_URL}/${projectId}/quiz_${item.id}.json`)
       if (quizResp.ok) {
+        const quizJson = await quizResp.json() as QuizType
         await prisma.document.create({
           data: {
             title: item.title,
             type: "QUIZ",
-            srcJson: await quizResp.json(),
+            srcJson: quizJson,
             projectId: projectId,
           }
         })

@@ -154,7 +154,7 @@ const SubtitleEditor = (props: SubtitleEditorProps) => {
               {
                 editorValues.src.subtitle.map((item, index) => {
                   return (
-                    <div key={item.id} className="flex h-full space-x-1">
+                    <div key={`src-${index}`} className="flex h-full space-x-1">
                       <div className="flex flex-col text-slate-300 py-2">
                         <Label className="text-xs h-full">{timeFormat(item.from)}</Label>
                         <Label className="text-xs">{timeFormat(item.to)}</Label>
@@ -176,7 +176,7 @@ const SubtitleEditor = (props: SubtitleEditorProps) => {
               {
                 editorValues.dst.subtitle.map((item, index) => {
                   return (
-                    <div key={item.id} className="flex h-full space-x-1">
+                    <div key={`dst-${index}`} className="flex h-full space-x-1">
                       <div className="flex flex-col text-slate-300 py-2">
                         <Label className="text-xs h-full">{timeFormat(item.from)}</Label>
                         <Label className="text-xs">{timeFormat(item.to)}</Label>

@@ -26,7 +26,7 @@ const VideoPlayer = React.forwardRef<HTMLDivElement, VideoPlayerProps>(
           }
         }
       }
-    }, [option, getInstance])
+    }, [])
 
     return (
       <div
