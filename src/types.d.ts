@@ -29,7 +29,6 @@ export type Introduction = {
 }
 
 export type SubtitleItem = {
-  id: string,
   from: number,
   to: number,
   text: string

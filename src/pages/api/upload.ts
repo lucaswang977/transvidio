@@ -1,7 +1,6 @@
 import type { NextApiHandler } from "next";
 import { S3Client } from "@aws-sdk/client-s3";
 import { Upload } from "@aws-sdk/lib-storage";
-import { v4 as uuid } from 'uuid';
 import * as pechkin from "pechkin"
 import type { Readable } from "stream";
 import { env } from "~/env.mjs"
@@ -36,15 +35,24 @@ const uploadFileToS3 = (key: string, stream: Readable) => {
 
 const handler: NextApiHandler = async (req, res) => {
   const { fields, files } = await pechkin.parseFormData(req, {
+    maxFileByteLength: 100 * 1024 * 1024,
     maxTotalFileFieldCount: Infinity,
     maxFileCountPerField: Infinity,
     maxTotalFileCount: Infinity
   })
+  console.log(fields, files)
+
+  const { projectId, filename } = fields;
+  const folder = env.UPLOAD_FOLDER;
+
+  if (projectId === undefined || filename === undefined) {
+    return
+  }
 
   const results = [];
 
   for await (const file of files) {
-    const key = uuid();
+    const key = `${projectId}/${folder}/${filename}`
     const item = file as { filename: string, stream: Readable }
 
     results.push(

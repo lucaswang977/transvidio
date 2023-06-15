@@ -31,12 +31,6 @@ import { ScrollArea } from "~/components/ui/scroll-area"
 
 import { timeFormat } from "~/utils/helper"
 
-const pageDefaultValue: SubtitleType = {
-  videoUrl: "",
-  originalSubtitleUrl: "",
-  subtitle: []
-}
-
 type SubtitleEditorProps = {
   docId: string,
   src: SubtitleType,
@@ -90,7 +84,6 @@ const SubtitleEditor = (props: SubtitleEditorProps) => {
           const data: SubtitleItem[] = []
           srcEntries.forEach((item) => {
             data.push({
-              id: item.id,
               from: item.from,
               to: item.to,
               text: ""
@@ -116,7 +109,7 @@ const SubtitleEditor = (props: SubtitleEditorProps) => {
   const onInputChange = (t: SrcOrDst, i: number, v: string) => {
     if (t === "src") {
       setEditorValues((values) => {
-        if (values.src.subtitle) (values.dst.subtitle[i] as SubtitleItem).text = v
+        if (values.src.subtitle) (values.src.subtitle[i] as SubtitleItem).text = v
         return { ...values, src: { ...values.src, subtitle: values.src.subtitle } }
       })
     } else if (t === "dst") {
@@ -139,6 +132,27 @@ const SubtitleEditor = (props: SubtitleEditorProps) => {
 
   const [captions, setCaptions] = React.useState({ src: "", dst: "" })
   const [player, setPlayer] = React.useState<ArtPlayer | null>(null)
+
+  React.useEffect(() => {
+    if (player) {
+      player.on("video:play", () => {
+        console.log("video is playing")
+      })
+      player.on("video:timeupdate", () => {
+        const index = editorValues.src.subtitle.findIndex(
+          (item) =>
+            (player.currentTime * 1000 >= item.from) && (player.currentTime * 1000 <= item.to))
+        if (index >= 0) {
+          const srcItem = editorValues.src.subtitle[index]
+          const dstItem = editorValues.dst.subtitle[index]
+          setCaptions({
+            src: srcItem?.text ? srcItem.text : "",
+            dst: dstItem?.text ? dstItem.text : ""
+          })
+        }
+      })
+    }
+  }, [player, editorValues])
 
   return (
     <div className="flex-col space-y-2">
@@ -201,20 +215,9 @@ const SubtitleEditor = (props: SubtitleEditorProps) => {
             option={{ url: editorValues.src.videoUrl }}
             className="w-[600px] h-[400px] my-1"
             getInstance={(art) => {
-              art.on("ready", () => setPlayer(art))
-              art.on("video:play", () => {
-                console.log("video is playing")
+              art.on("ready", () => {
+                if (!player) setPlayer(art)
               })
-              art.on("video:timeupdate", () => {
-                const index = editorValues.src.subtitle.findIndex(
-                  (item) =>
-                    (art.currentTime * 1000 >= item.from) && (art.currentTime * 1000 <= item.to))
-                const srcItem = editorValues.src.subtitle[index]
-                const dstItem = editorValues.dst.subtitle[index]
-                if (srcItem && dstItem)
-                  setCaptions({ src: srcItem.text, dst: dstItem.text })
-              })
-
             }} >
           </VideoPlayer>
           <Label className="text-lg">{captions.dst}</Label>
@@ -234,10 +237,8 @@ const DocEditor: NextPage = () => {
     { documentId: docId },
     { enabled: session?.user !== undefined }
   )
-  let srcObj = doc?.srcJson as SubtitleType
-  if (srcObj === null) srcObj = pageDefaultValue
-  let dstObj = doc?.dstJson as SubtitleType
-  if (dstObj === null) dstObj = pageDefaultValue
+  const srcObj = doc?.srcJson as SubtitleType
+  const dstObj = doc?.dstJson as SubtitleType
 
   return (
     status === "loading" ? <span>Loading</span> :

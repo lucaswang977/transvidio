@@ -5,7 +5,7 @@ import {
 
 import { prisma } from "~/server/db";
 import { z } from "zod";
-import { DocumentType } from "@prisma/client"
+import { DocumentType, type Prisma } from "@prisma/client"
 import { TRPCError } from "@trpc/server";
 
 export const documentRouter = createTRPCRouter({
@@ -159,8 +159,8 @@ export const documentRouter = createTRPCRouter({
             id: input.documentId
           },
           data: {
-            dstJson: JSON.parse(input.dst),
-            srcJson: JSON.parse(input.src)
+            dstJson: JSON.parse(input.dst) as Prisma.JsonObject,
+            srcJson: JSON.parse(input.src) as Prisma.JsonObject
           }
         })
       } else {
@@ -169,7 +169,7 @@ export const documentRouter = createTRPCRouter({
             id: input.documentId
           },
           data: {
-            dstJson: JSON.parse(input.dst)
+            dstJson: JSON.parse(input.dst) as Prisma.JsonObject
           }
         })
       }
