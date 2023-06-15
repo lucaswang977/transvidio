@@ -91,7 +91,7 @@ const AttachmentEditor = (props: AttachmentEditorProps) => {
           console.log('File uploading failed.', response);
         }
       } catch (error) {
-        console.error('Failed to upload file');
+        console.error('Failed to upload file', error);
       }
     }
 

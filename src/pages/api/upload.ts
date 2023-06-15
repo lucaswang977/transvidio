@@ -61,7 +61,7 @@ const handler: NextApiHandler = async (req, res) => {
           if ("Location" in res && res.Location) {
             const urlObj = new URL(res.Location)
             urlObj.host = new URL(env.CDN_BASE_URL).host
-            return { file: item.filename, location: urlObj.toString() }
+            return { file: item.filename, location: decodeURIComponent(urlObj.toString()) }
           }
         })
     );
