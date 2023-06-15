@@ -58,16 +58,17 @@ const handler: NextApiHandler = async (req, res) => {
     results.push(
       uploadFileToS3(key, item.stream)
         .then((res) => {
-          if ("Location" in res) return {
-            file: item.filename,
-            location: res.Location
+          if ("Location" in res && res.Location) {
+            const urlObj = new URL(res.Location)
+            urlObj.host = new URL(env.CDN_BASE_URL).host
+            return { file: item.filename, location: urlObj.toString() }
           }
         })
     );
   }
 
   const r = await Promise.all(results)
-  res.json({ fields, files: r })
+  res.json(r)
 };
 
 export default handler;

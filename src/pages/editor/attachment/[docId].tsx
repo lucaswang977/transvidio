@@ -10,11 +10,10 @@ import { api } from "~/utils/api";
 import { useSession } from "next-auth/react"
 
 import { Button } from "~/components/ui/button"
-import { Download, Folder, Save, Upload } from "lucide-react"
+import { Download, Folder, Trash, Save, Upload } from "lucide-react"
 import { Input } from "~/components/ui/input";
 import axios, { AxiosResponse } from 'axios';
 import { Label } from "~/components/ui/label";
-import { Progress } from "~/components/ui/progress";
 
 
 type PageSchema = {
@@ -36,94 +35,35 @@ type AttachmentEditorProps = {
 
 type SrcOrDst = "src" | "dst"
 
-type AttachmentProps =
-  {
-    where: SrcOrDst,
-    fileurl: string,
-    projectId: string,
-    filename: string,
-    onChange: (label: string, t: SrcOrDst, v: string) => void
-  }
-
-export const Attachment = (props: AttachmentProps) => {
-  const [uploadingFile, setUploadingFile] = React.useState<File | null>(null)
-  const [uploadProgress, setUploadProgress] = React.useState(0);
-
-  const handleUpload = async () => {
-    if (uploadingFile) {
-      const formData = new FormData();
-      formData.append("projectId", props.projectId)
-      formData.append('file', uploadingFile);
-      try {
-        const response: AxiosResponse<{ location: string }> = await axios.post('/api/upload', formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-          onUploadProgress: (progressEvent) => {
-            if (progressEvent.total) {
-              console.log(progressEvent.loaded, progressEvent.total)
-              const progress = Math.round((progressEvent.loaded / progressEvent.total) * 100);
-              setUploadProgress(progress);
-            }
-          },
-        });
-
-        props.onChange("fileurl", props.where, response.data.location)
-        console.log('File uploaded successfully');
-      } catch (error) {
-        console.error('Failed to upload file');
-      }
-    }
-  };
-
-  return (
-    <div className="flex-col space-y-2">
-      {props.fileurl ?
-        (<Button>
-          <a href={props.fileurl}><Download className="mr-2 h-4 w-4" />Download</a>
-        </Button>
-        )
-        : (
-          <div className="grid w-full max-w-sm items-center gap-1.5">
-            <Input multiple={false} type="file" onChange={({ target }) => {
-              if (target.files) {
-                const file = target.files[0];
-                if (file) {
-                  setUploadingFile(file)
-                }
-              }
-            }} />
-            <Button onClick={handleUpload} disabled={!uploadingFile}>Upload</Button>
-            <Label className="text-xs text-gray-500">Note: the maximized size of one file is 100MB.</Label>
-          </div>
-        )
-      }
-      {uploadProgress > 0 && (
-        <Progress value={uploadProgress} className="w-[60%]" />
-      )}
-    </div>
-  )
-}
-
-
 const AttachmentEditor = (props: AttachmentEditorProps) => {
   const mutation = api.document.save.useMutation()
   const [editorValues, setEditorValues] = React.useState({ src: props.src, dst: props.dst })
   const [contentChanged, setContentChanged] = React.useState(false)
+  const [uploadProgress, setUploadProgress] = React.useState(0);
 
   const [uploadingSrcFile, setUploadingSrcFile] = React.useState<File | null>(null)
   const [uploadingDstFile, setUploadingDstFile] = React.useState<File | null>(null)
+  const [uploading, setUploading] = React.useState(false)
 
   const fileSrcInputRef = React.useRef<HTMLInputElement>(null)
   const fileDstInputRef = React.useRef<HTMLInputElement>(null)
 
-  const handleUpload = async (where: SrcOrDst) => {
+  const handleUpload = async () => {
+    if (!uploadingSrcFile && !uploadingDstFile) {
+      console.log("No uploading file selected.")
+      return
+    }
+
     let uploadingFile = uploadingDstFile
     let uploadingFilename = editorValues.dst.filename
+    let where: SrcOrDst = "dst"
 
-    if (where === "src" && uploadingSrcFile) {
+    setUploading(true)
+
+    if (uploadingSrcFile) {
       uploadingFile = uploadingSrcFile
       uploadingFilename = editorValues.src.filename
+      where = "src"
     }
 
     if (uploadingFile) {
@@ -132,23 +72,32 @@ const AttachmentEditor = (props: AttachmentEditorProps) => {
       formData.append("filename", uploadingFilename)
       formData.append('file', uploadingFile);
       try {
-        const response: AxiosResponse<{ location: string }> = await axios.post('/api/upload', formData, {
+        const response: AxiosResponse<{ location: string }[]> = await axios.post('/api/upload', formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
           },
           onUploadProgress: (progressEvent) => {
             if (progressEvent.total) {
-              console.log(progressEvent.loaded, progressEvent.total)
+              const progress = Math.round((progressEvent.loaded / progressEvent.total) * 100);
+              setUploadProgress(progress);
             }
           },
         });
 
-        onInputChange("fileurl", where, response.data.location)
-        console.log('File uploaded successfully', response.data.location);
+        if (response.data[0]) {
+          onInputChange("fileurl", where, response.data[0].location)
+          console.log('File uploaded successfully', response);
+        } else {
+          console.log('File uploading failed.', response);
+        }
       } catch (error) {
         console.error('Failed to upload file');
       }
     }
+
+    setUploading(false)
+    setUploadingSrcFile(null)
+    setUploadingDstFile(null)
   };
 
   console.log(editorValues)
@@ -187,11 +136,12 @@ const AttachmentEditor = (props: AttachmentEditorProps) => {
       <div className="flex">
         <Input
           type="text"
+          disabled={true}
           value={editorValues.src.filename}
           onChange={(event) => {
             onInputChange("filename", "src", event.target.value)
           }} />
-        <Button variant="ghost">
+        <Button disabled={uploading} variant="ghost">
           {
             editorValues.src.fileurl ?
               <a href={editorValues.src.fileurl}><Download /></a> :
@@ -218,21 +168,30 @@ const AttachmentEditor = (props: AttachmentEditorProps) => {
       <div className="flex">
         <Input
           type="text"
+          disabled={true}
           value={editorValues.dst.filename}
           onChange={(event) => {
             onInputChange("filename", "dst", event.target.value)
           }} />
-        <Button variant="ghost">
+        <Button disabled={uploading} variant="ghost">
           {
             editorValues.dst.fileurl ?
-              <a href={editorValues.dst.fileurl}><Download /></a> :
-              editorValues.dst.filename ?
-                <Upload onClick={() => handleUpload("dst")} /> :
-                <Folder onClick={() => {
-                  if (fileDstInputRef.current) fileDstInputRef.current.click()
-                }} />
+              <a href={editorValues.dst.fileurl}><Download /></a>
+              :
+              <Folder onClick={() => {
+                if (fileDstInputRef.current) fileDstInputRef.current.click()
+              }} />
           }
         </Button>
+        {
+          editorValues.dst.fileurl ?
+            <Button variant="ghost" onClick={() => {
+              onInputChange("filename", "dst", "")
+              onInputChange("fileurl", "dst", "")
+            }}>
+              <Trash />
+            </Button> : <></>
+        }
         <input
           type="file"
           className="hidden"
@@ -248,6 +207,10 @@ const AttachmentEditor = (props: AttachmentEditorProps) => {
             }
           }} />
       </div>
+      {(uploadingSrcFile || uploadingDstFile) ?
+        <Button disabled={uploading} className="w-full" onClick={handleUpload}>
+          {uploading ? ((uploadProgress < 100) ? `${uploadProgress}%` : "Wait for url") : "Upload"}
+        </Button> : <></>}
     </div>
   )
 }
