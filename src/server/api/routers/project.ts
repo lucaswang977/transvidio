@@ -260,7 +260,7 @@ async function createCurriculum(
           await prisma.document.create({
             data: {
               title: item.title,
-              type: "DOC",
+              type: "ARTICLE",
               srcJson: { html: await docResp.text() },
               projectId: projectId,
             }

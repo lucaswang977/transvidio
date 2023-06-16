@@ -1,6 +1,4 @@
-
 import * as React from "react"
-import { type NextPage } from "next"
 import { useSession } from "next-auth/react"
 import { type DocumentColumn, columns } from "~/components/columns/documents"
 import { DataTable } from "~/components/ui/data-table"
@@ -9,8 +7,9 @@ import { api } from "~/utils/api";
 import { RefreshCcw } from "lucide-react"
 import { Button } from "~/components/ui/button"
 import { DocumentCreateDialog } from "~/components/create-document-dialog"
+import { NextPageWithLayout } from "../_app"
 
-const DocumentManagement: NextPage = () => {
+const DocumentManagement: NextPageWithLayout = () => {
   const { data: session } = useSession()
   const [rowSelection, setRowSelection] = React.useState({})
   const { data: documents, refetch } = api.document.getAll.useQuery(
@@ -43,32 +42,38 @@ const DocumentManagement: NextPage = () => {
   }
 
   return (
-    <Layout>
-      <div className="flex-1 space-y-4 p-8 pt-6">
-        <div className="flex items-center justify-between space-y-2">
-          <h2 className="text-3xl font-bold tracking-tight">All documents</h2>
-          <div className="flex space-x-2">
-            <Button size="sm" variant="outline" onClick={() => refetch()}>
-              <RefreshCcw className="mr-2 h-4 w-4" />
-              Refresh
-            </Button>
-            {
-              session?.user.role === "ADMIN" ?
-                <DocumentCreateDialog />
-                : <></>
-            }
-          </div>
+    <div className="flex-1 space-y-4 p-8 pt-6">
+      <div className="flex items-center justify-between space-y-2">
+        <h2 className="text-3xl font-bold tracking-tight">All documents</h2>
+        <div className="flex space-x-2">
+          <Button size="sm" variant="outline" onClick={() => refetch()}>
+            <RefreshCcw className="mr-2 h-4 w-4" />
+            Refresh
+          </Button>
+          {
+            session?.user.role === "ADMIN" ?
+              <DocumentCreateDialog />
+              : <></>
+          }
         </div>
-
-        <DataTable
-          columns={columns}
-          data={data}
-          rowSelection={rowSelection}
-          setRowSelection={setRowSelection}
-        />
       </div>
-    </Layout>
 
+      <DataTable
+        columns={columns}
+        data={data}
+        rowSelection={rowSelection}
+        setRowSelection={setRowSelection}
+      />
+    </div>
+  )
+}
+
+DocumentManagement.getTitle = () => "Documents - Transvid.io"
+DocumentManagement.getLayout = (page) => {
+  return (
+    <Layout>
+      {page}
+    </Layout>
   )
 }
 

@@ -1,17 +1,11 @@
-import { type NextPage } from "next";
-import Head from "next/head";
 import { SigninForm } from "~/components/signin-form"
 import { Logo } from "~/components/logo-with-name"
+import type { NextPageWithLayout } from './_app'
 
-const SignIn: NextPage = () => {
+const SignIn: NextPageWithLayout = () => {
 
   return (
     <>
-      <Head>
-        <title>Sign In - Transvid.io</title>
-        <meta name="description" content="Help your courses to go global." />
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
       <main className="flex min-h-screen flex-col items-center justify-center space-y-4">
         <Logo />
         <SigninForm />
@@ -20,5 +14,7 @@ const SignIn: NextPage = () => {
 
   );
 }
+
+SignIn.getTitle = () => "Sign in to Transvid.io"
 
 export default SignIn;

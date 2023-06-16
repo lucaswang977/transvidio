@@ -22,13 +22,13 @@ const pageDefaultValue: PageSchema = {
   html: "",
 }
 
-type CourseDocEditorProps = {
+type ArticleEditorProps = {
   docId: string,
   src: PageSchema,
   dst: PageSchema
 }
 
-const CourseDocEditor = (props: CourseDocEditorProps) => {
+const ArticleEditor = (props: ArticleEditorProps) => {
   const mutation = api.document.save.useMutation()
   const [editorValues, setEditorValues] = React.useState({ src: props.src, dst: props.dst })
   const [contentChanged, setContentChanged] = React.useState(false)
@@ -93,7 +93,7 @@ const DocEditor: NextPage = () => {
           <p className="text-sm text-gray-400">saved at {doc?.updatedAt.toLocaleString()}</p>
         </div>
         <div className="flex items-center w-full justify-evenly space-y-2">
-          <CourseDocEditor docId={docId} src={srcObj} dst={dstObj} />
+          <ArticleEditor docId={docId} src={srcObj} dst={dstObj} />
         </div>
       </div>
   )

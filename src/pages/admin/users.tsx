@@ -1,12 +1,12 @@
 import * as React from "react"
-import type { NextPage } from "next"
 import Layout from "./layout"
 import { DataTable } from "~/components/ui/data-table"
 import { type UserColumn, columns } from "~/components/columns/users"
 import { useSession } from "next-auth/react"
 import { api } from "~/utils/api";
+import { NextPageWithLayout } from "../_app"
 
-const UserManagement: NextPage = () => {
+const UserManagement: NextPageWithLayout = () => {
   const [rowSelection, setRowSelection] = React.useState({})
   const { data: sessionData } = useSession();
   const { data: users } = api.user.getAll.useQuery(
@@ -32,23 +32,30 @@ const UserManagement: NextPage = () => {
 
   }
   return (
-    <Layout>
-      <div className="flex-1 space-y-4 p-8 pt-6">
-        <div className="flex items-center justify-between space-y-2">
-          <h2 className="text-3xl font-bold tracking-tight">All users</h2>
-        </div>
-        <div>
-          <DataTable
-            columns={columns}
-            data={usersData}
-            rowSelection={rowSelection}
-            setRowSelection={setRowSelection}
-          />
-        </div>
+    <div className="flex-1 space-y-4 p-8 pt-6">
+      <div className="flex items-center justify-between space-y-2">
+        <h2 className="text-3xl font-bold tracking-tight">All users</h2>
       </div>
-    </Layout>
-
+      <div>
+        <DataTable
+          columns={columns}
+          data={usersData}
+          rowSelection={rowSelection}
+          setRowSelection={setRowSelection}
+        />
+      </div>
+    </div>
   )
 }
+
+UserManagement.getTitle = () => "Users - Transvid.io"
+UserManagement.getLayout = (page) => {
+  return (
+    <Layout>
+      {page}
+    </Layout>
+  )
+}
+
 
 export default UserManagement
