@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { useSession } from "next-auth/react"
+import { useRouter } from "next/router"
 
 import { cn } from "~/utils/helper"
 
@@ -8,6 +9,8 @@ export function MainNav({
   ...props
 }: React.HTMLAttributes<HTMLElement>) {
   const { data: sessionData } = useSession()
+  const router = useRouter()
+  const { pathname } = router
 
   return (
     <nav
@@ -16,30 +19,31 @@ export function MainNav({
     >
       <Link
         href="/admin/"
-        className="text-sm font-medium transition-colors hover:text-primary"
+        className={`text-sm font-medium ${pathname === "/admin" ? "" : "text-muted-foreground"} transition-colors hover:text-primary`}
       >
         Overview
       </Link>
-      {sessionData?.user?.role === "ADMIN" ?
-        <Link
-          href="/admin/users"
-          className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
-        >
-          Users
-        </Link> : <></>
+      {
+        sessionData?.user?.role === "ADMIN" ?
+          <Link
+            href="/admin/users"
+            className={`text-sm font-medium ${pathname === "/admin/users" ? "" : "text-muted-foreground"} transition-colors hover:text-primary`}
+          >
+            Users
+          </Link> : <></>
       }
       <Link
         href="/admin/projects"
-        className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+        className={`text-sm font-medium ${pathname === "/admin/projects" ? "" : "text-muted-foreground"} transition-colors hover:text-primary`}
       >
         Projects
       </Link>
       <Link
         href="/admin/documents"
-        className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+        className={`text-sm font-medium ${pathname === "/admin/documents" ? "" : "text-muted-foreground"} transition-colors hover:text-primary`}
       >
         Documents
       </Link>
-    </nav>
+    </nav >
   )
 }

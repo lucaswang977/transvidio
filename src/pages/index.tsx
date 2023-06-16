@@ -15,14 +15,11 @@
 // 6. Test & optimize
 // 7. First version release
 // 8. Database migrate test
-// 9. Forget password
+// 9. Reset / change password
+// 10. Activities on Dashboard
 
 // FIX:
-// 1. User should be unable to open signin page after logged in.
-// 2. A notfication should be shown up after signing up with email.
-// 3. Credential is currently saved as plain text in db.
-// 4. Table auto refresh.
-// 5. user.getAll() returns everything to the client including the passwords.
+// 1. Table auto refresh.
 
 import { useRouter } from "next/router"
 import { useSession } from "next-auth/react";

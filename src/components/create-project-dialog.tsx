@@ -45,8 +45,9 @@ const formSchema = z.object({
   memo: z.string()
 })
 
-export function ProjectCreateDialog() {
+export function ProjectCreateDialog(props: { refetch: () => void }) {
   const [open, setIsOpen] = React.useState(false)
+  const [loading, setLoading] = React.useState(false)
   const mutation = api.project.create.useMutation()
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -60,16 +61,24 @@ export function ProjectCreateDialog() {
   })
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values)
-
+    setLoading(true)
     mutation.mutate({
       name: values.name,
       srcLang: values.srcLang,
       dstLang: values.dstLang,
       memo: values.memo
+    }, {
+      onError: (err) => {
+        console.log(err)
+        setIsOpen(false)
+        setLoading(false)
+      },
+      onSuccess: () => {
+        props.refetch()
+        setIsOpen(false)
+        setLoading(false)
+      }
     })
-
-    setIsOpen(false)
   }
 
   return (
@@ -163,7 +172,7 @@ export function ProjectCreateDialog() {
               />
 
               <DialogFooter>
-                <Button type="submit">Create</Button>
+                <Button disabled={loading} type="submit">Create</Button>
               </DialogFooter>
             </form>
           </Form>

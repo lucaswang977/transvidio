@@ -1,4 +1,4 @@
-import { CreditCard, LogOut, PlusCircle, Settings, User } from "lucide-react"
+import { CreditCard, LogOut, User } from "lucide-react"
 
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar"
 import { Button } from "~/components/ui/button"
@@ -50,24 +50,15 @@ export function UserNav() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem>
+          <DropdownMenuItem disabled={true}>
             <User className="mr-2 h-4 w-4" />
             <span>Profile</span>
             <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut>
           </DropdownMenuItem>
-          <DropdownMenuItem>
+          <DropdownMenuItem disabled={true}>
             <CreditCard className="mr-2 h-4 w-4" />
             <span>Billing</span>
             <DropdownMenuShortcut>⌘B</DropdownMenuShortcut>
-          </DropdownMenuItem>
-          <DropdownMenuItem>
-            <Settings className="mr-2 h-4 w-4" />
-            <span>Settings</span>
-            <DropdownMenuShortcut>⌘S</DropdownMenuShortcut>
-          </DropdownMenuItem>
-          <DropdownMenuItem>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            <span>New Team</span>
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
