@@ -7,17 +7,17 @@ export interface VideoPlayerProps extends React.HTMLAttributes<HTMLDivElement> {
   getInstance: (art: Artplayer) => void,
 }
 
-function VideoPlayer({ className, option, getInstance, ...props }: VideoPlayerProps) {
+function VideoPlayer({ className, ...props }: VideoPlayerProps) {
   const artRef = React.useRef<HTMLDivElement>(null)
 
   React.useEffect(() => {
     if (artRef.current) {
       // Artplayer.DEBUG = true
       const art = new Artplayer({
-        ...option,
+        ...props.option,
         container: artRef.current
       })
-      getInstance(art)
+      props.getInstance(art)
 
       return () => {
         if (art && art.destroy) {

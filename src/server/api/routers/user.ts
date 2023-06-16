@@ -7,6 +7,7 @@ import {
 import { TRPCError } from "@trpc/server"
 
 import { prisma } from "~/server/db";
+import bcrypt from "bcryptjs"
 
 export const userRouter = createTRPCRouter({
   register: publicProcedure
@@ -33,11 +34,17 @@ export const userRouter = createTRPCRouter({
         data: {
           name: input.name,
           email: input.email,
-          pwd: input.password
+          pwd: await bcrypt.hash(input.password, 10)
         }
       })
 
-      return result
+      if (result) return true
+      else {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "User creating failed."
+        })
+      }
     }),
   getAll: protectedProcedure.query(({ ctx }) => {
     return ctx.prisma.user.findMany();

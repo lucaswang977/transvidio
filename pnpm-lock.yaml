@@ -83,6 +83,9 @@ dependencies:
   axios:
     specifier: ^1.4.0
     version: 1.4.0
+  bcryptjs:
+    specifier: ^2.4.3
+    version: 2.4.3
   class-variance-authority:
     specifier: ^0.6.0
     version: 0.6.0(typescript@5.0.4)
@@ -139,6 +142,9 @@ dependencies:
     version: 3.21.4
 
 devDependencies:
+  '@types/bcryptjs':
+    specifier: ^2.4.2
+    version: 2.4.2
   '@types/eslint':
     specifier: ^8.37.0
     version: 8.37.0
@@ -2307,6 +2313,10 @@ packages:
     resolution: {integrity: sha512-+Wt0NFAeflVSNiUnHIDNN3C8jP7XIRmYrcgJ6IsAnm0lK4p/FkpCpeu1aig5qxrgZx30PHNDLZ/3FttVSEW2aQ==}
     dev: false
 
+  /@types/bcryptjs@2.4.2:
+    resolution: {integrity: sha512-LiMQ6EOPob/4yUL66SZzu6Yh77cbzJFYll+ZfaPiPPFswtIlA/Fs1MzdKYA7JApHU49zQTbJGX3PDmCpIdDBRQ==}
+    dev: true
+
   /@types/eslint@8.37.0:
     resolution: {integrity: sha512-Piet7dG2JBuDIfohBngQ3rCt7MgO9xCO4xIMKxBThCq5PNRB91IjlJ10eJVwfoNtvTErmxLzwBZ7rHZtbOMmFQ==}
     dependencies:
@@ -2688,6 +2698,10 @@ packages:
 
   /base64-js@1.5.1:
     resolution: {integrity: sha512-AKpaYlHn8t4SVbOHCy+b5+KKgvR4vrsD8vbvrbiQJps7fKDTkjkDry6ji0rUJjC0kzbNePLwzxq8iypo41qeWA==}
+    dev: false
+
+  /bcryptjs@2.4.3:
+    resolution: {integrity: sha512-V/Hy/X9Vt7f3BbPJEi8BdVFMByHi+jNXrYkW3huaybV/kQ0KJg0Y6PkEMbn+zeT+i+SiKZ/HMqJGIIt4LZDqNQ==}
     dev: false
 
   /big-integer@1.6.51:

@@ -84,7 +84,8 @@ const QuizEditor = (props: QuizEditorProps) => {
                   value={q.prompt.question}
                   onChange={(event) => {
                     const newObj = { ...editorValues.src }
-                    newObj.results[i]!.prompt.question = event.target.value
+                    const res = newObj.results[i]
+                    if (res) res.prompt.question = event.target.value
                     onInputChange("src", newObj)
                   }}
                 />
@@ -92,7 +93,8 @@ const QuizEditor = (props: QuizEditorProps) => {
                   value={editorValues.dst?.results[i]?.prompt.question}
                   onChange={(event) => {
                     const newObj = { ...editorValues.dst }
-                    newObj.results[i]!.prompt.question = event.target.value
+                    const res = newObj.results[i]
+                    if (res) res.prompt.question = event.target.value
                     onInputChange("dst", newObj)
                   }}
                 />
@@ -107,7 +109,8 @@ const QuizEditor = (props: QuizEditorProps) => {
                         value={a}
                         onChange={(event) => {
                           const newObj = { ...editorValues.src }
-                          newObj.results[i]!.prompt.answers[j] = event.target.value
+                          const res = newObj.results[i]
+                          if (res) res.prompt.answers[j] = event.target.value
                           onInputChange("src", newObj)
                         }}
                       />
@@ -115,7 +118,8 @@ const QuizEditor = (props: QuizEditorProps) => {
                         value={editorValues.dst?.results[i]?.prompt.answers[j]}
                         onChange={(event) => {
                           const newObj = { ...editorValues.dst }
-                          newObj.results[i]!.prompt.answers[j] = event.target.value
+                          const res = newObj.results[i]
+                          if (res) res.prompt.answers[j] = event.target.value
                           onInputChange("dst", newObj)
                         }}
                       />
@@ -133,7 +137,8 @@ const QuizEditor = (props: QuizEditorProps) => {
                         value={f}
                         onChange={(event) => {
                           const newObj = { ...editorValues.src }
-                          newObj.results[i]!.prompt.feedbacks[j] = event.target.value
+                          const res = newObj.results[i]
+                          if (res) res.prompt.feedbacks[j] = event.target.value
                           onInputChange("src", newObj)
                         }}
                       />
@@ -141,7 +146,8 @@ const QuizEditor = (props: QuizEditorProps) => {
                         value={editorValues.dst?.results[i]?.prompt.feedbacks[j]}
                         onChange={(event) => {
                           const newObj = { ...editorValues.dst }
-                          newObj.results[i]!.prompt.feedbacks[j] = event.target.value
+                          const res = newObj.results[i]
+                          if (res) res.prompt.feedbacks[j] = event.target.value
                           onInputChange("dst", newObj)
                         }}
                       />

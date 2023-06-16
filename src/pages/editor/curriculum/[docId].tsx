@@ -44,20 +44,29 @@ type CurriculumListEditorProps = {
 
 const CurriculumListEditor = (props: CurriculumListEditorProps) => {
   const onChangeSectionTitle = (index: number, v: string) => {
-    if (props.value.sections[index])
-      props.value.sections[index]!.title = v
+    const section = props.value.sections[index]
+    if (section && section.title) section.title = v
+
     props.onChange(props.where, props.value)
   }
 
   const onChangeItemTitle = (i: number, j: number, v: string) => {
-    if (props.value.sections[i] && props.value.sections[i]!.items[j])
-      props.value.sections[i]!.items[j]!.title = v
+    const section = props.value.sections[i]
+    if (section && section.items && section.items[j]) {
+      const item = section.items[j]
+      if (item) item.title = v
+    }
+
     props.onChange(props.where, props.value)
   }
 
   const onChangeItemDescription = (i: number, j: number, v: string) => {
-    if (props.value.sections[i] && props.value.sections[i]!.items[j])
-      props.value.sections[i]!.items[j]!.description = v
+    const section = props.value.sections[i]
+    if (section && section.items && section.items[j]) {
+      const item = section.items[j]
+      if (item) item.description = v
+    }
+
     props.onChange(props.where, props.value)
   }
 

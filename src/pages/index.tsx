@@ -15,6 +15,7 @@
 // 6. Test & optimize
 // 7. First version release
 // 8. Database migrate test
+// 9. Forget password
 
 // FIX:
 // 1. User should be unable to open signin page after logged in.
@@ -34,8 +35,7 @@ import { Separator } from "~/components/ui/separator";
 
 const Home: NextPageWithLayout = () => {
   const router = useRouter();
-  const { data: sessionData, status: status } = useSession();
-  console.log(sessionData, status)
+  const { status: status } = useSession();
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center space-y-12">

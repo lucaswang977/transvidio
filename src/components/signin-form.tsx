@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form"
 import { signIn } from "next-auth/react"
 import { Icons } from "~/components/ui/icons"
 import * as z from "zod"
+import * as React from "react"
 
 import { Button } from "~/components/ui/button"
 import {
@@ -17,7 +18,9 @@ import {
   FormMessage,
 } from "~/components/ui/form"
 import { Input } from "~/components/ui/input"
-import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/card"
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "~/components/ui/card"
+import { Loader2 } from "lucide-react"
+import { Label } from "./ui/label"
 
 const formSchema = z.object({
   email: z.string().min(3, {
@@ -30,6 +33,10 @@ const formSchema = z.object({
 
 export function SigninForm() {
   const router = useRouter()
+  const [loading, setLoading] = React.useState(false)
+  const [failedMessage, setFailedMessage] = React.useState<string | null>(null)
+  const [passwordInputFocused, setPasswordInputFocused] = React.useState(false)
+  const [emailInputFocused, setEmailInputFocused] = React.useState(false)
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -37,28 +44,33 @@ export function SigninForm() {
       email: "",
       password: ""
     },
+    mode: "onSubmit",
   })
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values)
+    setLoading(true)
     await signIn("credentials", {
       email: values.email,
       password: values.password,
       redirect: false,
     }).then(async (result) => {
-      if (result && result.ok) {
-        console.log(result)
-        await router.push("/admin")
-      } else {
-        console.log(result)
+      if (result) {
+        if (result.ok) {
+          console.log(result)
+          await router.push("/admin")
+        } else {
+          if (result.error) setFailedMessage(result.error)
+        }
       }
+      form.reset()
+      setLoading(false)
     })
   }
 
   return (
     <Card className={"w-[480px]"}>
       <CardHeader>
-        <CardTitle>Sign in to your account.</CardTitle>
+        <CardTitle>Sign in with your account.</CardTitle>
       </CardHeader>
       <CardContent>
         <Form {...form}>
@@ -70,7 +82,12 @@ export function SigninForm() {
                 <FormItem>
                   <FormLabel>Email</FormLabel>
                   <FormControl>
-                    <Input placeholder="Your email adress." {...field} />
+                    <Input
+                      placeholder={emailInputFocused ? "" : "Your email address please."}
+                      {...field}
+                      onFocus={() => setEmailInputFocused(true)}
+                      onBlur={() => setEmailInputFocused(false)}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -83,25 +100,51 @@ export function SigninForm() {
                 <FormItem>
                   <FormLabel>Password</FormLabel>
                   <FormControl>
-                    <Input placeholder="•••" type="password" {...field} />
+                    <Input
+                      placeholder={passwordInputFocused ? "" : "••••••"}
+                      type="password"
+                      {...field}
+                      onFocus={() => setPasswordInputFocused(true)}
+                      onBlur={() => setPasswordInputFocused(false)}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
-            <Button className="w-full" type="submit">Sign In</Button>
-            <Button variant="outline" type="button" className="w-full"
-              onClick={() => signIn("google", { callbackUrl: "/admin" })}>
-              <Icons.google className="mr-2 h-4 w-4" />
-              Google
-            </Button>
-            <p>Don&apos;t have an account yet? <Button variant="link" onClick={() => router.push("/signup")}>Sign up</Button></p>
-
+            <div className="flex flex-col w-full space-y-6 items-center">
+              <div className="flex flex-col space-y-2 w-full items-center">
+                <Button
+                  disabled={loading}
+                  className="w-full"
+                  type="submit">
+                  {loading ? <Loader2 className="w-4 animate-spin" /> : "Sign In"}
+                </Button>
+                <Label className={failedMessage ? "text-red-400" : "hidden"}>{failedMessage}</Label>
+              </div>
+              <Button
+                disabled={loading}
+                variant="outline" type="button" className="w-full"
+                onClick={async () => {
+                  await signIn("google", { callbackUrl: "/admin" })
+                }}>
+                <Icons.google className="mr-2 h-4 w-4" />
+                Google
+              </Button>
+            </div>
           </form>
         </Form>
-
       </CardContent>
+      <CardFooter className="flex justify-center">
+        <p className="text-sm text-gray-500">Don&apos;t have an account yet?
+          <Button
+            disabled={loading}
+            variant="link"
+            onClick={() => router.push("/signup")}>Sign up</Button>
+        </p>
+      </CardFooter>
+
     </Card>
   )
 }
