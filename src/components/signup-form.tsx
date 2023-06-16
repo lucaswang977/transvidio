@@ -1,7 +1,6 @@
 "use client"
 
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useRouter } from "next/router"
 import { useForm } from "react-hook-form"
 import { signIn } from "next-auth/react"
 import { api } from "~/utils/api";
@@ -28,6 +27,7 @@ import {
 } from "~/components/ui/card"
 import { Loader2 } from "lucide-react"
 import { Label } from "./ui/label"
+import Link from "next/link"
 
 const formSchema = z.object({
   email: z.string().min(5, {
@@ -54,7 +54,6 @@ const formSchema = z.object({
 })
 
 export function SignupForm() {
-  const router = useRouter()
   const [loading, setLoading] = React.useState(false)
   const mutation = api.user.register.useMutation()
   const [failedMessage, setFailedMessage] = React.useState<string | null>(null)
@@ -229,7 +228,7 @@ export function SignupForm() {
       </CardContent>
       <CardFooter className="flex justify-center">
         <p className="text-sm text-gray-500">Already have an account?
-          <Button variant="link" onClick={() => router.push("/signin")}>Sign in</Button>
+          <Link className="ml-3 text-gray-800" href="/signin">Sign in</Link>
         </p>
       </CardFooter>
     </Card >

@@ -21,6 +21,7 @@ import { Input } from "~/components/ui/input"
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "~/components/ui/card"
 import { Loader2 } from "lucide-react"
 import { Label } from "./ui/label"
+import Link from "next/link"
 
 const formSchema = z.object({
   email: z.string().min(3, {
@@ -138,10 +139,7 @@ export function SigninForm() {
       </CardContent>
       <CardFooter className="flex justify-center">
         <p className="text-sm text-gray-500">Don&apos;t have an account yet?
-          <Button
-            disabled={loading}
-            variant="link"
-            onClick={() => router.push("/signup")}>Sign up</Button>
+          <Link className="ml-3 text-gray-800" href="/signup">Sign up</Link>
         </p>
       </CardFooter>
 
