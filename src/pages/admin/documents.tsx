@@ -7,7 +7,7 @@ import { api } from "~/utils/api";
 import { RefreshCcw } from "lucide-react"
 import { Button } from "~/components/ui/button"
 import { DocumentCreateDialog } from "~/components/create-document-dialog"
-import { NextPageWithLayout } from "../_app"
+import { type NextPageWithLayout } from "../_app"
 
 const DocumentManagement: NextPageWithLayout = () => {
   const { data: session } = useSession()

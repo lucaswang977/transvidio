@@ -12,7 +12,7 @@ import { useSession } from "next-auth/react"
 import { Button } from "~/components/ui/button"
 import { Download, Folder, Trash, Save, Upload } from "lucide-react"
 import { Input } from "~/components/ui/input";
-import axios, { AxiosResponse } from 'axios';
+import axios, { type AxiosResponse } from 'axios';
 import { Label } from "~/components/ui/label";
 
 

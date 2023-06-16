@@ -4,7 +4,7 @@ import { DataTable } from "~/components/ui/data-table"
 import { type UserColumn, columns } from "~/components/columns/users"
 import { useSession } from "next-auth/react"
 import { api } from "~/utils/api";
-import { NextPageWithLayout } from "../_app"
+import { type NextPageWithLayout } from "../_app"
 
 const UserManagement: NextPageWithLayout = () => {
   const [rowSelection, setRowSelection] = React.useState({})

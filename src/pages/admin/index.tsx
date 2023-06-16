@@ -1,5 +1,5 @@
 import Layout from "./layout"
-import { NextPageWithLayout } from "../_app"
+import { type NextPageWithLayout } from "../_app"
 
 const Dashboard: NextPageWithLayout = () => {
   return (

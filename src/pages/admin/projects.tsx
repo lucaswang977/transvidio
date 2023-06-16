@@ -8,7 +8,7 @@ import { api } from "~/utils/api";
 import { type ProjectRelatedUser } from "~/server/api/routers/project"
 import { RefreshCcw } from "lucide-react"
 import { Button } from "~/components/ui/button"
-import { NextPageWithLayout } from "../_app"
+import { type NextPageWithLayout } from "../_app"
 
 const ProjectManagement: NextPageWithLayout = () => {
   const { data: session } = useSession()

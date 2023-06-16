@@ -24,11 +24,13 @@
 // 5. user.getAll() returns everything to the client including the passwords.
 
 import { useRouter } from "next/router"
-import { signOut, useSession } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { Button } from "~/components/ui/button"
 import { Label } from "~/components/ui/label"
-import { Mail } from "lucide-react"
+import Image from "next/image"
 import type { NextPageWithLayout } from './_app'
+import { Logo } from "~/components/logo-with-name";
+import { Separator } from "~/components/ui/separator";
 
 const Home: NextPageWithLayout = () => {
   const router = useRouter();
@@ -36,18 +38,33 @@ const Home: NextPageWithLayout = () => {
   console.log(sessionData, status)
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center space-y-4">
-      <Button variant="outline" onClick={async () => {
-        if (status === "authenticated") {
-          await signOut()
-        } else {
-          await router.push("/signin")
+    <main className="flex min-h-screen flex-col items-center justify-center space-y-12">
+      <div className="flex flex-col items-center">
+        <Image src="/img/cover.png" width={400} height={400} alt="Cover image" />
+        <Label className="text-gray-400">We get translation job done.</Label>
+      </div>
+      <div className="flex flex-col items-center space-y-4">
+        <Logo />
+        {
+          status === "authenticated" ?
+            <Button
+              className="w-32"
+              onClick={() => router.push("/admin")}
+            >Enter App</Button>
+            :
+            <Button
+              className="w-32"
+              onClick={async () => { await router.push("/signin") }}
+              disabled={status === "loading"}>
+              Sign in
+            </Button>
         }
-      }}
-        disabled={status === "loading"}>
-        <Mail className="mr-2 h-4 w-4" /> {status === "authenticated" ? "Logout" : "Login"}
-      </Button>
-      <Label>{status === "authenticated" ? sessionData.user.email : "not logged in"}</Label>
+      </div>
+      <footer className="flex space-x-2 items-center">
+        <Label className="text-xs text-gray-500 italic">v0.1.0 (20230616)</Label>
+        <Separator orientation="vertical" />
+        <Label className="text-xs text-gray-500">&copy;&nbsp;Transvid.io 2023-2024</Label>
+      </footer>
     </main>
   );
 };

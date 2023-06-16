@@ -4,12 +4,12 @@ import { cn } from "~/utils/helper"
 export function Logo({
   className,
   ...props
-}: React.HTMLAttributes<HTMLElement>) {
+}: React.HTMLAttributes<HTMLButtonElement>) {
   return (
-    <div className={cn("flex items-center space-x-2", className)}
+    <button className={cn("flex items-center space-x-2", className)}
       {...props}>
       <Image src="/logo-black.svg" alt="TV" width={600} height={600} className="w-8" />
       <p>Transvid.io</p>
-    </div>
+    </button>
   )
 }
