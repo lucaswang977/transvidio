@@ -3,6 +3,7 @@
 import { type ColumnDef } from "@tanstack/react-table"
 import { Checkbox } from "~/components/ui/checkbox"
 import { Avatar, AvatarImage, AvatarFallback } from "~/components/ui/avatar"
+import { extractLetters } from "~/utils/helper"
 
 export type UserColumn = {
   id: string
@@ -40,7 +41,7 @@ export const columns: ColumnDef<UserColumn>[] = [
       const url: string = row.getValue("image")
       return (<Avatar className="h-8 w-8">
         <AvatarImage src={url} alt="avatar" />
-        <AvatarFallback>TV</AvatarFallback>
+        <AvatarFallback>{extractLetters(row.getValue("name"))}</AvatarFallback>
       </Avatar>)
 
     }

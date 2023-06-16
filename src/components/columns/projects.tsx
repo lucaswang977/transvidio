@@ -20,6 +20,7 @@ import {
 } from "~/components/ui/dropdown-menu"
 
 import { ProjectImportDialog } from "~/components/import-project-dialog"
+import { extractLetters } from "~/utils/helper"
 
 export type ProjectColumn = {
   id: string
@@ -87,7 +88,7 @@ export const columns: ColumnDef<ProjectColumn>[] = [
           {users.map((user) => {
             return (<Avatar key={user.id} className="h-8 w-8">
               <AvatarImage src={user.image ? user.image : ""} alt={user.name ? user.name : ""} />
-              <AvatarFallback>TV</AvatarFallback>
+              <AvatarFallback>{extractLetters(user.name ? user.name : "TV")}</AvatarFallback>
             </Avatar>)
           })}
           <AssignProjectToUserDialog

@@ -13,3 +13,19 @@ export function timeFormat(milliseconds: number) {
 
   return `${hours}:${minutes}:${seconds}.${millisecondsFormatted}`;
 }
+
+export function extractLetters(name: string): string {
+  let extractedLetters = '';
+
+  if (/[\p{Script=Latin}]/u.test(name)) {
+    // Extract two representative Latin letters
+    const latinLetters = name.match(/[a-zA-Z]/gu) || [];
+    extractedLetters = latinLetters.slice(0, 2).join('');
+  } else {
+    // Extract one character for non-Latin languages
+    const nonLatinCharacters = name.match(/[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]/gu);
+    extractedLetters = nonLatinCharacters ? nonLatinCharacters[0] : name.charAt(0);
+  }
+
+  return extractedLetters;
+}

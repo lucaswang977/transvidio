@@ -14,6 +14,7 @@ import {
 } from "~/components/ui/dropdown-menu"
 
 import { signOut, useSession } from "next-auth/react"
+import { extractLetters } from "~/utils/helper"
 
 export function UserNav() {
   const { data: sessionData } = useSession()
@@ -35,7 +36,7 @@ export function UserNav() {
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
           <Avatar className="h-8 w-8">
             <AvatarImage src={user.image} alt={user.name} />
-            <AvatarFallback>TV</AvatarFallback>
+            <AvatarFallback>{extractLetters(user.name)}</AvatarFallback>
           </Avatar>
         </Button>
       </DropdownMenuTrigger>

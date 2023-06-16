@@ -15,6 +15,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu"
+import { extractLetters } from "~/utils/helper"
 
 export type DocumentColumn = {
   id: string
@@ -87,7 +88,7 @@ export const columns: ColumnDef<DocumentColumn>[] = [
           <div className="flex">
             <Avatar key={user.id} className="h-8 w-8">
               <AvatarImage src={user.image ? user.image : ""} alt={user.name ? user.name : ""} />
-              <AvatarFallback>TV</AvatarFallback>
+              <AvatarFallback>{extractLetters(user.name)}</AvatarFallback>
             </Avatar>
           </div>
         )
