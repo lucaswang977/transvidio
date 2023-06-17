@@ -46,7 +46,9 @@ export const userRouter = createTRPCRouter({
         })
       }
     }),
-  getAll: protectedProcedure.query(({ ctx }) => {
-    return ctx.prisma.user.findMany();
+  getAll: protectedProcedure.query(async ({ ctx }) => {
+    return (await ctx.prisma.user.findMany()).map(
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      ({ emailVerified, pwd, updatedAt, ...rest }) => rest)
   }),
 });

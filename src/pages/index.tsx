@@ -17,6 +17,7 @@
 // 8. Database migrate test
 // 9. Reset / change password
 // 10. Activities on Dashboard
+// 11. Logging on vercel
 
 // FIX:
 // 1. Table auto refresh.

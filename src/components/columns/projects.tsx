@@ -58,7 +58,7 @@ export const columns: ColumnDef<ProjectColumn>[] = [
     cell: ({ row }) => {
       const projectId = row.original.id
       return (
-        < div className="flex flex-col space-y-2" >
+        <div className="flex flex-col space-y-2">
           <Label>{row.getValue("name")}</Label>
           <Label className="text-xs text-gray-400">{projectId}</Label>
         </div >
@@ -66,12 +66,13 @@ export const columns: ColumnDef<ProjectColumn>[] = [
     },
   },
   {
-    accessorKey: "srcLang",
-    header: "Source Language"
-  },
-  {
-    accessorKey: "dstLang",
-    header: "Target Language"
+    header: "Language",
+    cell: ({ row }) => {
+      const data = row.original
+      return (
+        <Label>{`${data.srcLang} -> ${data.dstLang}`}</Label>
+      )
+    },
   },
   {
     accessorKey: "memo",
@@ -80,22 +81,29 @@ export const columns: ColumnDef<ProjectColumn>[] = [
   {
     accessorKey: "users",
     header: "Users",
-    cell: ({ row }) => {
+    cell: ({ row, table }) => {
       const users: ProjectRelatedUser[] = row.getValue("users")
+      const myself = table.options.meta?.user
       const projectId = row.original.id
+
+      const avatarUI = users.map((user) => {
+        return (<Avatar key={user.id} className="h-8 w-8">
+          <AvatarImage src={user.image ? user.image : ""} alt={user.name ? user.name : ""} />
+          <AvatarFallback>{extractLetters(user.name ? user.name : "TV")}</AvatarFallback>
+        </Avatar>)
+      })
       return (
-        <div className="flex">
-          {users.map((user) => {
-            return (<Avatar key={user.id} className="h-8 w-8">
-              <AvatarImage src={user.image ? user.image : ""} alt={user.name ? user.name : ""} />
-              <AvatarFallback>{extractLetters(user.name ? user.name : "TV")}</AvatarFallback>
-            </Avatar>)
-          })}
-          <AssignProjectToUserDialog
-            projectId={projectId}
-            selectedUserIds={users.map((user) => user.id)}
-          />
-        </div>
+        <div className="flex space-x-1" >
+          {(myself && myself.role === "ADMIN") ?
+            <>
+              <AssignProjectToUserDialog
+                projectId={projectId}
+                selectedUserIds={users.map((user) => user.id)}
+                refetch={table.options.meta?.refetchData}
+              />
+            </> : <></>}
+          {avatarUI}
+        </div >
       )
     },
   },

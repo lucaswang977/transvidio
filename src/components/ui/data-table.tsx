@@ -8,7 +8,8 @@ import {
   flexRender,
   getCoreRowModel,
   useReactTable,
-  type OnChangeFn
+  type OnChangeFn,
+  type RowData
 } from "@tanstack/react-table"
 
 import {
@@ -20,18 +21,32 @@ import {
   TableRow,
 } from "~/components/ui/table"
 
+import type { UserRole } from "@prisma/client"
+
+declare module '@tanstack/react-table' {
+  interface TableMeta<TData extends RowData> {
+    nouse?: TData,
+    user?: { id: string, role: UserRole },
+    refetchData?: () => void
+  }
+}
+
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[],
   rowSelection: RowSelectionState | undefined,
-  setRowSelection: OnChangeFn<RowSelectionState> | undefined
+  setRowSelection: OnChangeFn<RowSelectionState> | undefined,
+  handleRefetch?: () => void,
+  user?: { id: string, role: UserRole },
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
   rowSelection,
-  setRowSelection
+  setRowSelection,
+  handleRefetch,
+  user
 }: DataTableProps<TData, TValue>) {
   const table = useReactTable({
     data,
@@ -40,6 +55,10 @@ export function DataTable<TData, TValue>({
     onRowSelectionChange: setRowSelection,
     state: {
       rowSelection
+    },
+    meta: {
+      refetchData: handleRefetch,
+      user: user
     }
   })
   return (

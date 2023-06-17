@@ -17,7 +17,13 @@ import { type UserColumn, columns } from "./columns/users"
 import { useSession } from "next-auth/react"
 import { api } from "~/utils/api";
 
-export function AssignProjectToUserDialog(props: { selectedUserIds: string[], projectId: string }) {
+type AssignProjectToUserDialogProps = {
+  selectedUserIds: string[],
+  projectId: string,
+  refetch?: () => void
+}
+
+export function AssignProjectToUserDialog(props: AssignProjectToUserDialogProps) {
   const [open, setIsOpen] = React.useState(false)
   const [rowSelection, setRowSelection] = React.useState({})
   const [selectionInitiated, setSelectionInitiated] = React.useState(false)
@@ -60,6 +66,13 @@ export function AssignProjectToUserDialog(props: { selectedUserIds: string[], pr
       mutation.mutate({
         id: props.projectId,
         users: data as [string, ...string[]]
+      }, {
+        onError: (err) => {
+          console.log(err.message)
+        },
+        onSuccess: () => {
+          if (props.refetch) props.refetch()
+        }
       })
     }
 
