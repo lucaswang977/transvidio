@@ -113,8 +113,9 @@ enum DocumentType {
 
 enum DocumentState {
     OPEN
+    WORKING
     REVIEW
-    COMPLETE
+    CLOSED
 }
 
 model Document {

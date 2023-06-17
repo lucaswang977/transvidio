@@ -91,12 +91,20 @@ export const documentRouter = createTRPCRouter({
         })
       }
 
+      if (document.state != "OPEN") {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "The state of this document is invalid."
+        })
+      }
+
       await prisma.document.update({
         where: {
           id: input.documentId
         },
         data: {
-          userId: ctx.session.user.id
+          userId: ctx.session.user.id,
+          state: "WORKING"
         }
       })
     }),
@@ -123,16 +131,98 @@ export const documentRouter = createTRPCRouter({
           message: "Document not claimed by this user."
         })
       }
+      if (document.state != "WORKING") {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "The state of this document is invalid."
+        })
+      }
 
       await prisma.document.update({
         where: {
           id: input.documentId
         },
         data: {
-          userId: null
+          userId: null,
+          state: "OPEN"
         }
       })
     }),
+  submitByUser: protectedProcedure
+    .input(z.object({
+      documentId: z.string().nonempty(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const document = await prisma.document.findFirst({
+        where: {
+          id: input.documentId,
+        }
+      })
+
+      if (!document) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Document not existed."
+        })
+      }
+      if (!document.userId || document.userId !== ctx.session.user.id) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Document not claimed by this user."
+        })
+      }
+
+      if (document.state !== "WORKING") {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Document state is invalid."
+        })
+      }
+
+      await prisma.document.update({
+        where: {
+          id: input.documentId
+        },
+        data: {
+          state: "REVIEW"
+        }
+      })
+    }),
+  closeByAdmin: protectedProcedure
+    .input(z.object({
+      documentId: z.string().nonempty(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const document = await prisma.document.findFirst({
+        where: {
+          id: input.documentId,
+        }
+      })
+
+      if (!document) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Document not existed."
+        })
+      }
+      if (ctx.session.user.role !== "ADMIN") {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only admin can close the document."
+        })
+      }
+
+      await prisma.document.update({
+        where: {
+          id: input.documentId
+        },
+        data: {
+          state: "CLOSED"
+        }
+      })
+    }),
+
+
   save: protectedProcedure
     .input(z.object({
       documentId: z.string().nonempty(),

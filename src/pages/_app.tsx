@@ -7,6 +7,7 @@ import "~/styles/globals.css";
 import Head from "next/head";
 import * as React from "react";
 import { type NextPage } from "next";
+import { Toaster } from "~/components/ui/toaster"
 
 const lato = Lato({
   subsets: ["latin"],
@@ -41,6 +42,7 @@ function MyApp(
       {getLayout(
         <main className={lato.className}>
           <Component {...pageProps} />
+          <Toaster />
         </main>
       )}
     </SessionProvider>

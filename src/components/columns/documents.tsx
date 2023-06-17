@@ -1,5 +1,6 @@
 "use client"
 
+import * as React from "react"
 import { type ColumnDef } from "@tanstack/react-table"
 import { Avatar, AvatarImage, AvatarFallback } from "~/components/ui/avatar"
 import { ExternalLink, MoreHorizontal } from "lucide-react"
@@ -16,18 +17,93 @@ import {
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu"
 import { extractLetters } from "~/utils/helper"
+import type { DocumentState, DocumentType } from "@prisma/client"
+import { Badge } from "~/components/ui/badge"
+import dayjs from "dayjs"
+import relativeTime from "dayjs/plugin/relativeTime";
+import { api } from "~/utils/api"
+import { useToast } from "~/components/ui/use-toast"
+import ConfirmDialog from "~/components/confirm-dialog"
+
+const CloseDialog = (props: { documentId: string, refetch?: () => void }) => {
+  const mutation = api.document.closeByAdmin.useMutation()
+  const { toast } = useToast()
+
+  return (
+    <ConfirmDialog
+      trigger="Close"
+      title="Are you sure to close the document?"
+      description="Once the document is closed, other people cannot modify it anymore."
+      handleConfirm={() => {
+        mutation.mutate({ documentId: props.documentId }, {
+          onSuccess: () => {
+            if (props.refetch) props.refetch()
+          },
+          onError: (err) => {
+            toast({ title: "Close failed.", description: err.message })
+          }
+        })
+      }}
+    />
+  )
+}
+const SubmitDialog = (props: { documentId: string, refetch?: () => void }) => {
+  const mutation = api.document.submitByUser.useMutation()
+  const { toast } = useToast()
+
+  return (
+    <ConfirmDialog
+      trigger="Submit"
+      title="Are you sure to submit the document?"
+      description="Once you submit this document, others will come to review it."
+      handleConfirm={() => {
+        mutation.mutate({ documentId: props.documentId }, {
+          onSuccess: () => {
+            if (props.refetch) props.refetch()
+          },
+          onError: (err) => {
+            toast({ title: "Submit failed.", description: err.message })
+          }
+        })
+      }}
+    />
+  )
+}
+
+const ClaimDialog = (props: { documentId: string, refetch?: () => void }) => {
+  const mutation = api.document.claimByUser.useMutation()
+  const { toast } = useToast()
+
+  return (
+    <ConfirmDialog
+      trigger="Confirm"
+      title="Are you sure to claim the document?"
+      description="Claiming the document to let others know you are working on it."
+      handleConfirm={() => {
+        mutation.mutate({ documentId: props.documentId }, {
+          onSuccess: () => {
+            if (props.refetch) props.refetch()
+          },
+          onError: (err) => {
+            toast({ title: "Claim failed.", description: err.message })
+          }
+        })
+      }}
+    />
+  )
+}
 
 export type DocumentColumn = {
   id: string
   title: string
-  type: string
+  type: DocumentType
   srcJson: string | undefined
   dstJson: string | undefined
-  state: string
+  state: DocumentState
   memo: string | null
   project: { id: string, name: string }
   user: { id: string, name: string, image: string } | null
-  updated: string
+  updated: Date
 }
 
 export const columns: ColumnDef<DocumentColumn>[] = [
@@ -68,11 +144,39 @@ export const columns: ColumnDef<DocumentColumn>[] = [
   },
   {
     accessorKey: "type",
-    header: "Type"
+    header: "Type",
+    cell: ({ row }) => {
+      const typeName = row.getValue("type")
+      if (typeName === "INTRODUCTION") {
+        return <Badge variant="secondary">INTRO</Badge>
+      } else if (typeName === "CURRICULUM") {
+        return <Badge variant="secondary">SYLLABUS</Badge>
+      } else if (typeName === "SUBTITLE") {
+        return <Badge variant="secondary">VIDEO</Badge>
+      } else if (typeName === "ATTACHMENT") {
+        return <Badge variant="secondary">FILE</Badge>
+      } else if (typeName === "ARTICLE") {
+        return <Badge variant="secondary">ARTICLE</Badge>
+      } else if (typeName === "QUIZ") {
+        return <Badge variant="secondary">QUIZ</Badge>
+      }
+    }
   },
   {
     accessorKey: "state",
-    header: "State"
+    header: "State",
+    cell: ({ row }) => {
+      const stateName = row.getValue("state")
+      if (stateName === "OPEN") {
+        return <Badge className="bg-sky-500">OPEN</Badge>
+      } else if (stateName === "WORKING") {
+        return <Badge className="bg-red-500">WORKING</Badge>
+      } else if (stateName === "REVIEW") {
+        return <Badge className="bg-teal-500">REVIEW</Badge>
+      } else if (stateName === "CLOSED") {
+        return <Badge className="bg-gray-500">CLOSED</Badge>
+      }
+    }
   },
   {
     accessorKey: "memo",
@@ -80,32 +184,38 @@ export const columns: ColumnDef<DocumentColumn>[] = [
   },
   {
     accessorKey: "user",
-    header: "Assigned",
+    header: "Claimed",
     cell: ({ row }) => {
       const user: { id: string, name: string, image: string } = row.getValue("user")
-      if (user && user.id && user.name && user.image) {
-        return (
-          <div className="flex">
-            <Avatar key={user.id} className="h-8 w-8">
-              <AvatarImage src={user.image ? user.image : ""} alt={user.name ? user.name : ""} />
-              <AvatarFallback>{extractLetters(user.name)}</AvatarFallback>
-            </Avatar>
-          </div>
-        )
-
-      } else {
-        return <></>
+      let avatarUI = <></>
+      if (user) {
+        avatarUI = (<div className="flex">
+          <Avatar key={user.id} className="h-8 w-8">
+            <AvatarImage src={user.image} alt={user.name} />
+            <AvatarFallback>{extractLetters(user.name)}</AvatarFallback>
+          </Avatar>
+        </div>)
       }
+      return <>
+        {avatarUI}
+      </>
     },
   },
   {
     accessorKey: "updated",
-    header: "Updated time",
+    header: "Updated",
+    cell: ({ row }) => {
+      dayjs.extend(relativeTime)
+      const time = dayjs(row.getValue("updated"))
+      return time.fromNow()
+    }
   },
   {
     id: "actions",
-    cell: ({ row }) => {
+    cell: ({ row, table }) => {
       const data = row.original
+      const myself = table.options.meta?.user
+      const refetch = table.options.meta?.refetchData
       let editorUrl = "/"
       if (data.type === "INTRODUCTION") {
         editorUrl = "/editor/introduction/" + data.id
@@ -123,6 +233,16 @@ export const columns: ColumnDef<DocumentColumn>[] = [
 
       return (
         <div className="flex space-x-1 place-items-center">
+          {
+            (data.state === "OPEN") ?
+              <ClaimDialog refetch={refetch} documentId={data.id} /> :
+              (data.state === "WORKING") ?
+                <SubmitDialog refetch={refetch} documentId={data.id} /> :
+                (data.state === "REVIEW" && myself && myself.role === "ADMIN") ?
+                  <CloseDialog refetch={refetch} documentId={data.id} /> :
+                  <></>
+          }
+
           <a href={editorUrl} target="_blank">
             <Button variant="ghost">
               <ExternalLink className="mr-2 h-4 w-4" />

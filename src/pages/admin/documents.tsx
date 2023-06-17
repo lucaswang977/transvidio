@@ -34,7 +34,7 @@ const DocumentManagement: NextPageWithLayout = () => {
           name: document.user.name !== null ? document.user.name : "",
           image: document.user.image !== null ? document.user.image : ""
         } : null,
-        updated: document.updatedAt.toLocaleString()
+        updated: document.updatedAt
       }
 
       return d
@@ -63,6 +63,8 @@ const DocumentManagement: NextPageWithLayout = () => {
         data={data}
         rowSelection={rowSelection}
         setRowSelection={setRowSelection}
+        user={session?.user}
+        handleRefetch={() => refetch()}
       />
     </div>
   )
