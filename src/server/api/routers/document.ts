@@ -13,6 +13,9 @@ export const documentRouter = createTRPCRouter({
     .query(async ({ ctx }) => {
       if (ctx.session.user.role === "ADMIN") {
         return ctx.prisma.document.findMany({
+          orderBy: {
+            seq: "asc"
+          },
           include: {
             user: true,
             project: true,
@@ -25,6 +28,9 @@ export const documentRouter = createTRPCRouter({
           }
         })
         return ctx.prisma.document.findMany({
+          orderBy: {
+            seq: "asc"
+          },
           include: {
             user: true,
             project: true,
@@ -33,7 +39,7 @@ export const documentRouter = createTRPCRouter({
             projectId: {
               in: projects.map((project) => project.projectId)
             }
-          }
+          },
         })
 
       }

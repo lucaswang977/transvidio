@@ -93,9 +93,9 @@ model Project {
 }
 
 model ProjectsOfUsers {
-    project       Project  @relation(fields: [projectId], references: [id])
+    project       Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
     projectId     String
-    user          User     @relation(fields: [userId], references: [id])
+    user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
     userId        String
     assignedAt    DateTime @default(now())
 
@@ -119,6 +119,7 @@ enum DocumentState {
 
 model Document {
     id            String           @id @default(cuid())
+    seq           Int              @default(9999)
     title         String
     type          DocumentType
     srcJson       Json?

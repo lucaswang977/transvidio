@@ -51,6 +51,7 @@ export async function createIntroDoc(projectId: string, intro: IntroType) {
 
   const result = await prisma.document.create({
     data: {
+      seq: 0,
       title: intro.title,
       type: "INTRODUCTION",
       srcJson: data,
@@ -73,7 +74,9 @@ export async function createCurriculum(
 
   let currentSection: CurriculumSection | null = null
 
+  let seq = 1 // intro and curriculum will be 0, 1
   for (const item of curriculum) {
+    seq = seq + 1
     if (item.type === "chapter") {
       const data: CurriculumSection = {
         index: item.id,
@@ -107,6 +110,7 @@ export async function createCurriculum(
           }
           const result = await prisma.document.create({
             data: {
+              seq: seq,
               title: item.title,
               type: "SUBTITLE",
               srcJson: srcData,
@@ -125,6 +129,7 @@ export async function createCurriculum(
         if (docResp.ok) {
           await prisma.document.create({
             data: {
+              seq: seq,
               title: item.title,
               type: "ARTICLE",
               srcJson: { html: await docResp.text() },
@@ -147,6 +152,7 @@ export async function createCurriculum(
             if (sup.assetType === "File") {
               promises.push(prisma.document.create({
                 data: {
+                  seq: seq,
                   title: item.title,
                   type: "ATTACHMENT",
                   srcJson: {
@@ -184,6 +190,7 @@ export async function createCurriculum(
         const quizJson = await quizResp.json() as QuizType
         await prisma.document.create({
           data: {
+            seq: seq,
             title: item.title,
             type: "QUIZ",
             srcJson: quizJson,
@@ -202,6 +209,7 @@ export async function createCurriculum(
 
   const result = await prisma.document.create({
     data: {
+      seq: 1,
       title: title,
       type: "CURRICULUM",
       srcJson: curriculumDoc,

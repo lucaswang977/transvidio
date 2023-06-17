@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Document" ADD COLUMN     "seq" INTEGER NOT NULL DEFAULT 9999;

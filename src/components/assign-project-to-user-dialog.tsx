@@ -26,7 +26,6 @@ type AssignProjectToUserDialogProps = {
 export function AssignProjectToUserDialog(props: AssignProjectToUserDialogProps) {
   const [open, setIsOpen] = React.useState(false)
   const [rowSelection, setRowSelection] = React.useState({})
-  const [selectionInitiated, setSelectionInitiated] = React.useState(false)
   const mutation = api.project.assignUsers.useMutation()
   const { data: sessionData } = useSession();
   const { data: users } = api.user.getAll.useQuery(
@@ -79,16 +78,16 @@ export function AssignProjectToUserDialog(props: AssignProjectToUserDialogProps)
     setIsOpen(false)
   }
 
-  if (allUsers && !selectionInitiated) {
-    const result: { [key: number]: boolean } = {}
-    allUsers.forEach((item, index) => {
-      if (props.selectedUserIds.find((i) => i === item.id))
-        result[index] = true
-    })
-    setRowSelection(result)
-    console.log("initialied ", allUsers, result, props.projectId)
-    setSelectionInitiated(true)
-  }
+  React.useEffect(() => {
+    if (allUsers) {
+      const result: { [key: number]: boolean } = {}
+      allUsers.forEach((item, index) => {
+        if (props.selectedUserIds.find((i) => i === item.id))
+          result[index] = true
+      })
+      setRowSelection(result)
+    }
+  }, [open])
 
   return (
     <div>

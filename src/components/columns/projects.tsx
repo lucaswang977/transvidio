@@ -124,8 +124,9 @@ export const columns: ColumnDef<ProjectColumn>[] = [
   },
   {
     id: "actions",
-    cell: ({ row }) => {
+    cell: ({ row, table }) => {
       const data = row.original
+      const myself = table.options.meta?.user
 
       return (
         <DropdownMenu>
@@ -138,12 +139,18 @@ export const columns: ColumnDef<ProjectColumn>[] = [
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <ProjectImportDialog projectId={data.id} />
-            <DropdownMenuItem>
+            {
+              (myself && myself.role === "ADMIN") ?
+                <ProjectImportDialog
+                  projectId={data.id}
+                  refetch={table.options.meta?.refetchData}
+                /> : <></>
+            }
+            <DropdownMenuItem disabled={myself && myself.role === "EDITOR"}>
               <Edit className="mr-2 h-4 w-4" />
               <span>Edit</span>
             </DropdownMenuItem>
-            <DropdownMenuItem>
+            <DropdownMenuItem disabled={myself && myself.role === "EDITOR"}>
               <Trash className="mr-2 h-4 w-4" />
               <span>Delete</span>
             </DropdownMenuItem>

@@ -20,16 +20,27 @@ import { api } from "~/utils/api";
 
 export const ProjectImportDialog = React.forwardRef<
   React.ElementRef<typeof DropdownMenuItem>,
-  React.ComponentPropsWithoutRef<typeof DropdownMenuItem> & { projectId: string }
->(({ onSelect, projectId, ...props }, ref) => {
+  React.ComponentPropsWithoutRef<typeof DropdownMenuItem> &
+  {
+    projectId: string,
+    refetch?: () => void
+  }
+>(({ onSelect, projectId, refetch, ...props }, ref) => {
   const mutation = api.project.import.useMutation()
   const [open, setOpen] = React.useState(false)
 
   const handleImport = (id: string) => {
-    const result = mutation.mutate({
+    mutation.mutate({
       id: id,
+    }, {
+      onError: (err) => {
+        console.log(err.message)
+      },
+      onSuccess: (data) => {
+        console.log(data)
+        if (refetch) refetch()
+      }
     })
-    console.log(result)
   }
 
   return (
