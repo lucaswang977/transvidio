@@ -34,7 +34,7 @@ const ProjectManagement: NextPageWithLayout = () => {
             name: user.user.name
           }
         }),
-        documents: project.documents.length
+        documentCount: { all: project.documents.length }
       }
 
       return p

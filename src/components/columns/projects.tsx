@@ -22,6 +22,7 @@ import {
 import { ProjectImportDialog } from "~/components/import-project-dialog"
 import { extractLetters } from "~/utils/helper"
 import Link from "next/link"
+import { Badge } from "../ui/badge"
 
 export type ProjectColumn = {
   id: string
@@ -30,7 +31,7 @@ export type ProjectColumn = {
   dstLang: string
   memo: string
   users: ProjectRelatedUser[]
-  documents: number
+  documentCount: { open?: number, working?: number, reviewing?: number, closed?: number, all: number }
 }
 
 export const columns: ColumnDef<ProjectColumn>[] = [
@@ -71,7 +72,11 @@ export const columns: ColumnDef<ProjectColumn>[] = [
     cell: ({ row }) => {
       const data = row.original
       return (
-        <Label>{`${data.srcLang} -> ${data.dstLang}`}</Label>
+        <div className="flex space-x-1">
+          <Badge variant="outline">{data.srcLang}</Badge>
+          <span>-</span>
+          <Badge variant="outline">{data.dstLang}</Badge>
+        </div>
       )
     },
   },
@@ -115,7 +120,7 @@ export const columns: ColumnDef<ProjectColumn>[] = [
       const data = row.original
       return (
         <div className="flex px-2 place-items-center space-x-2">
-          <span>{data.documents}</span>
+          <span>{data.documentCount.all}</span>
           <Link href={`/admin/documents?filter=${data.name}`}>
             <ArrowRightCircle className="h-4 w-4" />
           </Link>
