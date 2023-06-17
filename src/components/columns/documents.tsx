@@ -16,7 +16,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu"
-import { extractLetters } from "~/utils/helper"
+import { extractLetters, truncateString } from "~/utils/helper"
 import type { DocumentState, DocumentType } from "@prisma/client"
 import { Badge } from "~/components/ui/badge"
 import dayjs from "dayjs"
@@ -101,7 +101,7 @@ export type DocumentColumn = {
   dstJson: string | undefined
   state: DocumentState
   memo: string | null
-  project: { id: string, name: string }
+  project: string
   user: { id: string, name: string, image: string } | null
   updated: Date
 }
@@ -130,10 +130,12 @@ export const columns: ColumnDef<DocumentColumn>[] = [
     accessorKey: "project",
     header: "Project",
     cell: ({ row }) => {
-      const project: { id: string, name: string, image: string } = row.getValue("project")
+      const project: string = row.getValue("project")
       return (
         <div className="flex">
-          <span>{project.name}</span>
+          <p className="text-xs text-gray-400 whitespace-nowrap">
+            {truncateString(project, 20)}
+          </p>
         </div>
       )
     },
@@ -240,7 +242,7 @@ export const columns: ColumnDef<DocumentColumn>[] = [
                 <SubmitDialog refetch={refetch} documentId={data.id} /> :
                 (data.state === "REVIEW" && myself && myself.role === "ADMIN") ?
                   <CloseDialog refetch={refetch} documentId={data.id} /> :
-                  <></>
+                  <Button className="invisible w-20">Hidden</Button>
           }
 
           <a href={editorUrl} target="_blank">
@@ -258,13 +260,11 @@ export const columns: ColumnDef<DocumentColumn>[] = [
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={() => navigator.clipboard.writeText(data.id)}
-              >
+              <DropdownMenuItem disabled={myself && myself.role === "EDITOR"}>
                 <Edit className="mr-2 h-4 w-4" />
                 <span>Edit</span>
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem disabled={myself && myself.role === "EDITOR"}>
                 <Trash className="mr-2 h-4 w-4" />
                 <span>Delete</span>
               </DropdownMenuItem>

@@ -21,6 +21,7 @@ import {
 
 import { ProjectImportDialog } from "~/components/import-project-dialog"
 import { extractLetters } from "~/utils/helper"
+import Link from "next/link"
 
 export type ProjectColumn = {
   id: string
@@ -115,9 +116,9 @@ export const columns: ColumnDef<ProjectColumn>[] = [
       return (
         <div className="flex px-2 place-items-center space-x-2">
           <span>{data.documents}</span>
-          <Button variant="ghost">
+          <Link href={`/admin/documents?filter=${data.name}`}>
             <ArrowRightCircle className="h-4 w-4" />
-          </Button>
+          </Link>
         </div>
       )
     },

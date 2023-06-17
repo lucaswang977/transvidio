@@ -29,3 +29,12 @@ export function extractLetters(name: string): string {
 
   return extractedLetters;
 }
+
+export function truncateString(str: string, maxLength: number): string {
+  if (str.length <= maxLength) {
+    return str;
+  }
+
+  const truncated = str.slice(0, maxLength);
+  return truncated + '...';
+}

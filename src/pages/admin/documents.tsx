@@ -3,16 +3,31 @@ import { useSession } from "next-auth/react"
 import { type DocumentColumn, columns } from "~/components/columns/documents"
 import { DataTable } from "~/components/ui/data-table"
 import Layout from "./layout"
+import { useRouter } from 'next/router';
 import { api } from "~/utils/api";
 import { RefreshCcw } from "lucide-react"
 import { Button } from "~/components/ui/button"
 import { DocumentCreateDialog } from "~/components/create-document-dialog"
 import { type NextPageWithLayout } from "../_app"
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "~/components/ui/select"
+import { truncateString } from "~/utils/helper"
 
 const DocumentManagement: NextPageWithLayout = () => {
   const { data: session } = useSession()
+  const router = useRouter();
+  const { filter } = router.query;
+  const [filterProject, setFilterProject] = React.useState("")
   const [rowSelection, setRowSelection] = React.useState({})
+
+  React.useEffect(() => {
+    if (filter && typeof filter === "string") setFilterProject(filter)
+  }, [filter])
+
   const { data: documents, refetch } = api.document.getAll.useQuery(
+    undefined,
+    { enabled: session?.user !== undefined },
+  );
+  const { data: projects } = api.project.getAll.useQuery(
     undefined,
     { enabled: session?.user !== undefined },
   );
@@ -28,7 +43,7 @@ const DocumentManagement: NextPageWithLayout = () => {
         srcJson: document.srcJson?.toString(),
         dstJson: document.dstJson?.toString(),
         memo: document.memo,
-        project: { id: document.project.id, name: document.project.name },
+        project: document.project.name,
         user: (document.user !== null) ? {
           id: document.user.id,
           name: document.user.name !== null ? document.user.name : "",
@@ -46,6 +61,22 @@ const DocumentManagement: NextPageWithLayout = () => {
       <div className="flex items-center justify-between space-y-2">
         <h2 className="text-3xl font-bold tracking-tight">All documents</h2>
         <div className="flex space-x-2">
+          <Select onValueChange={(v) => {
+            setFilterProject(v)
+          }}>
+            <SelectTrigger className="w-[240px] text-xs h-9">
+              <SelectValue placeholder="Filter by project" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                <SelectLabel>Projects</SelectLabel>
+                <SelectItem value="">All projects</SelectItem>
+                {projects ? projects.map((p) =>
+                  <SelectItem key={p.id} value={p.name}>{truncateString(p.name, 26)}</SelectItem>
+                ) : <>Loading</>}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
           <Button size="sm" variant="outline" onClick={() => refetch()}>
             <RefreshCcw className="mr-2 h-4 w-4" />
             Refresh
@@ -65,6 +96,7 @@ const DocumentManagement: NextPageWithLayout = () => {
         setRowSelection={setRowSelection}
         user={session?.user}
         handleRefetch={() => refetch()}
+        filter={{ column: "project", value: filterProject }}
       />
     </div>
   )

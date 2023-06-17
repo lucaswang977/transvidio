@@ -23,7 +23,7 @@ const ConfirmDialog = (props: ConfirmDialogProps) => {
   const [open, setOpen] = React.useState(false)
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
+      <DialogTrigger asChild className="w-20">
         <Button variant="secondary" className="text-xs">{props.trigger}</Button>
       </DialogTrigger>
       <DialogContent>
