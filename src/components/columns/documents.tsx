@@ -16,11 +16,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu"
-import { extractLetters, truncateString } from "~/utils/helper"
+import { extractLetters, naturalTime, truncateString } from "~/utils/helper"
 import type { DocumentState, DocumentType } from "@prisma/client"
 import { Badge } from "~/components/ui/badge"
-import dayjs from "dayjs"
-import relativeTime from "dayjs/plugin/relativeTime";
 import { api } from "~/utils/api"
 import { useToast } from "~/components/ui/use-toast"
 import ConfirmDialog from "~/components/confirm-dialog"
@@ -207,9 +205,7 @@ export const columns: ColumnDef<DocumentColumn>[] = [
     accessorKey: "updated",
     header: "Updated",
     cell: ({ row }) => {
-      dayjs.extend(relativeTime)
-      const time = dayjs(row.getValue("updated"))
-      return time.fromNow()
+      return naturalTime(row.getValue("updated"))
     }
   },
   {

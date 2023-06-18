@@ -11,131 +11,136 @@
 // "target_audiences": [text, text]
 // }
 
-import { type NextPage } from "next"
+import { type NextPageWithLayout } from "~/pages/_app"
 import { useRouter } from "next/router"
 import * as React from "react"
 import { api } from "~/utils/api";
 import { useSession } from "next-auth/react"
+import { equals } from 'ramda';
 
-import { Button } from "~/components/ui/button"
-import { Save } from "lucide-react"
 import {
   ComparativeInput,
-  ComparativeHtmlEditor,
-  ComparativeArrayEditor
 } from "~/components/ui/comparatives"
 
-import type { Introduction } from "~/types"
+import type { Introduction, SrcOrDst } from "~/types"
+import DocLayout from "~/pages/editor/layout";
+import { Document, Project } from "@prisma/client";
 
-const pageDefaultValue: Introduction = {
-  title: "",
-  headline: "",
-  description: "",
-  prerequisites: [],
-  objectives: [],
-  target_audiences: []
-}
+type EditorValueChangeHandlerType = (t: SrcOrDst, v: Introduction) => void
 
-type IntroductionEditorProps = {
-  docId: string,
-  src: Introduction,
-  dst: Introduction
-}
-
-const IntroductionEditor = (props: IntroductionEditorProps) => {
-  const mutation = api.document.save.useMutation()
-  const [editorValues, setEditorValues] = React.useState({ src: props.src, dst: props.dst })
-  const [contentChanged, setContentChanged] = React.useState(false)
-
-  const onInputChange = (label: string, t: "src" | "dst", v: string) => {
-    if (t === "src") {
-      setEditorValues((values) => {
-        return { ...values, src: { ...values.src, [label]: v } }
-      })
-    } else if (t === "dst") {
-      setEditorValues((values) => {
-        return { ...values, dst: { ...values.dst, [label]: v } }
-      })
-    }
-    setContentChanged(true)
-  }
-
-  function save() {
-    mutation.mutate({
-      documentId: props.docId,
-      dst: JSON.stringify(editorValues.dst)
-    })
-    setContentChanged(false)
-  }
-
-  return (
-    <div className="flex-col space-y-2">
-      <Button className="fixed right-6 bottom-6 w-10 rounded-full p-0 z-20"
-        disabled={!contentChanged} onClick={() => save()} >
-        <Save className="h-4 w-4" />
-        <span className="sr-only">Save</span>
-      </Button>
-      <ComparativeInput
-        label="title"
-        src={editorValues.src.title}
-        dst={editorValues.dst.title}
-        onChange={onInputChange} />
-      <ComparativeInput
-        label="headline"
-        src={editorValues.src.headline}
-        dst={editorValues.dst.headline}
-        onChange={onInputChange} />
-      <ComparativeHtmlEditor
-        label="description"
-        src={editorValues.src.description}
-        dst={editorValues.dst.description}
-        onChange={onInputChange} />
-      <ComparativeArrayEditor
-        label="prerequisites"
-        src={editorValues.src.prerequisites}
-        dst={editorValues.dst.prerequisites}
-        onChange={onInputChange} />
-      <ComparativeArrayEditor
-        label="objectives"
-        src={editorValues.src.objectives}
-        dst={editorValues.dst.objectives}
-        onChange={onInputChange} />
-      <ComparativeArrayEditor
-        label="target_audiences"
-        src={editorValues.src.target_audiences}
-        dst={editorValues.dst.target_audiences}
-        onChange={onInputChange} />
-    </div>
-  )
-}
-
-const DocEditor: NextPage = () => {
+const DocEditorPage: NextPageWithLayout = () => {
   const router = useRouter()
   const docId = router.query.docId as string
   const { data: session } = useSession()
-  const { data: doc, status } = api.document.load.useQuery(
+  const mutation = api.document.save.useMutation()
+  const [contentDirty, setContentDirty] = React.useState(false)
+  const [currentDoc, setCurrentDoc] = React.useState<Document & { project: Project; } | null>(null)
+  const [editorSrcValues, setEditorSrcValues] = React.useState<Introduction | null>(null)
+  const [editorDstValues, setEditorDstValues] = React.useState<Introduction | null>(null)
+  const { status } = api.document.load.useQuery(
     { documentId: docId },
-    { enabled: session?.user !== undefined }
+    {
+      enabled: session?.user !== undefined,
+      onSuccess: (doc) => {
+        setCurrentDoc(doc)
+        // if (doc && doc.srcJson) {
+        //   setEditorSrcValues(doc.srcJson as Introduction)
+        // }
+        //
+        // if (doc && doc.dstJson) {
+        //   setEditorDstValues(doc.dstJson as Introduction)
+        // }
+        //
+        // if (doc && doc.srcJson && !doc.dstJson) {
+        //   setEditorDstValues(cloneDeep(doc.srcJson as Introduction))
+        // }
+      }
+    }
   )
-  let srcObj = doc?.srcJson as Introduction
-  if (srcObj === null) srcObj = pageDefaultValue
-  let dstObj = doc?.dstJson as Introduction
-  if (dstObj === null) dstObj = pageDefaultValue
+
+  const onInputChange: EditorValueChangeHandlerType = (t, v) => {
+    if (t === "src") {
+      if (equals(v, editorSrcValues)) setContentDirty(true)
+      setEditorSrcValues(v)
+    } else if (t === "dst") {
+      if (equals(v, editorDstValues)) setContentDirty(true)
+      setEditorDstValues(v)
+    }
+  }
+
+  function saveDoc() {
+    mutation.mutate({
+      documentId: docId,
+      src: JSON.stringify(editorSrcValues),
+      dst: JSON.stringify(editorDstValues)
+    })
+    setContentDirty(true)
+  }
+
 
   return (
-    status === "loading" ? <span>Loading</span> :
-      <div className="flex-1 space-y-4 p-8 pt-6">
-        <div className="flex items-center justify-between space-y-2">
-          <h2 className="text-3xl font-bold tracking-tight">
-            {doc?.title ? doc.title : "Introduction Editor"}
-          </h2>
-          <p className="text-sm text-gray-400">saved at {doc?.updatedAt.toLocaleString()}</p>
+    <DocLayout
+      title={currentDoc?.project.name ? currentDoc.project.name : "Unknown Project"}
+      handleSave={saveDoc}
+      saveDisabled={!contentDirty}
+      docUpdateTime={currentDoc?.updatedAt ? currentDoc.updatedAt : new Date(0)}
+    >
+      {status === "loading" ? <span>Loading</span> :
+        <div className="flex-1 space-y-4 p-8 pt-6">
+          <div className="flex items-center justify-between space-y-2">
+            <h2 className="text-3xl font-bold tracking-tight">
+              {currentDoc?.title ? currentDoc.title : "Introduction Editor"}
+            </h2>
+          </div>
+          <div className="flex items-center w-full justify-evenly space-y-2">
+            <div className="flex-col space-y-2">
+              <ComparativeInput
+                src={(currentDoc?.srcJson as Introduction).title}
+                dst={(currentDoc?.dstJson as Introduction).title}
+                onChange={(t, v) => {
+                  if (t === "src") {
+                    const n = { ...currentDoc?.srcJson as Introduction }
+                    n.title = v
+                    onInputChange(t, n)
+                  } else if (t === "dst") {
+                    const n = { ...currentDoc?.dstJson as Introduction }
+                    n.title = v
+                    onInputChange(t, n)
+                  }
+                }} />
+              {/* <ComparativeInput */}
+              {/*   label="headline" */}
+              {/*   src={src.headline} */}
+              {/*   dst={dst.headline} */}
+              {/*   onChange={handleChange} /> */}
+              {/* <ComparativeHtmlEditor */}
+              {/*   label="description" */}
+              {/*   src={src.description} */}
+              {/*   dst={dst.description} */}
+              {/*   onChange={handleChange} /> */}
+              {/* <ComparativeArrayEditor */}
+              {/*   label="prerequisites" */}
+              {/*   src={src.prerequisites} */}
+              {/*   dst={dst.prerequisites} */}
+              {/*   onChange={handleChange} /> */}
+              {/* <ComparativeArrayEditor */}
+              {/*   label="objectives" */}
+              {/*   src={src.objectives} */}
+              {/*   dst={dst.objectives} */}
+              {/*   onChange={handleChange} /> */}
+              {/* <ComparativeArrayEditor */}
+              {/*   label="target_audiences" */}
+              {/*   src={src.target_audiences} */}
+              {/*   dst={dst.target_audiences} */}
+              {/*   onChange={handleChange} /> */}
+            </div>
+          </div>
         </div>
-        <div className="flex items-center w-full justify-evenly space-y-2">
-          <IntroductionEditor docId={docId} src={srcObj} dst={dstObj} />
-        </div>
-      </div>
+      }
+    </DocLayout>
   )
 }
 
-export default DocEditor
+DocEditorPage.getTitle = () => "Document editor - Transvid.io"
+
+export default DocEditorPage

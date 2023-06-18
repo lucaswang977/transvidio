@@ -297,6 +297,9 @@ export const documentRouter = createTRPCRouter({
         where: {
           id: input.documentId
         },
+        include: {
+          project: true
+        }
       })
     }),
 

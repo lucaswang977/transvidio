@@ -1,5 +1,7 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
+import dayjs from "dayjs"
+import relativeTime from "dayjs/plugin/relativeTime";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -12,6 +14,11 @@ export function timeFormat(milliseconds: number) {
   const millisecondsFormatted = (milliseconds % 1000).toString().padStart(3, '0');
 
   return `${hours}:${minutes}:${seconds}.${millisecondsFormatted}`;
+}
+
+export function naturalTime(time: Date) {
+  dayjs.extend(relativeTime)
+  return dayjs(time).fromNow()
 }
 
 export function extractLetters(name: string): string {

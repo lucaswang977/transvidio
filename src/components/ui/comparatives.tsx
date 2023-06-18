@@ -26,32 +26,27 @@ type SrcOrDst = "src" | "dst"
 
 type ComparativeInputProps =
   {
-    label: string,
     src: string | undefined,
     dst: string | undefined,
     srcEditable?: boolean,
-    onChange: (label: string, t: SrcOrDst, v: string) => void
+    onChange: (t: SrcOrDst, v: string) => void
   }
 
 export const ComparativeInput = (props: ComparativeInputProps) => {
-  const [content, setContent] = React.useState({ src: props.src, dst: props.dst })
   return (
     <div className="flex-col space-y-2">
-      <Label>{props.label}</Label>
       <Input
         disabled={props.srcEditable ? !props.srcEditable : true}
         type="text"
-        value={content.src}
+        value={props.src}
         onChange={(event) => {
-          setContent({ ...content, src: event.target.value })
-          props.onChange(props.label, "src", event.target.value)
+          props.onChange("src", event.target.value)
         }} />
       <Input
         type="text"
-        value={content.dst}
+        value={props.dst}
         onChange={(event) => {
-          setContent({ ...content, dst: event.target.value })
-          props.onChange(props.label, "dst", event.target.value)
+          props.onChange("dst", event.target.value)
         }} />
     </div>
   )
