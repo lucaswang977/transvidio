@@ -1,6 +1,10 @@
 @tailwind base;
 @tailwind components;
 
+.rsw-editor {
+  width: 100%
+}
+
 .rsw-ce {
   ul {
     display: block;

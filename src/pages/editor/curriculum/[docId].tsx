@@ -17,29 +17,20 @@
 //   ]
 // }
 
-import { type NextPage } from "next"
 import { useRouter } from "next/router"
 import * as React from "react"
 import { api } from "~/utils/api";
 import { useSession } from "next-auth/react"
-
-import { Button } from "~/components/ui/button"
 import { Label } from "~/components/ui/label"
 import { Input } from "~/components/ui/input"
-import { Save } from "lucide-react"
-import type { Curriculum, CurriculumItem, SrcOrDst } from "~/types"
+import type { Curriculum, DocumentInfo, SrcOrDst } from "~/types"
 import { RichtextEditor } from "~/components/ui/richtext-editor";
-
-type CurriculumEditorProps = {
-  docId: string,
-  src: Curriculum,
-  dst: Curriculum
-}
+import type { NextPageWithLayout } from "~/pages/_app";
+import DocLayout from "../layout";
 
 type CurriculumListEditorProps = {
-  where: SrcOrDst,
   value: Curriculum,
-  onChange: (t: SrcOrDst, v: Curriculum) => void
+  onChange: (v: Curriculum) => void
 }
 
 const CurriculumListEditor = (props: CurriculumListEditorProps) => {
@@ -47,7 +38,7 @@ const CurriculumListEditor = (props: CurriculumListEditorProps) => {
     const section = props.value.sections[index]
     if (section && section.title) section.title = v
 
-    props.onChange(props.where, props.value)
+    props.onChange(props.value)
   }
 
   const onChangeItemTitle = (i: number, j: number, v: string) => {
@@ -57,7 +48,7 @@ const CurriculumListEditor = (props: CurriculumListEditorProps) => {
       if (item) item.title = v
     }
 
-    props.onChange(props.where, props.value)
+    props.onChange(props.value)
   }
 
   const onChangeItemDescription = (i: number, j: number, v: string) => {
@@ -67,9 +58,10 @@ const CurriculumListEditor = (props: CurriculumListEditorProps) => {
       if (item) item.description = v
     }
 
-    props.onChange(props.where, props.value)
+    props.onChange(props.value)
   }
 
+  console.log("value", props.value)
 
   return (
     <div className="w-[500px] space-y-2">
@@ -112,111 +104,104 @@ const CurriculumListEditor = (props: CurriculumListEditorProps) => {
   )
 }
 
-const CurriculumEditor = (props: CurriculumEditorProps) => {
-  const mutation = api.document.save.useMutation()
-  const [editorValues, setEditorValues] = React.useState({ src: props.src, dst: props.dst })
-  const [contentChanged, setContentChanged] = React.useState(false)
+type CurriculumEditorProps = {
+  srcObj: Curriculum,
+  dstObj: Curriculum
+  onChange: (t: SrcOrDst, v: Curriculum) => void
+}
 
-  const onInputChange = (t: SrcOrDst, v: Curriculum) => {
-    if (t === "src") {
-      setEditorValues((values) => {
-        return { ...values, src: v }
-      })
-    } else if (t === "dst") {
-      setEditorValues((values) => {
-        return { ...values, dst: v }
-      })
-    }
-    setContentChanged(true)
-  }
-
-  function save() {
-    mutation.mutate({
-      documentId: props.docId,
-      dst: JSON.stringify(editorValues.dst)
-    })
-    setContentChanged(false)
-  }
+const CurriculumEditor = ({ srcObj, dstObj, onChange }: CurriculumEditorProps) => {
+  console.log(srcObj, dstObj)
 
   return (
     <div className="flex-col space-y-2">
-      <Button className="fixed right-6 bottom-6 w-10 rounded-full p-0 z-20"
-        disabled={!contentChanged} onClick={() => save()} >
-        <Save className="h-4 w-4" />
-        <span className="sr-only">Save</span>
-      </Button>
       <div className="flex space-x-10">
         <CurriculumListEditor
-          where="src"
-          value={editorValues.src}
-          onChange={onInputChange} />
+          value={srcObj}
+          onChange={(v) => onChange("src", v)} />
         <CurriculumListEditor
-          where="dst"
-          value={editorValues.dst}
-          onChange={onInputChange} />
+          value={dstObj}
+          onChange={(v) => onChange("dst", v)} />
       </div>
     </div>
   )
 }
 
-const DocEditor: NextPage = () => {
+const DocEditorPage: NextPageWithLayout = () => {
   const router = useRouter()
   const docId = router.query.docId as string
   const { data: session } = useSession()
-  const { data: doc, status } = api.document.load.useQuery(
-    { documentId: docId },
-    { enabled: session?.user !== undefined }
+  const mutation = api.document.save.useMutation()
+  const [contentDirty, setContentDirty] = React.useState(false)
+  const [docInfo, setDocInfo] = React.useState<DocumentInfo>(
+    { id: "", title: "", projectName: "", updatedAt: new Date(0) }
   )
-  let srcObj: Curriculum = doc?.srcJson as Curriculum
-  if (!srcObj) srcObj = { sections: [] }
-  let dstObj: Curriculum = doc?.dstJson as Curriculum
-  if (!dstObj) dstObj = { sections: [] }
+  const defaultCurriculumValue: Curriculum = {
+    sections: []
+  }
+  const [srcObj, setSrcObj] = React.useState(defaultCurriculumValue)
+  const [dstObj, setDstObj] = React.useState(defaultCurriculumValue)
 
-  srcObj.sections.forEach((section, i) => {
-    if (dstObj.sections[i] === undefined) {
-      const dstItems: CurriculumItem[] = []
-      section.items.forEach((item, j) => {
-        dstItems[j] = {
-          id: item.id,
-          title: "",
-          description: "",
-          item_type: item.item_type
-        }
-      })
-      dstObj.sections[i] = {
-        index: section.index,
-        title: "",
-        items: dstItems
-      }
-    } else {
-      const dstItems: CurriculumItem[] = []
-      section.items.forEach((item, j) => {
-        if (dstItems[j] === undefined) {
-          dstItems[j] = {
-            id: item.id,
-            title: "",
-            description: "",
-            item_type: item.item_type
+  const { status } = api.document.load.useQuery(
+    { documentId: docId },
+    {
+      enabled: (session?.user !== undefined && docId !== undefined && docInfo.id === ""),
+      onSuccess: (doc) => {
+        if (doc) {
+          setDocInfo({
+            id: doc.id,
+            title: doc.title,
+            updatedAt: doc.updatedAt,
+            projectName: doc.project.name,
+          })
+          if (doc.srcJson) setSrcObj(doc.srcJson as Curriculum)
+          if (doc.dstJson) {
+            setDstObj(doc.dstJson as Curriculum)
+          } else if (doc.srcJson) {
+            setDstObj(doc.srcJson as Curriculum)
           }
         }
-      })
+      }
     }
-  })
+  )
+
+  function saveDoc() {
+    mutation.mutate({
+      documentId: docId,
+      src: JSON.stringify(srcObj),
+      dst: JSON.stringify(dstObj)
+    }, {
+      onSuccess: (di) => {
+        setDocInfo(di)
+      }
+    })
+    setContentDirty(false)
+  }
 
   return (
-    status === "loading" ? <span>Loading</span> :
-      <div className="flex-1 space-y-4 p-8 pt-6">
-        <div className="flex items-center justify-between space-y-2">
-          <h2 className="text-3xl font-bold tracking-tight">
-            {doc?.title ? doc.title : "Introduction Editor"}
-          </h2>
-          <p className="text-sm text-gray-400">saved at {doc?.updatedAt.toLocaleString()}</p>
+    <DocLayout
+      docInfo={docInfo}
+      handleSave={saveDoc}
+      saveDisabled={!contentDirty}
+    >
+      {status === "loading" ? <span>Loading</span> :
+        <div className="flex-1 space-y-4 p-8 pt-6">
+          <div className="flex items-center justify-between space-y-2">
+            <h2 className="text-xl font-bold tracking-tight mx-auto">
+              {docInfo?.title ? docInfo.title : "Curriculum Editor"}
+            </h2>
+          </div>
+          <CurriculumEditor srcObj={srcObj} dstObj={dstObj} onChange={(t, v) => {
+            if (t === "src") setSrcObj(v)
+            else setDstObj(v)
+            setContentDirty(true)
+          }} />
         </div>
-        <div className="flex items-center w-full justify-evenly space-y-2">
-          <CurriculumEditor docId={docId} src={srcObj} dst={dstObj} />
-        </div>
-      </div>
+      }
+    </DocLayout>
   )
 }
 
-export default DocEditor
+DocEditorPage.getTitle = () => "Document editor - Transvid.io"
+
+export default DocEditorPage

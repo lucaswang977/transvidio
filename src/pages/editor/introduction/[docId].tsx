@@ -16,17 +16,133 @@ import { useRouter } from "next/router"
 import * as React from "react"
 import { api } from "~/utils/api";
 import { useSession } from "next-auth/react"
-import { equals } from 'ramda';
 
-import {
-  ComparativeInput,
-} from "~/components/ui/comparatives"
-
-import type { Introduction, SrcOrDst } from "~/types"
+import type { Introduction, SrcOrDst, DocumentInfo } from "~/types"
 import DocLayout from "~/pages/editor/layout";
-import { Document, Project } from "@prisma/client";
+import { Input } from "~/components/ui/input";
+import { RichtextEditor } from "~/components/ui/richtext-editor";
+import { ComparativeArrayEditor } from "~/components/comparative-array-input";
 
-type EditorValueChangeHandlerType = (t: SrcOrDst, v: Introduction) => void
+type IntroductionEditorProps = {
+  srcObj: Introduction,
+  dstObj: Introduction,
+  onChange: (t: SrcOrDst, v: Introduction) => void
+}
+
+const IntroductionEditor = ({ srcObj, dstObj, onChange }: IntroductionEditorProps) => {
+  return (
+    <div className="flex-1 items-center space-y-2 justify-center">
+      <div className="flex flex-col space-y-2 items-center">
+        <p className="text-sm font-bold">Title</p>
+        <Input
+          type="text"
+          className="w-full"
+          value={srcObj.title}
+          onChange={(event) => {
+            const obj = { ...srcObj }
+            obj.title = event.target.value
+            onChange("src", obj)
+          }} />
+        <Input
+          type="text"
+          className="w-full"
+          value={dstObj.title}
+          onChange={(event) => {
+            const obj = { ...dstObj }
+            obj.title = event.target.value
+            onChange("dst", obj)
+          }} />
+      </div>
+      <div className="flex flex-col space-y-2 items-center">
+        <p className="text-sm font-bold">Headline</p>
+        <Input
+          type="text"
+          value={srcObj.headline}
+          onChange={(event) => {
+            const obj = { ...srcObj }
+            obj.headline = event.target.value
+            onChange("src", obj)
+          }} />
+        <Input
+          type="text"
+          value={dstObj.headline}
+          onChange={(event) => {
+            const obj = { ...dstObj }
+            obj.headline = event.target.value
+            onChange("dst", obj)
+          }} />
+      </div>
+      <div className="flex flex-col space-y-2 items-center">
+        <p className="text-sm font-bold">Description</p>
+        <RichtextEditor
+          value={srcObj.description}
+          onChange={(event) => {
+            const obj = { ...srcObj }
+            obj.description = event.target.value
+            onChange("src", obj)
+          }} />
+        <RichtextEditor
+          value={dstObj.description}
+          onChange={(event) => {
+            const obj = { ...dstObj }
+            obj.description = event.target.value
+            onChange("dst", obj)
+          }} />
+      </div>
+      <div className="flex flex-col space-y-2 items-center">
+        <p className="text-sm font-bold">Prerequisites</p>
+        <ComparativeArrayEditor
+          src={srcObj.prerequisites}
+          dst={dstObj.prerequisites}
+          onChange={(t, v) => {
+            if (t === "src") {
+              const obj = { ...srcObj }
+              obj.prerequisites = v
+              onChange("src", obj)
+            } else {
+              const obj = { ...dstObj }
+              obj.prerequisites = v
+              onChange("dst", obj)
+            }
+          }} />
+      </div>
+      <div className="flex flex-col space-y-2 items-center">
+        <p className="text-sm font-bold">Objectives</p>
+        <ComparativeArrayEditor
+          src={srcObj.objectives}
+          dst={dstObj.objectives}
+          onChange={(t, v) => {
+            if (t === "src") {
+              const obj = { ...srcObj }
+              obj.objectives = v
+              onChange("src", obj)
+            } else {
+              const obj = { ...dstObj }
+              obj.objectives = v
+              onChange("dst", obj)
+            }
+          }} />
+      </div>
+      <div className="flex flex-col space-y-2 items-center">
+        <p className="text-sm font-bold">Target Audiences</p>
+        <ComparativeArrayEditor
+          src={srcObj.target_audiences}
+          dst={dstObj.target_audiences}
+          onChange={(t, v) => {
+            if (t === "src") {
+              const obj = { ...srcObj }
+              obj.target_audiences = v
+              onChange("src", obj)
+            } else {
+              const obj = { ...dstObj }
+              obj.target_audiences = v
+              onChange("dst", obj)
+            }
+          }} />
+      </div>
+    </div>
+  )
+}
 
 const DocEditorPage: NextPageWithLayout = () => {
   const router = useRouter()
@@ -34,107 +150,71 @@ const DocEditorPage: NextPageWithLayout = () => {
   const { data: session } = useSession()
   const mutation = api.document.save.useMutation()
   const [contentDirty, setContentDirty] = React.useState(false)
-  const [currentDoc, setCurrentDoc] = React.useState<Document & { project: Project; } | null>(null)
-  const [editorSrcValues, setEditorSrcValues] = React.useState<Introduction | null>(null)
-  const [editorDstValues, setEditorDstValues] = React.useState<Introduction | null>(null)
+  const [docInfo, setDocInfo] = React.useState<DocumentInfo>(
+    { id: "", title: "", projectName: "", updatedAt: new Date(0) }
+  )
+  const defaultIntroductionValue: Introduction = {
+    title: "",
+    headline: "",
+    description: "",
+    prerequisites: [],
+    objectives: [],
+    target_audiences: []
+  }
+  const [srcObj, setSrcObj] = React.useState(defaultIntroductionValue)
+  const [dstObj, setDstObj] = React.useState(defaultIntroductionValue)
+
   const { status } = api.document.load.useQuery(
     { documentId: docId },
     {
-      enabled: session?.user !== undefined,
+      enabled: (session?.user !== undefined && docId !== undefined && docInfo.id === ""),
       onSuccess: (doc) => {
-        setCurrentDoc(doc)
-        // if (doc && doc.srcJson) {
-        //   setEditorSrcValues(doc.srcJson as Introduction)
-        // }
-        //
-        // if (doc && doc.dstJson) {
-        //   setEditorDstValues(doc.dstJson as Introduction)
-        // }
-        //
-        // if (doc && doc.srcJson && !doc.dstJson) {
-        //   setEditorDstValues(cloneDeep(doc.srcJson as Introduction))
-        // }
+        if (doc) {
+          setDocInfo({
+            id: doc.id,
+            title: doc.title,
+            updatedAt: doc.updatedAt,
+            projectName: doc.project.name,
+          })
+
+          setSrcObj(doc.srcJson as Introduction)
+          setDstObj(doc.dstJson as Introduction)
+        }
       }
     }
   )
 
-  const onInputChange: EditorValueChangeHandlerType = (t, v) => {
-    if (t === "src") {
-      if (equals(v, editorSrcValues)) setContentDirty(true)
-      setEditorSrcValues(v)
-    } else if (t === "dst") {
-      if (equals(v, editorDstValues)) setContentDirty(true)
-      setEditorDstValues(v)
-    }
-  }
-
   function saveDoc() {
     mutation.mutate({
       documentId: docId,
-      src: JSON.stringify(editorSrcValues),
-      dst: JSON.stringify(editorDstValues)
+      src: JSON.stringify(srcObj),
+      dst: JSON.stringify(dstObj)
+    }, {
+      onSuccess: (di) => {
+        setDocInfo(di)
+      }
     })
-    setContentDirty(true)
+    setContentDirty(false)
   }
-
 
   return (
     <DocLayout
-      title={currentDoc?.project.name ? currentDoc.project.name : "Unknown Project"}
+      docInfo={docInfo}
       handleSave={saveDoc}
       saveDisabled={!contentDirty}
-      docUpdateTime={currentDoc?.updatedAt ? currentDoc.updatedAt : new Date(0)}
     >
       {status === "loading" ? <span>Loading</span> :
         <div className="flex-1 space-y-4 p-8 pt-6">
           <div className="flex items-center justify-between space-y-2">
-            <h2 className="text-3xl font-bold tracking-tight">
-              {currentDoc?.title ? currentDoc.title : "Introduction Editor"}
+            <h2 className="text-xl font-bold tracking-tight mx-auto">
+              {docInfo?.title ? docInfo.title : "Introduction Editor"}
             </h2>
           </div>
-          <div className="flex items-center w-full justify-evenly space-y-2">
-            <div className="flex-col space-y-2">
-              <ComparativeInput
-                src={(currentDoc?.srcJson as Introduction).title}
-                dst={(currentDoc?.dstJson as Introduction).title}
-                onChange={(t, v) => {
-                  if (t === "src") {
-                    const n = { ...currentDoc?.srcJson as Introduction }
-                    n.title = v
-                    onInputChange(t, n)
-                  } else if (t === "dst") {
-                    const n = { ...currentDoc?.dstJson as Introduction }
-                    n.title = v
-                    onInputChange(t, n)
-                  }
-                }} />
-              {/* <ComparativeInput */}
-              {/*   label="headline" */}
-              {/*   src={src.headline} */}
-              {/*   dst={dst.headline} */}
-              {/*   onChange={handleChange} /> */}
-              {/* <ComparativeHtmlEditor */}
-              {/*   label="description" */}
-              {/*   src={src.description} */}
-              {/*   dst={dst.description} */}
-              {/*   onChange={handleChange} /> */}
-              {/* <ComparativeArrayEditor */}
-              {/*   label="prerequisites" */}
-              {/*   src={src.prerequisites} */}
-              {/*   dst={dst.prerequisites} */}
-              {/*   onChange={handleChange} /> */}
-              {/* <ComparativeArrayEditor */}
-              {/*   label="objectives" */}
-              {/*   src={src.objectives} */}
-              {/*   dst={dst.objectives} */}
-              {/*   onChange={handleChange} /> */}
-              {/* <ComparativeArrayEditor */}
-              {/*   label="target_audiences" */}
-              {/*   src={src.target_audiences} */}
-              {/*   dst={dst.target_audiences} */}
-              {/*   onChange={handleChange} /> */}
-            </div>
-          </div>
+          <IntroductionEditor srcObj={srcObj} dstObj={dstObj} onChange={(t, v) => {
+            if (t === "src") setSrcObj(v)
+            else setDstObj(v)
+            setContentDirty(true)
+          }} />
         </div>
       }
     </DocLayout>

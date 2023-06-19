@@ -1,3 +1,10 @@
+export type DocumentInfo = {
+  id: string,
+  title: string,
+  updatedAt: Date,
+  projectName: string,
+}
+
 export type CurriculumItemEnum = "lecture" | "quiz" | "article" | "resource"
 
 export type CurriculumItem = {

@@ -52,7 +52,7 @@ export async function createIntroDoc(projectId: string, intro: IntroType) {
   const result = await prisma.document.create({
     data: {
       seq: 0,
-      title: intro.title,
+      title: "Course Introduction",
       type: "INTRODUCTION",
       srcJson: data,
       projectId: projectId,
@@ -210,7 +210,7 @@ export async function createCurriculum(
   const result = await prisma.document.create({
     data: {
       seq: 1,
-      title: title,
+      title: "Course Curriculum",
       type: "CURRICULUM",
       srcJson: curriculumDoc,
       projectId: projectId,

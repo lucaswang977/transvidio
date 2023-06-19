@@ -7,6 +7,7 @@ import { prisma } from "~/server/db";
 import { z } from "zod";
 import { DocumentType, type Prisma } from "@prisma/client"
 import { TRPCError } from "@trpc/server";
+import type { DocumentInfo } from "~/types";
 
 export const documentRouter = createTRPCRouter({
   getAll: protectedProcedure
@@ -233,6 +234,9 @@ export const documentRouter = createTRPCRouter({
       const document = await prisma.document.findFirst({
         where: {
           id: input.documentId,
+        },
+        include: {
+          project: true
         }
       })
 
@@ -249,8 +253,15 @@ export const documentRouter = createTRPCRouter({
         })
       }
 
+      const docInfo: DocumentInfo = {
+        title: document.title,
+        updatedAt: document.updatedAt,
+        id: document.id,
+        projectName: document.project.name
+      }
+
       if (input.src) {
-        await prisma.document.update({
+        const { updatedAt } = await prisma.document.update({
           where: {
             id: input.documentId
           },
@@ -259,8 +270,9 @@ export const documentRouter = createTRPCRouter({
             srcJson: JSON.parse(input.src) as Prisma.JsonObject
           }
         })
+        docInfo.updatedAt = updatedAt
       } else {
-        await prisma.document.update({
+        const { updatedAt } = await prisma.document.update({
           where: {
             id: input.documentId
           },
@@ -268,7 +280,10 @@ export const documentRouter = createTRPCRouter({
             dstJson: JSON.parse(input.dst) as Prisma.JsonObject
           }
         })
+        docInfo.updatedAt = updatedAt
       }
+
+      return docInfo
     }),
   load: protectedProcedure
     .input(z.object({

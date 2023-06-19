@@ -150,7 +150,7 @@ export const columns: ColumnDef<DocumentColumn>[] = [
       if (typeName === "INTRODUCTION") {
         return <Badge variant="secondary">INTRO</Badge>
       } else if (typeName === "CURRICULUM") {
-        return <Badge variant="secondary">SYLLABUS</Badge>
+        return <Badge variant="secondary">CURRICULUM</Badge>
       } else if (typeName === "SUBTITLE") {
         return <Badge variant="secondary">VIDEO</Badge>
       } else if (typeName === "ATTACHMENT") {

@@ -1,38 +1,48 @@
+import * as React from "react"
 import { UserNav } from "~/components/user-nav";
 import { Logo } from "~/components/logo-with-name"
 import { Button } from "~/components/ui/button"
 import Link from "next/link";
 import { Save } from "lucide-react";
 import { naturalTime } from "~/utils/helper"
+import type { DocumentInfo } from "~/types";
+import { Beforeunload } from 'react-beforeunload';
 
 type LayoutProps = {
-  title: string,
+  docInfo: DocumentInfo,
   handleSave: () => void,
   saveDisabled: boolean,
-  docUpdateTime: Date,
   children: React.ReactNode
 }
 
 const DocLayout = (props: LayoutProps) => {
+
   return (
-    <main className="flex min-h-screen flex-col">
-      <div className="border-b">
-        <div className="flex items-center justify-between h-16 px-4">
-          <Link href="/"><Logo /></Link>
-          <p>{props.title}</p>
-          <Button className="w-10 rounded-full p-0 z-20"
-            disabled={props.saveDisabled} onClick={props.handleSave} >
-            <Save className="h-4 w-4" />
-            <span className="sr-only">Save</span>
-          </Button>
-          <p className="text-sm text-gray-400">
-            saved {naturalTime(props.docUpdateTime)}
-          </p>
-          <UserNav />
+    <>
+      {!props.saveDisabled && (<Beforeunload onBeforeunload={(event) => event.preventDefault()} />)}
+      <main className="flex min-h-screen flex-col">
+        <div className="border-b">
+          <div className="fixed bg-white z-10 w-full border-b flex items-center justify-between h-16 px-4">
+            <Link href="/"><Logo /></Link>
+            <div className="flex flex-col items-center">
+              <p className="text">{props.docInfo.title}</p>
+              <p className="text-xs text-gray-400">
+                Saved {naturalTime(props.docInfo.updatedAt)}
+              </p>
+            </div>
+            <div className="flex space-x-4 items-center">
+              <Button disabled={props.saveDisabled} onClick={props.handleSave} >
+                <Save className="h-4 w-4 mr-1" />
+                <span>Save</span>
+              </Button>
+              <UserNav />
+            </div>
+          </div>
         </div>
-      </div>
-      {props.children}
-    </main>
+        {props.children}
+      </main>
+
+    </>
   )
 }
 
