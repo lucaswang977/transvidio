@@ -26,7 +26,7 @@ import { Input } from "~/components/ui/input"
 import type { Curriculum, DocumentInfo, SrcOrDst } from "~/types"
 import { RichtextEditor } from "~/components/ui/richtext-editor";
 import type { NextPageWithLayout } from "~/pages/_app";
-import DocLayout from "../layout";
+import DocLayout from "~/components/doc-layout";
 import { clone } from "ramda"
 
 type CurriculumListEditorProps = {

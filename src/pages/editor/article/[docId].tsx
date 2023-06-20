@@ -9,7 +9,7 @@ import { useSession } from "next-auth/react"
 
 import type { NextPageWithLayout } from "~/pages/_app";
 import type { ArticleType, DocumentInfo, SrcOrDst } from "~/types";
-import DocLayout from "../layout";
+import DocLayout from "~/components/doc-layout";
 import { RichtextEditor } from "~/components/ui/richtext-editor";
 
 type ArticleEditorProps = {

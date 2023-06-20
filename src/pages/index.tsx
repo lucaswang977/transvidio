@@ -66,4 +66,6 @@ const Home: NextPageWithLayout = () => {
   );
 };
 
+Home.getTitle = () => "Transvid.io"
+
 export default Home;

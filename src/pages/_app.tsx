@@ -16,7 +16,7 @@ const lato = Lato({
 
 export type NextPageWithLayout<P = unknown, IP = P> = NextPage<P, IP> & {
   getLayout?: (page: React.ReactElement) => React.ReactNode,
-  getTitle?: () => string
+  getTitle: () => string
 }
 
 type AppProps = AppInitialProps & {

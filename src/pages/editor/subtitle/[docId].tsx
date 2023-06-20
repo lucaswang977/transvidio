@@ -24,7 +24,7 @@ import { ScrollArea } from "~/components/ui/scroll-area"
 
 import { timeFormat } from "~/utils/helper"
 import type { NextPageWithLayout } from "~/pages/_app"
-import DocLayout from "../layout"
+import DocLayout from "~/components/doc-layout"
 import type ReactPlayer from "react-player";
 
 type SubtitleEditorProps = {

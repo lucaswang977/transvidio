@@ -1,3 +1,5 @@
+"use client"
+
 import * as React from "react"
 import { UserNav } from "~/components/user-nav";
 import { Logo } from "~/components/logo-with-name"

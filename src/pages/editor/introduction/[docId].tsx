@@ -18,7 +18,7 @@ import { api } from "~/utils/api";
 import { useSession } from "next-auth/react"
 
 import type { Introduction, SrcOrDst, DocumentInfo } from "~/types"
-import DocLayout from "~/pages/editor/layout";
+import DocLayout from "~/components/doc-layout";
 import { Input } from "~/components/ui/input";
 import { RichtextEditor } from "~/components/ui/richtext-editor";
 import { ComparativeArrayEditor } from "~/components/comparative-array-input";
