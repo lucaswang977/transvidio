@@ -257,6 +257,7 @@ export const documentRouter = createTRPCRouter({
         title: document.title,
         updatedAt: document.updatedAt,
         id: document.id,
+        projectId: document.projectId,
         projectName: document.project.name
       }
 

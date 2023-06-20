@@ -2,6 +2,7 @@ export type DocumentInfo = {
   id: string,
   title: string,
   updatedAt: Date,
+  projectId: string,
   projectName: string,
 }
 
@@ -65,4 +66,9 @@ export type QuizType = {
 
 export type ArticleType = {
   html: string
+}
+
+export type AttachmentType = {
+  filename: string,
+  fileurl: string,
 }

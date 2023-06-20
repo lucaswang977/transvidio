@@ -3,42 +3,30 @@
 //   fileurl: "/files/32321321321.doc",
 // }
 
-import { type NextPage } from "next"
 import { useRouter } from "next/router"
 import * as React from "react"
 import { api } from "~/utils/api";
 import { useSession } from "next-auth/react"
 
 import { Button } from "~/components/ui/button"
-import { Download, Folder, Trash, Save, Upload } from "lucide-react"
+import { Download, Folder, Trash, Upload } from "lucide-react"
 import { Input } from "~/components/ui/input";
 import axios, { type AxiosResponse } from 'axios';
 import { Label } from "~/components/ui/label";
-
-
-type PageSchema = {
-  filename: string,
-  fileurl: string,
-}
-
-const pageDefaultValue: PageSchema = {
-  filename: "",
-  fileurl: "",
-}
+import type { NextPageWithLayout } from "~/pages/_app";
+import type { AttachmentType, DocumentInfo } from "~/types";
+import DocLayout from "~/components/doc-layout";
 
 type AttachmentEditorProps = {
   projectId: string,
-  docId: string,
-  src: PageSchema,
-  dst: PageSchema
+  srcObj: AttachmentType,
+  dstObj: AttachmentType,
+  onChange: (t: SrcOrDst, v: AttachmentType) => void
 }
 
 type SrcOrDst = "src" | "dst"
 
-const AttachmentEditor = (props: AttachmentEditorProps) => {
-  const mutation = api.document.save.useMutation()
-  const [editorValues, setEditorValues] = React.useState({ src: props.src, dst: props.dst })
-  const [contentChanged, setContentChanged] = React.useState(false)
+const AttachmentEditor = ({ projectId, srcObj, dstObj, onChange }: AttachmentEditorProps) => {
   const [uploadProgress, setUploadProgress] = React.useState(0);
 
   const [uploadingSrcFile, setUploadingSrcFile] = React.useState<File | null>(null)
@@ -55,20 +43,20 @@ const AttachmentEditor = (props: AttachmentEditorProps) => {
     }
 
     let uploadingFile = uploadingDstFile
-    let uploadingFilename = editorValues.dst.filename
+    let uploadingFilename = dstObj.filename
     let where: SrcOrDst = "dst"
 
     setUploading(true)
 
     if (uploadingSrcFile) {
       uploadingFile = uploadingSrcFile
-      uploadingFilename = editorValues.src.filename
+      uploadingFilename = srcObj.filename
       where = "src"
     }
 
     if (uploadingFile) {
       const formData = new FormData();
-      formData.append("projectId", props.projectId)
+      formData.append("projectId", projectId)
       formData.append("filename", uploadingFilename)
       formData.append('file', uploadingFile);
       try {
@@ -85,7 +73,7 @@ const AttachmentEditor = (props: AttachmentEditorProps) => {
         });
 
         if (response.data[0]) {
-          onInputChange("fileurl", where, response.data[0].location)
+          onChange(where, { ...(where === "src" ? srcObj : dstObj), fileurl: response.data[0].location })
           console.log('File uploaded successfully', response);
         } else {
           console.log('File uploading failed.', response);
@@ -100,51 +88,21 @@ const AttachmentEditor = (props: AttachmentEditorProps) => {
     setUploadingDstFile(null)
   };
 
-  console.log(editorValues)
-
-  const onInputChange = (label: string, t: "src" | "dst", v: string) => {
-    if (t === "src") {
-      setEditorValues((values) => {
-        return { ...values, src: { ...values.src, [label]: v } }
-      })
-    } else if (t === "dst") {
-      setEditorValues((values) => {
-        return { ...values, dst: { ...values.dst, [label]: v } }
-      })
-    }
-    setContentChanged(true)
-  }
-
-  function save() {
-    mutation.mutate({
-      documentId: props.docId,
-      src: JSON.stringify({ filename: editorValues.src.filename, fileurl: editorValues.src.fileurl }),
-      dst: JSON.stringify({ filename: editorValues.dst.filename, fileurl: editorValues.dst.fileurl })
-    })
-    setContentChanged(false)
-  }
-
-
   return (
     <div className="flex-col space-y-2">
-      <Button className="fixed right-6 bottom-6 w-10 rounded-full p-0 z-20"
-        disabled={!contentChanged} onClick={() => save()} >
-        <Save className="h-4 w-4" />
-        <span className="sr-only">Save</span>
-      </Button>
       <Label>Filename</Label>
       <div className="flex">
         <Input
           type="text"
           disabled={true}
-          value={editorValues.src.filename}
+          value={srcObj.filename}
           onChange={(event) => {
-            onInputChange("filename", "src", event.target.value)
+            onChange("src", { ...srcObj, filename: event.target.value })
           }} />
         <Button disabled={uploading} variant="ghost">
           {
-            editorValues.src.fileurl ?
-              <a href={editorValues.src.fileurl}><Download /></a> :
+            srcObj.fileurl ?
+              <a href={srcObj.fileurl}><Download /></a> :
               <Upload />
           }
         </Button>
@@ -158,7 +116,7 @@ const AttachmentEditor = (props: AttachmentEditorProps) => {
               const file = target.files[0];
               if (file) {
                 setUploadingSrcFile(file)
-                onInputChange("filename", "src", file.name)
+                onChange("src", { ...srcObj, filename: file.name })
               }
             }
           }} />
@@ -169,14 +127,14 @@ const AttachmentEditor = (props: AttachmentEditorProps) => {
         <Input
           type="text"
           disabled={true}
-          value={editorValues.dst.filename}
+          value={dstObj.filename}
           onChange={(event) => {
-            onInputChange("filename", "dst", event.target.value)
+            onChange("dst", { ...dstObj, filename: event.target.value })
           }} />
         <Button disabled={uploading} variant="ghost">
           {
-            editorValues.dst.fileurl ?
-              <a href={editorValues.dst.fileurl}><Download /></a>
+            dstObj.fileurl ?
+              <a href={dstObj.fileurl}><Download /></a>
               :
               <Folder onClick={() => {
                 if (fileDstInputRef.current) fileDstInputRef.current.click()
@@ -184,10 +142,9 @@ const AttachmentEditor = (props: AttachmentEditorProps) => {
           }
         </Button>
         {
-          editorValues.dst.fileurl ?
+          dstObj.fileurl ?
             <Button variant="ghost" onClick={() => {
-              onInputChange("filename", "dst", "")
-              onInputChange("fileurl", "dst", "")
+              onChange("dst", { filename: "", fileurl: "" })
             }}>
               <Trash />
             </Button> : <></>
@@ -202,7 +159,7 @@ const AttachmentEditor = (props: AttachmentEditorProps) => {
               const file = target.files[0];
               if (file) {
                 setUploadingDstFile(file)
-                onInputChange("filename", "dst", file.name)
+                onChange("dst", { ...dstObj, filename: file.name })
               }
             }
           }} />
@@ -215,35 +172,84 @@ const AttachmentEditor = (props: AttachmentEditorProps) => {
   )
 }
 
-const DocEditor: NextPage = () => {
+const DocEditorPage: NextPageWithLayout = () => {
   const router = useRouter()
   const docId = router.query.docId as string
   const { data: session } = useSession()
-  const { data: doc, status } = api.document.load.useQuery(
-    { documentId: docId },
-    { enabled: session?.user !== undefined }
+  const mutation = api.document.save.useMutation()
+  const [contentDirty, setContentDirty] = React.useState(false)
+  const [docInfo, setDocInfo] = React.useState<DocumentInfo>(
+    { id: "", title: "", projectId: "", projectName: "", updatedAt: new Date(0) }
   )
-  let srcObj: PageSchema = doc?.srcJson as PageSchema
-  if (srcObj === null) srcObj = pageDefaultValue
-  let dstObj: PageSchema = doc?.dstJson as PageSchema
-  if (dstObj === null) dstObj = pageDefaultValue
+
+  const defaultAttachmentValue: AttachmentType = {
+    filename: "",
+    fileurl: "",
+  }
+
+  const [srcObj, setSrcObj] = React.useState(defaultAttachmentValue)
+  const [dstObj, setDstObj] = React.useState(defaultAttachmentValue)
+
+  const { status } = api.document.load.useQuery(
+    { documentId: docId },
+    {
+      enabled: (session?.user !== undefined && docId !== undefined && docInfo.id === ""),
+      onSuccess: (doc) => {
+        if (doc) {
+          setDocInfo({
+            id: doc.id,
+            title: doc.title,
+            updatedAt: doc.updatedAt,
+            projectId: doc.projectId,
+            projectName: doc.project.name,
+          })
+
+          if (doc.srcJson) setSrcObj(doc.srcJson as AttachmentType)
+          if (doc.dstJson) setDstObj(doc.dstJson as AttachmentType)
+        }
+      }
+    }
+  )
+
+  function saveDoc() {
+    mutation.mutate({
+      documentId: docId,
+      src: JSON.stringify(srcObj),
+      dst: JSON.stringify(dstObj)
+    }, {
+      onSuccess: (di) => {
+        setDocInfo(di)
+      }
+    })
+    setContentDirty(false)
+  }
 
   return (
-    status === "loading" ? <span>Loading</span> :
-      doc?.projectId ?
-        <div className="flex-1 space-y-4 p-8 pt-6">
+    <DocLayout
+      docInfo={docInfo}
+      handleSave={saveDoc}
+      saveDisabled={!contentDirty}
+    >
+      {status === "loading" ? <span>Loading</span> :
+        <div className="flex flex-col items-center space-y-4 p-20">
           <div className="flex items-center justify-between space-y-2">
-            <h2 className="text-3xl font-bold tracking-tight">
-              {doc?.title ? doc.title : "Introduction Editor"}
+            <h2 className="text-xl font-bold tracking-tight mx-auto">
+              {docInfo?.title ? docInfo.title : "Introduction Editor"}
             </h2>
-            <p className="text-sm text-gray-400">saved at {doc?.updatedAt.toLocaleString()}</p>
           </div>
-          <div className="flex items-center w-full justify-evenly space-y-2">
-            <AttachmentEditor projectId={doc.projectId} docId={docId} src={srcObj} dst={dstObj} />
-          </div>
+          <AttachmentEditor
+            projectId={docInfo.projectId}
+            srcObj={srcObj} dstObj={dstObj} onChange={(t, v) => {
+              if (t === "src") setSrcObj(v)
+              else setDstObj(v)
+              setContentDirty(true)
+            }} />
         </div>
-        : <div>Document loading failed.</div>
+      }
+    </DocLayout>
   )
 }
 
-export default DocEditor
+DocEditorPage.getTitle = () => "Document editor - Transvid.io"
+
+export default DocEditorPage

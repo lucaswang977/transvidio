@@ -151,7 +151,7 @@ const DocEditorPage: NextPageWithLayout = () => {
   const mutation = api.document.save.useMutation()
   const [contentDirty, setContentDirty] = React.useState(false)
   const [docInfo, setDocInfo] = React.useState<DocumentInfo>(
-    { id: "", title: "", projectName: "", updatedAt: new Date(0) }
+    { id: "", title: "", projectId: "", projectName: "", updatedAt: new Date(0) }
   )
   const defaultIntroductionValue: Introduction = {
     title: "",
@@ -174,6 +174,7 @@ const DocEditorPage: NextPageWithLayout = () => {
             id: doc.id,
             title: doc.title,
             updatedAt: doc.updatedAt,
+            projectId: doc.projectId,
             projectName: doc.project.name,
           })
 

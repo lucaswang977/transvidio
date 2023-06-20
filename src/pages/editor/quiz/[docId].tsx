@@ -21,61 +21,29 @@
 //   ]
 // }
 
-import { type NextPage } from "next"
 import { useRouter } from "next/router"
 import * as React from "react"
 import { api } from "~/utils/api";
 import { useSession } from "next-auth/react"
 
-import { Button } from "~/components/ui/button"
-import { Save } from "lucide-react"
-import { type QuizType } from "~/types";
+import type { DocumentInfo, SrcOrDst, QuizType } from "~/types";
 import { Label } from "~/components/ui/label";
 import { RichtextEditor } from "~/components/ui/richtext-editor";
+import type { NextPageWithLayout } from "~/pages/_app";
+import { clone } from "ramda"
+import DocLayout from "~/components/doc-layout";
 
 type QuizEditorProps = {
-  docId: string,
-  src: QuizType,
-  dst: QuizType
+  srcObj: QuizType,
+  dstObj: QuizType,
+  onChange: (t: SrcOrDst, v: QuizType) => void
 }
 
-const QuizEditor = (props: QuizEditorProps) => {
-  const mutation = api.document.save.useMutation()
-  const [editorValues, setEditorValues] = React.useState({ src: props.src, dst: props.dst })
-  const [contentChanged, setContentChanged] = React.useState(false)
-  console.log(editorValues)
-
-  const onInputChange = (t: "src" | "dst", v: QuizType) => {
-    if (t === "src") {
-      setEditorValues((values) => {
-        return { ...values, src: v }
-      })
-    } else if (t === "dst") {
-      setEditorValues((values) => {
-        return { ...values, dst: v }
-      })
-    }
-    setContentChanged(true)
-  }
-
-  function save() {
-    mutation.mutate({
-      documentId: props.docId,
-      src: JSON.stringify(editorValues.src),
-      dst: JSON.stringify(editorValues.dst)
-    })
-    setContentChanged(false)
-  }
-
+const QuizEditor = ({ srcObj, dstObj, onChange }: QuizEditorProps) => {
   return (
     <div className="flex-col space-y-2">
-      <Button className="fixed right-6 bottom-6 w-10 rounded-full p-0 z-20"
-        disabled={!contentChanged} onClick={() => save()} >
-        <Save className="h-4 w-4" />
-        <span className="sr-only">Save</span>
-      </Button>
       {
-        editorValues.src.results.map((q, i) => {
+        srcObj.results.map((q, i) => {
           return (
             <div key={`q${i}`} className="flex flex-col space-y-4">
               <Label className="bg-blue-100 p-2 font-bold">{`Question ${i + 1}`}</Label>
@@ -83,19 +51,19 @@ const QuizEditor = (props: QuizEditorProps) => {
                 <RichtextEditor
                   value={q.prompt.question}
                   onChange={(event) => {
-                    const newObj = { ...editorValues.src }
+                    const newObj = clone(srcObj)
                     const res = newObj.results[i]
                     if (res) res.prompt.question = event.target.value
-                    onInputChange("src", newObj)
+                    onChange("src", newObj)
                   }}
                 />
                 <RichtextEditor
-                  value={editorValues.dst?.results[i]?.prompt.question}
+                  value={dstObj.results[i]?.prompt.question}
                   onChange={(event) => {
-                    const newObj = { ...editorValues.dst }
+                    const newObj = clone(dstObj)
                     const res = newObj.results[i]
                     if (res) res.prompt.question = event.target.value
-                    onInputChange("dst", newObj)
+                    onChange("dst", newObj)
                   }}
                 />
               </div>
@@ -108,19 +76,19 @@ const QuizEditor = (props: QuizEditorProps) => {
                       <RichtextEditor
                         value={a}
                         onChange={(event) => {
-                          const newObj = { ...editorValues.src }
+                          const newObj = clone(srcObj)
                           const res = newObj.results[i]
                           if (res) res.prompt.answers[j] = event.target.value
-                          onInputChange("src", newObj)
+                          onChange("src", newObj)
                         }}
                       />
                       <RichtextEditor
-                        value={editorValues.dst?.results[i]?.prompt.answers[j]}
+                        value={dstObj.results[i]?.prompt.answers[j]}
                         onChange={(event) => {
-                          const newObj = { ...editorValues.dst }
+                          const newObj = clone(dstObj)
                           const res = newObj.results[i]
                           if (res) res.prompt.answers[j] = event.target.value
-                          onInputChange("dst", newObj)
+                          onChange("dst", newObj)
                         }}
                       />
                     </div>
@@ -136,19 +104,19 @@ const QuizEditor = (props: QuizEditorProps) => {
                       <RichtextEditor
                         value={f}
                         onChange={(event) => {
-                          const newObj = { ...editorValues.src }
+                          const newObj = clone(srcObj)
                           const res = newObj.results[i]
                           if (res) res.prompt.feedbacks[j] = event.target.value
-                          onInputChange("src", newObj)
+                          onChange("src", newObj)
                         }}
                       />
                       <RichtextEditor
-                        value={editorValues.dst?.results[i]?.prompt.feedbacks[j]}
+                        value={dstObj.results[i]?.prompt.feedbacks[j]}
                         onChange={(event) => {
-                          const newObj = { ...editorValues.dst }
+                          const newObj = clone(dstObj)
                           const res = newObj.results[i]
                           if (res) res.prompt.feedbacks[j] = event.target.value
-                          onInputChange("dst", newObj)
+                          onChange("dst", newObj)
                         }}
                       />
                     </div>
@@ -163,38 +131,82 @@ const QuizEditor = (props: QuizEditorProps) => {
   )
 }
 
-const DocEditor: NextPage = () => {
+const DocEditorPage: NextPageWithLayout = () => {
   const router = useRouter()
   const docId = router.query.docId as string
   const { data: session } = useSession()
-  const { data: doc, status } = api.document.load.useQuery(
-    { documentId: docId },
-    { enabled: session?.user !== undefined }
+  const mutation = api.document.save.useMutation()
+  const [contentDirty, setContentDirty] = React.useState(false)
+  const [docInfo, setDocInfo] = React.useState<DocumentInfo>(
+    { id: "", title: "", projectId: "", projectName: "", updatedAt: new Date(0) }
   )
-  const srcObj = doc?.srcJson as QuizType
-  let dstObj = doc?.dstJson as QuizType
-
-  if (srcObj && dstObj === null) {
-    dstObj = JSON.parse(JSON.stringify(srcObj)) as QuizType
+  const defaultQuizValue: QuizType = {
+    count: 0,
+    results: []
   }
 
-  console.log("src: ", srcObj, typeof srcObj)
-  console.log("dst: ", dstObj, typeof dstObj)
+  const [srcObj, setSrcObj] = React.useState(defaultQuizValue)
+  const [dstObj, setDstObj] = React.useState(defaultQuizValue)
+
+  const { status } = api.document.load.useQuery(
+    { documentId: docId },
+    {
+      enabled: (session?.user !== undefined && docId !== undefined && docInfo.id === ""),
+      onSuccess: (doc) => {
+        if (doc) {
+          setDocInfo({
+            id: doc.id,
+            title: doc.title,
+            updatedAt: doc.updatedAt,
+            projectId: doc.projectId,
+            projectName: doc.project.name,
+          })
+
+          if (doc.srcJson) setSrcObj(doc.srcJson as QuizType)
+          if (doc.dstJson) setDstObj(doc.dstJson as QuizType)
+          else setDstObj(doc.srcJson as QuizType)
+        }
+      }
+    }
+  )
+
+  function saveDoc() {
+    mutation.mutate({
+      documentId: docId,
+      src: JSON.stringify(srcObj),
+      dst: JSON.stringify(dstObj)
+    }, {
+      onSuccess: (di) => {
+        setDocInfo(di)
+      }
+    })
+    setContentDirty(false)
+  }
 
   return (
-    status === "loading" ? <span>Loading</span> :
-      <div className="flex-1 space-y-4 p-8 pt-6">
-        <div className="flex items-center justify-between space-y-2">
-          <h2 className="text-3xl font-bold tracking-tight">
-            {doc?.title ? doc.title : "Introduction Editor"}
-          </h2>
-          <p className="text-sm text-gray-400">saved at {doc?.updatedAt.toLocaleString()}</p>
+    <DocLayout
+      docInfo={docInfo}
+      handleSave={saveDoc}
+      saveDisabled={!contentDirty}
+    >
+      {status === "loading" ? <span>Loading</span> :
+        <div className="flex flex-col items-center space-y-4 p-20">
+          <div className="flex items-center justify-between space-y-2">
+            <h2 className="text-xl font-bold tracking-tight mx-auto">
+              {docInfo?.title ? docInfo.title : "Introduction Editor"}
+            </h2>
+          </div>
+          <QuizEditor srcObj={srcObj} dstObj={dstObj} onChange={(t, v) => {
+            if (t === "src") setSrcObj(v)
+            else setDstObj(v)
+            setContentDirty(true)
+          }} />
         </div>
-        <div className="flex items-center w-full justify-evenly space-y-2">
-          <QuizEditor docId={docId} src={srcObj} dst={dstObj} />
-        </div>
-      </div>
+      }
+    </DocLayout>
   )
 }
 
-export default DocEditor
+DocEditorPage.getTitle = () => "Document editor - Transvid.io"
+
+export default DocEditorPage
