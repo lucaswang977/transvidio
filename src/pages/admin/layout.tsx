@@ -13,7 +13,7 @@ const Layout = ({ children }: LayoutProps) => {
       <main className="flex min-h-screen flex-col">
         <div className="border-b">
           <div className="flex items-center justify-between h-16 px-4">
-            <Link href="/"><Logo /></Link>
+            <Link href="/admin"><Logo /></Link>
             <MainNav />
             <UserNav />
           </div>

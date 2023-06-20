@@ -43,7 +43,6 @@ export type SubtitleItem = {
 
 export type SubtitleType = {
   videoUrl: string,
-  originalSubtitleUrl: string,
   subtitle: SubtitleItem[],
 }
 

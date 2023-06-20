@@ -27,6 +27,7 @@ import type { Curriculum, DocumentInfo, SrcOrDst } from "~/types"
 import { RichtextEditor } from "~/components/ui/richtext-editor";
 import type { NextPageWithLayout } from "~/pages/_app";
 import DocLayout from "../layout";
+import { clone } from "ramda"
 
 type CurriculumListEditorProps = {
   value: Curriculum,
@@ -35,33 +36,33 @@ type CurriculumListEditorProps = {
 
 const CurriculumListEditor = (props: CurriculumListEditorProps) => {
   const onChangeSectionTitle = (index: number, v: string) => {
-    const section = props.value.sections[index]
-    if (section && section.title) section.title = v
-
-    props.onChange(props.value)
+    const sections = clone(props.value.sections)
+    const section = sections[index]
+    if (section && section.title) {
+      section.title = v
+      props.onChange({ sections: sections })
+    }
   }
 
   const onChangeItemTitle = (i: number, j: number, v: string) => {
-    const section = props.value.sections[i]
+    const sections = clone(props.value.sections)
+    const section = sections[i]
     if (section && section.items && section.items[j]) {
       const item = section.items[j]
       if (item) item.title = v
+      props.onChange({ sections: sections })
     }
-
-    props.onChange(props.value)
   }
 
   const onChangeItemDescription = (i: number, j: number, v: string) => {
-    const section = props.value.sections[i]
+    const sections = clone(props.value.sections)
+    const section = sections[i]
     if (section && section.items && section.items[j]) {
       const item = section.items[j]
       if (item) item.description = v
+      props.onChange({ sections: sections })
     }
-
-    props.onChange(props.value)
   }
-
-  console.log("value", props.value)
 
   return (
     <div className="w-[500px] space-y-2">
@@ -111,8 +112,6 @@ type CurriculumEditorProps = {
 }
 
 const CurriculumEditor = ({ srcObj, dstObj, onChange }: CurriculumEditorProps) => {
-  console.log(srcObj, dstObj)
-
   return (
     <div className="flex-col space-y-2">
       <div className="flex space-x-10">
@@ -157,8 +156,10 @@ const DocEditorPage: NextPageWithLayout = () => {
           if (doc.srcJson) setSrcObj(doc.srcJson as Curriculum)
           if (doc.dstJson) {
             setDstObj(doc.dstJson as Curriculum)
-          } else if (doc.srcJson) {
-            setDstObj(doc.srcJson as Curriculum)
+          } else {
+            if (dstObj === null || dstObj.sections.length === 0) {
+              setDstObj({ ...(doc.srcJson as Curriculum) })
+            }
           }
         }
       }
@@ -185,7 +186,7 @@ const DocEditorPage: NextPageWithLayout = () => {
       saveDisabled={!contentDirty}
     >
       {status === "loading" ? <span>Loading</span> :
-        <div className="flex-1 space-y-4 p-8 pt-6">
+        <div className="flex flex-col items-center space-y-4 p-20">
           <div className="flex items-center justify-between space-y-2">
             <h2 className="text-xl font-bold tracking-tight mx-auto">
               {docInfo?.title ? docInfo.title : "Curriculum Editor"}

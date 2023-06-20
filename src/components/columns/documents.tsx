@@ -74,7 +74,7 @@ const ClaimDialog = (props: { documentId: string, refetch?: () => void }) => {
 
   return (
     <ConfirmDialog
-      trigger="Confirm"
+      trigger="Claim"
       title="Are you sure to claim the document?"
       description="Claiming the document to let others know you are working on it."
       handleConfirm={() => {

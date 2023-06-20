@@ -10,9 +10,9 @@ import { Beforeunload } from 'react-beforeunload';
 
 type LayoutProps = {
   docInfo: DocumentInfo,
-  handleSave: () => void,
   saveDisabled: boolean,
   children: React.ReactNode
+  handleSave: () => void,
 }
 
 const DocLayout = (props: LayoutProps) => {
@@ -23,7 +23,7 @@ const DocLayout = (props: LayoutProps) => {
       <main className="flex min-h-screen flex-col">
         <div className="border-b">
           <div className="fixed bg-white z-10 w-full border-b flex items-center justify-between h-16 px-4">
-            <Link href="/"><Logo /></Link>
+            <Link href="/admin"><Logo /></Link>
             <div className="flex flex-col items-center">
               <p className="text">{props.docInfo.title}</p>
               <p className="text-xs text-gray-400">

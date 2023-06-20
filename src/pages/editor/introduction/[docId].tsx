@@ -204,7 +204,7 @@ const DocEditorPage: NextPageWithLayout = () => {
       saveDisabled={!contentDirty}
     >
       {status === "loading" ? <span>Loading</span> :
-        <div className="flex-1 space-y-4 p-8 pt-6">
+        <div className="flex flex-col items-center space-y-4 p-20">
           <div className="flex items-center justify-between space-y-2">
             <h2 className="text-xl font-bold tracking-tight mx-auto">
               {docInfo?.title ? docInfo.title : "Introduction Editor"}

@@ -10,6 +10,7 @@ import type {
   QuizType,
   SubtitleType
 } from "~/types"
+import { parse } from '@plussub/srt-vtt-parser'
 
 export type IntroType = {
   id: number,
@@ -97,17 +98,30 @@ export async function createCurriculum(
           si.lectureId === item.id && si.assetId === item.assetId)
 
         if (supItem && supItem.assetFilename) {
+          const originalSubtitleSrcUrl = `${env.CDN_BASE_URL}/${projectId}/${supItem.assetFilename}.src.vtt`
           const srcData: SubtitleType = {
             videoUrl: `${env.CDN_BASE_URL}/${projectId}/${supItem.assetFilename}`,
-            originalSubtitleUrl: `${env.CDN_BASE_URL}/${projectId}/${supItem.assetFilename}.src.vtt`,
             subtitle: []
+          }
+          const respSrc = await fetch(originalSubtitleSrcUrl)
+          if (respSrc.ok) {
+            const vttText = await respSrc.text()
+            const { entries } = parse(vttText)
+            srcData.subtitle = entries
           }
 
+          const originalSubtitleDstUrl = `${env.CDN_BASE_URL}/${projectId}/${supItem.assetFilename}.dst.vtt`
           const dstData: SubtitleType = {
             videoUrl: srcData.videoUrl,
-            originalSubtitleUrl: `${env.CDN_BASE_URL}/${projectId}/${supItem.assetFilename}.dst.vtt`,
             subtitle: []
           }
+          const respDst = await fetch(originalSubtitleDstUrl)
+          if (respDst.ok) {
+            const vttText = await respDst.text()
+            const { entries } = parse(vttText)
+            dstData.subtitle = entries
+          }
+
           const result = await prisma.document.create({
             data: {
               seq: seq,
