@@ -222,7 +222,7 @@ export const columns: ColumnDef<DocumentColumn>[] = [
       } else if (data.type === "SUBTITLE") {
         editorUrl = "/editor/subtitle/" + data.id
       } else if (data.type === "ARTICLE") {
-        editorUrl = "/editor/doc/" + data.id
+        editorUrl = "/editor/article/" + data.id
       } else if (data.type === "QUIZ") {
         editorUrl = "/editor/quiz/" + data.id
       } else if (data.type === "ATTACHMENT") {

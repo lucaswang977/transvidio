@@ -63,3 +63,6 @@ export type QuizType = {
   results: QuizItem[]
 }
 
+export type ArticleType = {
+  html: string
+}
