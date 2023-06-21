@@ -165,9 +165,13 @@ const AttachmentEditor = ({ projectId, srcObj, dstObj, onChange }: AttachmentEdi
           }} />
       </div>
       {(uploadingSrcFile || uploadingDstFile) ?
-        <Button disabled={uploading} className="w-full" onClick={handleUpload}>
-          {uploading ? ((uploadProgress < 100) ? `${uploadProgress}%` : "Wait for url") : "Upload"}
-        </Button> : <></>}
+        <div className="flex flex-col space-y-1">
+          <Button disabled={uploading} className="w-full" onClick={handleUpload}>
+            {uploading ? ((uploadProgress < 100) ? `${uploadProgress}%` : "Waiting") : "Upload"}
+          </Button>
+          <p className="text-xs text-gray-400">Once uploaded, click the Save button before leaving.</p>
+        </div>
+        : <></>}
     </div>
   )
 }

@@ -19,8 +19,6 @@
 // 10. Activities on Dashboard
 // 11. Logging on vercel
 
-// FIX:
-
 import { useRouter } from "next/router"
 import { useSession } from "next-auth/react";
 import { Button } from "~/components/ui/button"

@@ -6,7 +6,7 @@
 // 2. Promotional video
 
 // Find the course ID first
-const COURSE_ID = 852060;
+const COURSE_ID = 5385350;
 
 // Do not touch this URLs unless they are changed.
 const COURSE_INTRO_JSON_URL = `/api-2.0/courses/${COURSE_ID}/?fields[course]=title,headline,description,prerequisites,objectives,target_audiences`
@@ -14,6 +14,7 @@ const CURRICULUM_JSON_URL = `/api-2.0/courses/${COURSE_ID}/subscriber-curriculum
 const ATTACHMENT_JSON_URL = `/api-2.0/users/me/subscribed-courses/${COURSE_ID}/lectures/LECTURE_ID/supplementary-assets/ASSET_ID/?fields[asset]=download_urls`
 const ARTICLE_JSON_URL = '/api-2.0/assets/ASSET_ID/?fields[asset]=@min,status,delayed_asset_message,processing_errors,body';
 const VIDEO_DOWNLOADABLE_PATCH_URL = `/api-2.0/users/me/taught-courses/${COURSE_ID}/lectures/LECTURE_ID/?fields[lecture]=is_downloadable`;
+const VIDEO_FREEPREVIEW_PATCH_URL = `/api-2.0/users/me/taught-courses/${COURSE_ID}/lectures/LECTURE_ID/?fields[lecture]=is_free`;
 const VIDEO_DOWNLOAD_URL = `/api-2.0/users/me/subscribed-courses/${COURSE_ID}/lectures/LECTURE_ID/?fields[lecture]=asset&fields[asset]=download_urls`
 const TRANSCRIPT_FETCH_URL = `/api-2.0/users/me/subscribed-courses/${COURSE_ID}/lectures/LECTURE_ID/?fields[lecture]=asset,description,download_url,is_free,last_watched_second&fields[asset]=asset_type,length,media_license_token,course_is_drmed,media_sources,captions,thumbnail_sprite,slides,slide_urls,download_urls,external_url`
 const QUIZ_DOWNLOAD_URL = `/api-2.0/quizzes/QUIZ_ID/assessments/?page_size=250&fields[assessment]=assessment_type,prompt,correct_response,section,original_assessment_id&draft=true`
@@ -23,17 +24,17 @@ const QUIZ_DOWNLOAD_URL = `/api-2.0/quizzes/QUIZ_ID/assessments/?page_size=250&f
 const OUTPUT_CSV = false;
 
 // Logged in as student is needed
-const DOWNLOAD_INTRODUCTION = true;
-const DOWNLOAD_CURRICULUM = true;
+const DOWNLOAD_INTRODUCTION = false;
+const DOWNLOAD_CURRICULUM = false;
 
 const DOWNLOAD_SUPPLEMENT = true;        // Main toggle for attachment, article, video, quiz
 
-const DOWNLOAD_ARTICLE = true;           // as student 
-const DOWNLOAD_ATTACHMENT = true;        // as student
-const DOWNLOAD_VIDEO = false;             // as instructor
+const DOWNLOAD_ARTICLE = false;           // as student 
+const DOWNLOAD_ATTACHMENT = false;        // as student
+const DOWNLOAD_VIDEO = true;             // as instructor
 const DOWNLOAD_TRANSCRIPT = false;        // as student
 const DOWNLOAD_AUTO_TRANSLATED = false;   // as student
-const DOWNLOAD_QUIZ = true;               // as instructor
+const DOWNLOAD_QUIZ = false;               // as instructor
 
 const SOURCE_TRANSCRIPT_LOCALE = "en_US";
 const AUTO_TRANSLATED_LOCALE = "zh_CN";
@@ -299,25 +300,37 @@ const downloadVideo = async (lectureId, filename) => {
     },
     body: JSON.stringify({ is_downloadable: true })
   })
-    .then(response => {
-      if (response.ok) {
-        console.log('Video ', lectureId, ' downloadable set to true.');
-        const url = VIDEO_DOWNLOAD_URL.replace("LECTURE_ID", lectureId);
-        return delay(1000).then(() => fetch(url).then(response => {
-          if (response.ok) {
-            response.json().then(data => {
-              if ("asset" in data &&
-                "download_urls" in data.asset &&
-                "Video" in data.asset.download_urls) {
-                const video = data.asset.download_urls.Video.find(item => item.label === "480");
-                console.log("video: ", video.file)
-                downloadRequests.push({ url: video.file, filename: filename });
+    .then(resp1 => {
+      if (resp1.ok) {
+        const url = VIDEO_FREEPREVIEW_PATCH_URL.replace("LECTURE_ID", lectureId);
+        return fetch(url, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ is_free: true })
+        }).then(resp2 => {
+          if (resp2.ok) {
+            console.log('Video ', lectureId, ' downloadable set to true.');
+            const url = VIDEO_DOWNLOAD_URL.replace("LECTURE_ID", lectureId);
+            return delay(1000).then(() => fetch(url).then(response => {
+              if (response.ok) {
+                response.json().then(data => {
+                  if ("asset" in data &&
+                    "download_urls" in data.asset &&
+                    "Video" in data.asset.download_urls) {
+                    const video = data.asset.download_urls.Video.find(item => item.label === "480");
+                    console.log("video: ", video.file)
+                    downloadRequests.push({ url: video.file, filename: filename });
+                  }
+                })
               }
-            })
+            }))
+          } else {
+            console.log('Video ', lectureId, ' downloadable setting failed.');
           }
-        }))
-      } else {
-        console.log('Video ', lectureId, ' downloadable setting failed.');
+
+        })
       }
     })
     .finally(async () => {
@@ -327,14 +340,29 @@ const downloadVideo = async (lectureId, filename) => {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ is_downloadable: false })
-      }).then(response => {
-        if (response.ok) {
+      }).then(resp1 => {
+        if (resp1.ok) {
           console.log('Video ', lectureId, ' downloadable set to false.');
+
+          const url = VIDEO_FREEPREVIEW_PATCH_URL.replace("LECTURE_ID", lectureId);
+          return fetch(url, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ is_free: true })
+          }).then(resp2 => {
+            if (resp2.ok) {
+              console.log('Video ', lectureId, ' freepreview set to false.');
+            } else {
+              console.log('Video ', lectureId, ' freepreview setting failed.');
+            }
+          })
         } else {
           console.log('Video ', lectureId, ' downloadable setting failed.');
         }
       })
-    });
+    })
 }
 
 const downloadTranscript = async (lectureId, filename) => {
