@@ -9,7 +9,8 @@
     "lint": "next lint",
     "start": "next start",
     "prepare": "husky install",
-    "vercel-build": "prisma generate && prisma migrate deploy && next build"
+    "vercel-build": "prisma generate && prisma migrate deploy && next build",
+    "prisma": "npx prisma studio -p 3003 --browser none"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.350.0",
