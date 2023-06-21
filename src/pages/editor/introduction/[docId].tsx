@@ -178,8 +178,8 @@ const DocEditorPage: NextPageWithLayout = () => {
             projectName: doc.project.name,
           })
 
-          setSrcObj(doc.srcJson as Introduction)
-          setDstObj(doc.dstJson as Introduction)
+          if (doc.srcJson) setSrcObj(doc.srcJson as Introduction)
+          if (doc.dstJson) setDstObj(doc.dstJson as Introduction)
         }
       }
     }
