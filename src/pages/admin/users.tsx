@@ -5,13 +5,16 @@ import { type UserColumn, columns } from "~/components/columns/users"
 import { useSession } from "next-auth/react"
 import { api } from "~/utils/api";
 import { type NextPageWithLayout } from "../_app"
+import { naturalTime } from "~/utils/helper"
+import { Button } from "~/components/ui/button"
+import { RefreshCcw } from "lucide-react"
 
 const UserManagement: NextPageWithLayout = () => {
   const [rowSelection, setRowSelection] = React.useState({})
-  const { data: sessionData } = useSession();
-  const { data: users } = api.user.getAll.useQuery(
+  const { data: session } = useSession();
+  const { data: users, refetch } = api.user.getAll.useQuery(
     undefined, // no input
-    { enabled: sessionData?.user !== undefined },
+    { enabled: session?.user !== undefined },
   );
 
   let usersData: UserColumn[] = []
@@ -24,17 +27,30 @@ const UserManagement: NextPageWithLayout = () => {
         role: user.role === "ADMIN" ? "admin" : "editor",
         email: user.email ? user.email : "",
         image: user.image ? user.image : "",
-        created: user.createdAt.toLocaleString()
+        created: user.createdAt.toLocaleString(),
+        lastLogin: naturalTime(user.lastLogin)
       }
 
       return u
     })
 
   }
+
+  const handleRefetch = async () => {
+    await refetch()
+  }
   return (
     <div className="flex-1 space-y-4 p-8 pt-6">
       <div className="flex items-center justify-between space-y-2">
         <h2 className="text-3xl font-bold tracking-tight">All users</h2>
+        <div className="flex space-x-2">
+          <Button size="sm" variant="outline"
+            onClick={handleRefetch}>
+            <RefreshCcw className="mr-2 h-4 w-4" />
+            Refresh
+          </Button>
+        </div>
+
       </div>
       <div>
         <DataTable

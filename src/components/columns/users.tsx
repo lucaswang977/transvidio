@@ -12,6 +12,7 @@ export type UserColumn = {
   email: string
   image: string
   created: string
+  lastLogin: string
 }
 
 export const columns: ColumnDef<UserColumn>[] = [
@@ -57,6 +58,10 @@ export const columns: ColumnDef<UserColumn>[] = [
   {
     accessorKey: "role",
     header: "Role"
+  },
+  {
+    accessorKey: "lastLogin",
+    header: "Last login"
   },
   {
     accessorKey: "created",

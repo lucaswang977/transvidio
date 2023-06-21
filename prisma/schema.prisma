@@ -57,6 +57,8 @@ model User {
     pwd           String?
     createdAt     DateTime  @default(now())
     updatedAt     DateTime  @updatedAt
+    lastLogin     DateTime  @default(now())
+    blocked       Boolean   @default(false)
 
     accounts      Account[]
     sessions      Session[]
@@ -136,4 +138,30 @@ model Document {
 
     userId        String?
     user          User?            @relation(fields: [userId], references: [id], onDelete: NoAction)
+}
+
+enum ActivityType {
+    USER
+    PROJECT
+    DOCUMENT
+}
+
+model Activity {
+    id            String           @id @default(cuid())
+    createdAt     DateTime         @default(now())
+    seq           Int              @default(autoincrement())
+    text          String
+    type          ActivityType
+
+    userId        String?
+    projectId     String?
+    documentId    String?
+}
+
+model Announcement {
+    id            String           @id @default(cuid())
+    createdAt     DateTime         @default(now())
+    updatedAt     DateTime         @updatedAt
+    text          String
+    userId        String
 }

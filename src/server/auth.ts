@@ -50,14 +50,40 @@ export const authOptions: NextAuthOptions = {
     }
   },
   callbacks: {
-    jwt: ({ token, user, profile }) => {
+    async signIn({ user, account, profile, email, credentials }) {
+      console.log("signin", user, account, profile, email, credentials)
+      const u = await prisma.user.findUnique({
+        where: {
+          id: user.id
+        }
+      })
+      console.log("result: ", u)
+      if (u && u.blocked) {
+        console.log("user is blocked", u)
+        return false
+      }
+      return true
+    },
+    jwt: async ({ token, user, profile }) => {
       if (user) {
         token.email = user.email
         token.name = user.name
         token.role = user.role
         token.id = user.id
       }
-      console.log("jwt", token, profile)
+      if ("id" in token) {
+        const result = await prisma.user.update({
+          data: {
+            lastLogin: new Date()
+          },
+          where: {
+            id: token.id as string
+          }
+        })
+        console.log("login time refreshed", result)
+      }
+
+      console.log("jwt", token, user, profile)
       return token
     },
     session: ({ session, token, user }) => {
@@ -69,6 +95,7 @@ export const authOptions: NextAuthOptions = {
           role: token.role
         }
       }
+
       console.log("session", session, newSession, user)
       return newSession
     },

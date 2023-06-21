@@ -15,12 +15,14 @@ An online translation collaborative platform which enables project-based transla
   - Quiz
 
 ## Functions to be implemented
-- [ ] Dashboard
+- [ ] Dashboard related
   - [ ] User based notification
   - [ ] Ongoing projects & documents
   - [ ] Activity history
-- [ ] User password reset
-- [ ] User profile
+- [ ] User related
+  - [ ] Password reset
+  - [ ] User profile(avatar, payment method)
+  - [ ] Block user login / invalidate token
 - [ ] AI integration for productivity
 - [ ] Document edit history and restore back
 - [ ] Payment management
