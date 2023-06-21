@@ -16,6 +16,7 @@ import {
 import { type UserColumn, columns } from "./columns/users"
 import { useSession } from "next-auth/react"
 import { api } from "~/utils/api";
+import { naturalTime } from "~/utils/helper"
 
 type AssignProjectToUserDialogProps = {
   selectedUserIds: string[],
@@ -43,7 +44,8 @@ export function AssignProjectToUserDialog(props: AssignProjectToUserDialogProps)
         role: user.role === "ADMIN" ? "admin" : "editor",
         email: user.email ? user.email : "",
         image: user.image ? user.image : "",
-        created: user.createdAt.toLocaleString()
+        created: user.createdAt.toLocaleString(),
+        lastLogin: naturalTime(user.lastLogin)
       }
 
       return u

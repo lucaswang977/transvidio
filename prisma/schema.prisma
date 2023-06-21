@@ -144,6 +144,7 @@ enum ActivityType {
     USER
     PROJECT
     DOCUMENT
+    LOGIN
 }
 
 model Activity {
