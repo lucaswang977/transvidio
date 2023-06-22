@@ -29,6 +29,6 @@ An online translation collaborative platform which enables project-based transla
 - [ ] AI dubbing
 
 ## Known important bugs
-- [ ] Pagination reset when focus is back #1
-- [ ] Data batchly import should be outside the project
-- [ ] Upload directly to S3 since the serverless function limitation
+- [ ] Pagination reset when focus is back [#1]
+- [x] Data batchly import should be outside the project
+- [x] Upload directly to S3 since the serverless function limitation

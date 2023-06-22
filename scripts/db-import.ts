@@ -58,7 +58,7 @@ type SupplementType = SupplementItemType[]
 async function createIntroDoc(projectId: string, intro: IntroType) {
   const data = intro as Introduction
 
-  const result = await prisma.document.create({
+  await prisma.document.create({
     data: {
       seq: 0,
       title: "Course Introduction",
@@ -68,7 +68,7 @@ async function createIntroDoc(projectId: string, intro: IntroType) {
     }
   })
 
-  console.log("Intro doc created: ", result)
+  console.log("Intro doc created.")
 }
 
 async function createCurriculum(
@@ -129,7 +129,7 @@ async function createCurriculum(
             dstData.subtitle = entries
           }
 
-          const result = await prisma.document.create({
+          await prisma.document.create({
             data: {
               seq: seq,
               title: item.title,
@@ -140,13 +140,13 @@ async function createCurriculum(
             }
           })
 
-          console.log("Create a subtitle doc for: ", item.title, item.id, result)
+          console.log("Create a subtitle doc for: ", item.title, item.id)
         } else {
           console.log("Subtitle doc creation failed: ", item.title, item.id)
         }
       } else if (item.assetType === "Article") {
         dataType = "article"
-        const docResp = await fetch(`${env.CDN_BASE_URL}/${projectId}/${item.id}.html`)
+        const docResp = await fetch(`${env.CDN_BASE_URL}/${projectId}/${item.assetId}.html`)
         if (docResp.ok) {
           await prisma.document.create({
             data: {
@@ -238,7 +238,7 @@ async function createCurriculum(
     }
   })
 
-  console.log("Curriculum doc created: ", result)
+  console.log("Curriculum doc created.")
 }
 
 if (process.argv.length < 3) {

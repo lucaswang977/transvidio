@@ -24,17 +24,17 @@ const QUIZ_DOWNLOAD_URL = `/api-2.0/quizzes/QUIZ_ID/assessments/?page_size=250&f
 const OUTPUT_CSV = false;
 
 // Logged in as student is needed
-const DOWNLOAD_INTRODUCTION = false;
-const DOWNLOAD_CURRICULUM = false;
+const DOWNLOAD_INTRODUCTION = true;
+const DOWNLOAD_CURRICULUM = true;
 
 const DOWNLOAD_SUPPLEMENT = true;        // Main toggle for attachment, article, video, quiz
 
-const DOWNLOAD_ARTICLE = false;           // as student 
-const DOWNLOAD_ATTACHMENT = false;        // as student
-const DOWNLOAD_VIDEO = true;             // as instructor
-const DOWNLOAD_TRANSCRIPT = false;        // as student
-const DOWNLOAD_AUTO_TRANSLATED = false;   // as student
-const DOWNLOAD_QUIZ = false;               // as instructor
+const DOWNLOAD_ARTICLE = true;           // as student 
+const DOWNLOAD_ATTACHMENT = true;        // as student
+const DOWNLOAD_VIDEO = false;             // as instructor
+const DOWNLOAD_TRANSCRIPT = true;        // as student
+const DOWNLOAD_AUTO_TRANSLATED = true;   // as student
+const DOWNLOAD_QUIZ = true;               // as instructor
 
 const SOURCE_TRANSCRIPT_LOCALE = "en_US";
 const AUTO_TRANSLATED_LOCALE = "zh_CN";
@@ -160,12 +160,12 @@ const fetchSupplement = async (url) => {
             item.assetType = result.asset.asset_type;
             item.assetId = result.asset.id;
             item.assetFilename = item.assetId + '.html';
-            items.push(item)
+            items.push({ ...item })
           } else if (result.asset.asset_type === 'Video') {
             item.assetType = result.asset.asset_type;
             item.assetId = result.asset.id;
             item.assetFilename = result.asset.filename;
-            items.push(item)
+            items.push({ ...item })
           }
         }
         if ('supplementary_assets' in result) {
@@ -184,7 +184,7 @@ const fetchSupplement = async (url) => {
             })
 
             if (!duplicated && supItem.asset_type === 'File') {
-              items.push(item);
+              items.push({ ...item });
             }
           })
         }
@@ -251,7 +251,7 @@ const downloadFilesSequentially = (reqs) => {
   }
 
   const req = reqs.shift();
-  downloadFile(req.url, req.filename)
+  delay(1000).then(() => downloadFile(req.url, req.filename)
     .then(() => {
       console.log(req);
       downloadFilesSequentially(reqs);
@@ -259,7 +259,7 @@ const downloadFilesSequentially = (reqs) => {
     .catch(error => {
       console.error(`Error downloading file: ${req}`, error);
       downloadFilesSequentially(reqs);
-    });
+    }));
 }
 
 const downloadFile = (url, filename) => {
@@ -313,7 +313,7 @@ const downloadVideo = async (lectureId, filename) => {
           if (resp2.ok) {
             console.log('Video ', lectureId, ' downloadable set to true.');
             const url = VIDEO_DOWNLOAD_URL.replace("LECTURE_ID", lectureId);
-            return delay(1000).then(() => fetch(url).then(response => {
+            return fetch(url).then(response => {
               if (response.ok) {
                 response.json().then(data => {
                   if ("asset" in data &&
@@ -325,7 +325,7 @@ const downloadVideo = async (lectureId, filename) => {
                   }
                 })
               }
-            }))
+            })
           } else {
             console.log('Video ', lectureId, ' downloadable setting failed.');
           }
@@ -452,14 +452,16 @@ if (DOWNLOAD_SUPPLEMENT) {
     const promises = [];
 
     items.forEach(item => {
-      if (DOWNLOAD_SUPPLEMENT && DOWNLOAD_ARTICLE && item.assetType === 'Article')
+      console.log("items: ", item)
+      if (DOWNLOAD_SUPPLEMENT && DOWNLOAD_ARTICLE && item.assetType === 'Article') {
         promises.push(downloadArticle(item.assetId, `${item.assetId}.html`));
-      else if (DOWNLOAD_SUPPLEMENT && DOWNLOAD_ATTACHMENT && item.assetType === 'File')
+      } else if (DOWNLOAD_SUPPLEMENT && DOWNLOAD_ATTACHMENT && item.assetType === 'File') {
         promises.push(downloadSupplement(
           item.lectureId,
           item.assetId,
-          item.assetFilename));
-      else if (DOWNLOAD_SUPPLEMENT && item.assetType === 'Video') {
+          item.assetFilename)
+        );
+      } else if (DOWNLOAD_SUPPLEMENT && item.assetType === 'Video') {
         if (DOWNLOAD_VIDEO)
           promises.push(downloadVideo(item.lectureId, item.assetFilename))
         if (DOWNLOAD_TRANSCRIPT)
