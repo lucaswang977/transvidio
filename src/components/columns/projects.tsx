@@ -19,7 +19,6 @@ import {
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu"
 
-import { ProjectImportDialog } from "~/components/import-project-dialog"
 import { extractLetters } from "~/utils/helper"
 import Link from "next/link"
 import { Badge } from "../ui/badge"
@@ -130,8 +129,7 @@ export const columns: ColumnDef<ProjectColumn>[] = [
   },
   {
     id: "actions",
-    cell: ({ row, table }) => {
-      const data = row.original
+    cell: ({ table }) => {
       const myself = table.options.meta?.user
 
       return (
@@ -145,13 +143,6 @@ export const columns: ColumnDef<ProjectColumn>[] = [
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            {
-              (myself && myself.role === "ADMIN") ?
-                <ProjectImportDialog
-                  projectId={data.id}
-                  refetch={table.options.meta?.refetchData}
-                /> : <></>
-            }
             <DropdownMenuItem disabled={myself && myself.role === "EDITOR"}>
               <Edit className="mr-2 h-4 w-4" />
               <span>Edit</span>

@@ -7,9 +7,6 @@ import { prisma } from "~/server/db";
 import { z } from "zod";
 import { Language } from "@prisma/client"
 import { TRPCError } from "@trpc/server";
-import { env } from "~/env.mjs";
-import type { CurriculumType, IntroType, SupplementType } from "./data-import"
-import { createCurriculum, createIntroDoc } from "./data-import";
 
 export type ProjectRelatedUser = {
   id: string,
@@ -117,43 +114,5 @@ export const projectRouter = createTRPCRouter({
         })
       }
       return input
-    }),
-  import: protectedProcedure
-    .input(z.object({
-      id: z.string().nonempty()
-    }))
-    .mutation(async ({ input }) => {
-      const project = await prisma.project.findUnique({
-        where: {
-          id: input.id,
-        }
-      })
-
-      if (!project) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Project not existe."
-        })
-      }
-
-      const introResp = await fetch(`${env.CDN_BASE_URL}/${input.id}/introduction.json`)
-      console.log("fetching intro", introResp.ok)
-      const curriculumResp = await fetch(`${env.CDN_BASE_URL}/${input.id}/curriculum.json`)
-      console.log("fetching curriculum", curriculumResp.ok)
-      const supplementResp = await fetch(`${env.CDN_BASE_URL}/${input.id}/supplement.json`)
-      console.log("fetching supplement", supplementResp.ok)
-      if (introResp.ok && curriculumResp.ok && supplementResp.ok) {
-        const intro = await introResp.json() as IntroType
-        const curriculum = await curriculumResp.json() as CurriculumType
-        const supplement = await supplementResp.json() as SupplementType
-        await createIntroDoc(input.id, intro)
-        await createCurriculum(input.id, intro.title, curriculum, supplement)
-        return { result: "ok" }
-      } else {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Project data incomplete."
-        })
-      }
     }),
 });

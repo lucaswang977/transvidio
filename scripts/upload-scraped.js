@@ -40,7 +40,7 @@ function uploadFileToS3(filePath, s3Key) {
   const upload = new Upload({
     client: s3Client,
     params: {
-      Bucket: "transvidio",
+      Bucket: process.env.S3_BUCKET_NAME,
       Key: s3Key,
       Body: fileStream,
     },

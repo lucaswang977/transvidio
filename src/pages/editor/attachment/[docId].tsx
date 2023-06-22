@@ -60,7 +60,6 @@ const AttachmentEditor = ({ projectId, srcObj, dstObj, onChange }: AttachmentEdi
         filename: uploadingFilename
       }, {
         onSuccess: (async ({ presigned, finalUrl }) => {
-          console.log(presigned)
           if (uploadingFile) {
             const buffer = await uploadingFile.arrayBuffer();
             const result = await new Promise<boolean>((resolve,) => {
@@ -126,7 +125,7 @@ const AttachmentEditor = ({ projectId, srcObj, dstObj, onChange }: AttachmentEdi
         <Button disabled={uploading} variant="ghost">
           {
             srcObj.fileurl ?
-              <a href={srcObj.fileurl}><Download /></a> :
+              <a target="_blank" href={srcObj.fileurl}><Download /></a> :
               <Upload />
           }
         </Button>
@@ -158,7 +157,7 @@ const AttachmentEditor = ({ projectId, srcObj, dstObj, onChange }: AttachmentEdi
         <Button disabled={uploading} variant="ghost">
           {
             dstObj.fileurl ?
-              <a href={dstObj.fileurl}><Download /></a>
+              <a target="_blank" href={dstObj.fileurl}><Download /></a>
               :
               <Folder onClick={() => {
                 if (fileDstInputRef.current) fileDstInputRef.current.click()

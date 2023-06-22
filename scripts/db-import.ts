@@ -1,5 +1,13 @@
-import { env } from "~/env.mjs"
-import { prisma } from "~/server/db"
+// Convert uploaded files into database records
+//
+// This is a node script written in Typescript, because we have to 
+// import database type definitions.
+//
+// Run this script like this:
+// # dotenv -e .env -- npx tsx scripts/db-import.ts <product id> 
+
+import { env } from "../src/env.mjs"
+import { prisma } from "../src/server/db"
 import type { Document } from "@prisma/client"
 import type {
   Curriculum,
@@ -9,10 +17,10 @@ import type {
   Introduction,
   QuizType,
   SubtitleType
-} from "~/types"
+} from "../src/types"
 import { parse } from '@plussub/srt-vtt-parser'
 
-export type IntroType = {
+type IntroType = {
   id: number,
   title: string,
   description: string,
@@ -22,7 +30,7 @@ export type IntroType = {
   target_audiences: string[]
 }
 
-export type CurriculumItemType = {
+type CurriculumItemType = {
   id: number,
   type: "chapter" | "lecture" | "practice" | "quiz",
   title: string,
@@ -35,19 +43,19 @@ export type CurriculumItemType = {
   supAssetCount: number | null
 }
 
-export type CurriculumType = CurriculumItemType[]
+type CurriculumType = CurriculumItemType[]
 
 
-export type SupplementItemType = {
+type SupplementItemType = {
   lectureId: number,
   assetId: number,
   assetType: "Video" | "File" | "Article",
   assetFilename: string
 }
 
-export type SupplementType = SupplementItemType[]
+type SupplementType = SupplementItemType[]
 
-export async function createIntroDoc(projectId: string, intro: IntroType) {
+async function createIntroDoc(projectId: string, intro: IntroType) {
   const data = intro as Introduction
 
   const result = await prisma.document.create({
@@ -63,9 +71,8 @@ export async function createIntroDoc(projectId: string, intro: IntroType) {
   console.log("Intro doc created: ", result)
 }
 
-export async function createCurriculum(
+async function createCurriculum(
   projectId: string,
-  title: string,
   curriculum: CurriculumType,
   supplement: SupplementType) {
 
@@ -232,4 +239,28 @@ export async function createCurriculum(
   })
 
   console.log("Curriculum doc created: ", result)
+}
+
+if (process.argv.length < 3) {
+  console.log('Please provide the project ID.');
+  console.log('Usage: dotenv -e <.env> -- node db-import.js <project-id>');
+  process.exit(1);
+}
+
+const projectId = process.argv[2];
+
+if (projectId) {
+  const introResp = await fetch(`${env.CDN_BASE_URL}/${projectId}/introduction.json`)
+  console.log("fetching intro", introResp.ok)
+  const curriculumResp = await fetch(`${env.CDN_BASE_URL}/${projectId}/curriculum.json`)
+  console.log("fetching curriculum", curriculumResp.ok)
+  const supplementResp = await fetch(`${env.CDN_BASE_URL}/${projectId}/supplement.json`)
+  console.log("fetching supplement", supplementResp.ok)
+  if (introResp.ok && curriculumResp.ok && supplementResp.ok) {
+    const intro = await introResp.json()
+    const curriculum = await curriculumResp.json()
+    const supplement = await supplementResp.json()
+    await createIntroDoc(projectId, intro)
+    await createCurriculum(projectId, curriculum, supplement)
+  }
 }
