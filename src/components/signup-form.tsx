@@ -203,7 +203,9 @@ export function SignupForm() {
                     <Checkbox
                       checked={field.value}
                       disabled={loading}
-                      onCheckedChange={field.onChange}
+                      onCheckedChange={v => {
+                        field.onChange(v ? true : false)
+                      }}
                     />
                   </FormControl>
                   <FormLabel>

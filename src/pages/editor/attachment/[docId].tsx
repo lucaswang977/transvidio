@@ -11,7 +11,6 @@ import { useSession } from "next-auth/react"
 import { Button } from "~/components/ui/button"
 import { Download, Folder, Trash, Upload } from "lucide-react"
 import { Input } from "~/components/ui/input";
-import axios, { type AxiosResponse } from 'axios';
 import { Label } from "~/components/ui/label";
 import type { NextPageWithLayout } from "~/pages/_app";
 import type { AttachmentType, DocumentInfo } from "~/types";
@@ -32,11 +31,12 @@ const AttachmentEditor = ({ projectId, srcObj, dstObj, onChange }: AttachmentEdi
   const [uploadingSrcFile, setUploadingSrcFile] = React.useState<File | null>(null)
   const [uploadingDstFile, setUploadingDstFile] = React.useState<File | null>(null)
   const [uploading, setUploading] = React.useState(false)
+  const mutation = api.upload.signUrl.useMutation()
 
   const fileSrcInputRef = React.useRef<HTMLInputElement>(null)
   const fileDstInputRef = React.useRef<HTMLInputElement>(null)
 
-  const handleUpload = async () => {
+  const handleUpload = () => {
     if (!uploadingSrcFile && !uploadingDstFile) {
       console.log("No uploading file selected.")
       return
@@ -55,38 +55,62 @@ const AttachmentEditor = ({ projectId, srcObj, dstObj, onChange }: AttachmentEdi
     }
 
     if (uploadingFile) {
-      const formData = new FormData();
-      formData.append("projectId", projectId)
-      formData.append("filename", uploadingFilename)
-      formData.append('file', uploadingFile);
-      try {
-        const response: AxiosResponse<{ location: string }[]> = await axios.post('/api/upload', formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-          onUploadProgress: (progressEvent) => {
-            if (progressEvent.total) {
-              const progress = Math.round((progressEvent.loaded / progressEvent.total) * 100);
-              setUploadProgress(progress);
+      mutation.mutate({
+        projectId: projectId,
+        filename: uploadingFilename
+      }, {
+        onSuccess: (async ({ presigned, finalUrl }) => {
+          console.log(presigned)
+          if (uploadingFile) {
+            const buffer = await uploadingFile.arrayBuffer();
+            const result = await new Promise<boolean>((resolve,) => {
+              const xhr = new XMLHttpRequest();
+
+              xhr.upload.onprogress = (event: ProgressEvent) => {
+                setUploadProgress(Math.floor(event.loaded / event.total * 100));
+              };
+
+              xhr.open('PUT', presigned, true);
+              xhr.setRequestHeader('Content-Type',
+                uploadingFile ? uploadingFile.type : "application/octet-stream");
+              xhr.setRequestHeader('Cache-Control', 'max-age=630720000');
+
+              xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) {
+                  if (xhr.status >= 200 && xhr.status < 300) {
+                    resolve(true)
+                  } else {
+                    resolve(false)
+                  }
+                }
+              };
+
+              xhr.send(buffer);
+            }).catch(err => {
+              console.log("File upload failed: ", err)
+            });
+            if (result) {
+              onChange(where, {
+                ...(where === "src" ? srcObj : dstObj),
+                fileurl: finalUrl
+              })
+            } else {
+              console.log("File upload failed: ")
             }
-          },
-        });
-
-        if (response.data[0]) {
-          onChange(where, { ...(where === "src" ? srcObj : dstObj), fileurl: response.data[0].location })
-          console.log('File uploaded successfully', response);
-        } else {
-          console.log('File uploading failed.', response);
-        }
-      } catch (error) {
-        console.error('Failed to upload file', error);
-      }
+            setUploading(false)
+            setUploadingSrcFile(null)
+            setUploadingDstFile(null)
+          }
+        }),
+        onError: (err => {
+          console.log(err)
+          setUploading(false)
+          setUploadingSrcFile(null)
+          setUploadingDstFile(null)
+        })
+      })
     }
-
-    setUploading(false)
-    setUploadingSrcFile(null)
-    setUploadingDstFile(null)
-  };
+  }
 
   return (
     <div className="flex-col space-y-2">

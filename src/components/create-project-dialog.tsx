@@ -117,7 +117,11 @@ export function ProjectCreateDialog(props: { refetch: () => void }) {
                     <FormItem>
                       <FormLabel>Source language</FormLabel>
                       <FormControl>
-                        <Select onValueChange={field.onChange} defaultValue="enUS">
+                        <Select
+                          onValueChange={v => {
+                            field.onChange(v as Language)
+                          }}
+                          defaultValue="enUS">
                           <SelectTrigger className="w-[200px]">
                             <SelectValue placeholder="Select a language" />
                           </SelectTrigger>
@@ -140,7 +144,11 @@ export function ProjectCreateDialog(props: { refetch: () => void }) {
                     <FormItem>
                       <FormLabel>Target language</FormLabel>
                       <FormControl>
-                        <Select onValueChange={field.onChange} defaultValue="zhCN">
+                        <Select
+                          onValueChange={v => {
+                            field.onChange(v as Language)
+                          }}
+                          defaultValue="zhCN">
                           <SelectTrigger className="w-[200px]">
                             <SelectValue placeholder="Select a language" />
                           </SelectTrigger>

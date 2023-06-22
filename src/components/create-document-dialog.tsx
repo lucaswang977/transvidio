@@ -153,7 +153,11 @@ export function DocumentCreateDialog() {
                   <FormItem>
                     <FormLabel>Type</FormLabel>
                     <FormControl>
-                      <Select onValueChange={field.onChange} defaultValue="enUS">
+                      <Select
+                        onValueChange={(v) => {
+                          field.onChange(v as DocumentType)
+                        }}
+                        defaultValue="enUS">
                         <SelectTrigger className="w-[200px]">
                           <SelectValue placeholder="Select a language" />
                         </SelectTrigger>
