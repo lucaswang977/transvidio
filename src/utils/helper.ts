@@ -8,12 +8,11 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function timeFormat(milliseconds: number) {
-  const hours = Math.floor(milliseconds / 1000 / 60 / 60).toString().padStart(2, "0");
-  const minutes = Math.floor(milliseconds / 1000 / 60 % 60).toString().padStart(2, '0');
+  const minutes = Math.floor(milliseconds / 1000 / 60).toString().padStart(2, '0');
   const seconds = Math.floor(milliseconds / 1000 % 3600).toString().padStart(2, '0');
-  const millisecondsFormatted = (milliseconds % 1000).toString().padStart(3, '0');
+  const millisecondsFormatted = Math.floor(milliseconds % 1000 / 100).toString().padStart(1, '0');
 
-  return `${hours}:${minutes}:${seconds}.${millisecondsFormatted}`;
+  return `${minutes}:${seconds}.${millisecondsFormatted}`;
 }
 
 export function naturalTime(time: Date) {

@@ -38,96 +38,100 @@ const SubtitleEditor = ({ srcObj, dstObj, onChange }: SubtitleEditorProps) => {
   const [captions, setCaptions] = React.useState({ src: "", dst: "" })
 
   return (
-    <div className="flex-col space-y-2">
-      <div className="flex space-x-2 py-6">
-        <ScrollArea className="h-[80vh]">
-          <div className="flex space-x-6">
-            <div className="flex flex-col space-y-2 w-[300px]">
-              {
-                srcObj.subtitle.map((item, index) => {
-                  return (
-                    <div key={`src-${index}`} className="flex h-full space-x-1">
-                      <div className="flex flex-col text-slate-300 py-2">
-                        <Label className="text-xs h-full">{timeFormat(item.from)}</Label>
-                        <Label className="text-xs">{timeFormat(item.to)}</Label>
-                      </div>
-                      <Textarea
-                        value={item.text}
-                        className="overflow-hidden"
-                        onChange={(event) => {
-                          const subtitles = [...srcObj.subtitle]
-                          const subtitle = subtitles[index]
-                          if (subtitle) {
-                            subtitle.text = event.target.value
-                            onChange("src", { ...srcObj, subtitle: subtitles })
-                          }
-                        }}
-                        onFocus={() => {
-                          if (reactPlayerRef.current) reactPlayerRef.current.seekTo(item.from / 1000)
-                        }}
-                      />
-                    </div>
-                  )
-                })
-              }
-            </div>
-            <div className="flex flex-col space-y-2 w-[300px]">
-              {
-                dstObj.subtitle.map((item, index) => {
-                  return (
-                    <div key={`dst-${index}`} className="flex h-full space-x-1">
-                      <div className="flex flex-col text-slate-300 py-2">
-                        <Label className="text-xs h-full">{timeFormat(item.from)}</Label>
-                        <Label className="text-xs">{timeFormat(item.to)}</Label>
-                      </div>
-                      <Textarea
-                        value={item.text}
-                        className="overflow-hidden"
-                        onChange={(event) => {
-                          const subtitles = [...dstObj.subtitle]
-                          const subtitle = subtitles[index]
-                          if (subtitle) {
-                            subtitle.text = event.target.value
-                            onChange("dst", { ...dstObj, subtitle: subtitles })
-                          }
-                        }}
-                        onFocus={() => {
-                          if (reactPlayerRef.current) reactPlayerRef.current.seekTo(item.from / 1000)
-                        }}
-                      />
-                    </div>
-                  )
-                })
-              }
-            </div>
-          </div>
-        </ScrollArea>
-        <div className="flex flex-col items-center space-y-2">
-          <VideoPlayer
-            url={srcObj.videoUrl}
-            ref={reactPlayerRef}
-            className="w-[600px] h-[400px] my-1"
-            handleProgress={(playedSeconds: number) => {
-              const index = srcObj.subtitle.findIndex(
-                (item) =>
-                  (playedSeconds * 1000 >= item.from) &&
-                  (playedSeconds * 1000 <= item.to))
-              if (index >= 0) {
-                const srcItem = srcObj.subtitle[index]
-                const dstItem = dstObj.subtitle[index]
-                setCaptions({
-                  src: srcItem?.text ? srcItem.text : "",
-                  dst: dstItem?.text ? dstItem.text : ""
-                })
-              }
-            }}
-          >
-          </VideoPlayer>
-          <Label className="text-lg">{captions.dst}</Label>
-          <Label>{captions.src}</Label>
-        </div>
+    <div className="flex flex-col lg:flex-row lg:space-x-2 lg:py-6">
+      <div className="flex flex-col items-center space-y-2 mb-4 lg:order-last">
+        <VideoPlayer
+          url={srcObj.videoUrl}
+          ref={reactPlayerRef}
+          handleProgress={(playedSeconds: number) => {
+            console.log("played: ", playedSeconds)
+            const index = srcObj.subtitle.findIndex(
+              (item) =>
+                (playedSeconds * 1000 >= item.from) &&
+                (playedSeconds * 1000 <= item.to))
+            if (index >= 0) {
+              const srcItem = srcObj.subtitle[index]
+              const dstItem = dstObj.subtitle[index]
+              setCaptions({
+                src: srcItem?.text ? srcItem.text : "",
+                dst: dstItem?.text ? dstItem.text : ""
+              })
+            }
+          }}
+        >
+        </VideoPlayer>
+        <Label className="text-lg">{captions.dst}</Label>
+        <Label>{captions.src}</Label>
       </div>
 
+      <ScrollArea className="h-[50vh] lg:h-[80vh]">
+        <div className="flex space-x-6">
+          <div className="flex flex-col space-y-2">
+            {
+              srcObj.subtitle.map((item, index) => {
+                return (
+                  <div key={`src-${index}`} className="flex space-x-1 w-96">
+                    <div className="flex flex-col text-slate-300 py-2">
+                      <Label className="text-xs h-full">{timeFormat(item.from)}</Label>
+                      <Label className="text-xs">{timeFormat(item.to)}</Label>
+                    </div>
+                    <Textarea
+                      value={item.text}
+                      className="overflow-hidden"
+                      onChange={(event) => {
+                        const subtitles = [...srcObj.subtitle]
+                        const subtitle = subtitles[index]
+                        if (subtitle) {
+                          subtitle.text = event.target.value
+                          onChange("src", { ...srcObj, subtitle: subtitles })
+                        }
+                      }}
+                      onFocus={() => {
+                        if (reactPlayerRef.current) {
+                          const duration = reactPlayerRef.current.getDuration()
+                          reactPlayerRef.current.seekTo(item.from / 1000 / duration, "fraction")
+                        }
+                      }}
+                    />
+                  </div>
+                )
+              })
+            }
+          </div>
+          <div className="flex flex-col space-y-2">
+            {
+              dstObj.subtitle.map((item, index) => {
+                return (
+                  <div key={`dst-${index}`} className="flex space-x-1 w-96">
+                    <div className="flex flex-col text-slate-300 py-2">
+                      <Label className="text-xs h-full">{timeFormat(item.from)}</Label>
+                      <Label className="text-xs">{timeFormat(item.to)}</Label>
+                    </div>
+                    <Textarea
+                      value={item.text}
+                      className="overflow-hidden"
+                      onChange={(event) => {
+                        const subtitles = [...dstObj.subtitle]
+                        const subtitle = subtitles[index]
+                        if (subtitle) {
+                          subtitle.text = event.target.value
+                          onChange("dst", { ...dstObj, subtitle: subtitles })
+                        }
+                      }}
+                      onFocus={() => {
+                        if (reactPlayerRef.current) {
+                          const duration = reactPlayerRef.current.getDuration()
+                          reactPlayerRef.current.seekTo(item.from / 1000 / duration, "fraction")
+                        }
+                      }}
+                    />
+                  </div>
+                )
+              })
+            }
+          </div>
+        </div>
+      </ScrollArea>
     </div>
   )
 }

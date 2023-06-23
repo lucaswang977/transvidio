@@ -117,16 +117,9 @@ async function createCurriculum(
             srcData.subtitle = entries
           }
 
-          const originalSubtitleDstUrl = `${env.CDN_BASE_URL}/${projectId}/${supItem.assetFilename}.dst.vtt`
           const dstData: SubtitleType = {
             videoUrl: srcData.videoUrl,
-            subtitle: []
-          }
-          const respDst = await fetch(originalSubtitleDstUrl)
-          if (respDst.ok) {
-            const vttText = await respDst.text()
-            const { entries } = parse(vttText)
-            dstData.subtitle = entries
+            subtitle: srcData.subtitle.map(s => { return { from: s.from, text: "", to: s.to } })
           }
 
           await prisma.document.create({
