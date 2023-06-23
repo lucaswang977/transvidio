@@ -11,6 +11,7 @@ import { DocumentCreateDialog } from "~/components/create-document-dialog"
 import { type NextPageWithLayout } from "../_app"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "~/components/ui/select"
 import { truncateString } from "~/utils/helper"
+import { Skeleton } from "~/components/ui/skeleton"
 
 const DocumentManagement: NextPageWithLayout = () => {
   const { data: session } = useSession()
@@ -23,7 +24,7 @@ const DocumentManagement: NextPageWithLayout = () => {
     if (filter && typeof filter === "string") setFilterProject(filter)
   }, [filter])
 
-  const { data: documents, refetch } = api.document.getAll.useQuery(
+  const { data: documents, status, refetch } = api.document.getAll.useQuery(
     undefined,
     { enabled: session?.user !== undefined },
   );
@@ -65,7 +66,7 @@ const DocumentManagement: NextPageWithLayout = () => {
             setFilterProject(v)
           }}>
             <SelectTrigger className="w-[240px] text-xs h-9">
-              <SelectValue placeholder="Filter by project" />
+              <SelectValue placeholder="Select a project" />
             </SelectTrigger>
             <SelectContent>
               <SelectGroup>
@@ -89,15 +90,23 @@ const DocumentManagement: NextPageWithLayout = () => {
         </div>
       </div>
 
-      <DataTable
-        columns={columns}
-        data={data}
-        rowSelection={rowSelection}
-        setRowSelection={setRowSelection}
-        user={session?.user}
-        handleRefetch={() => refetch()}
-        filter={{ column: "project", value: filterProject }}
-      />
+      {status === "loading" ?
+        <div className="space-y-2">
+          <Skeleton className="h4 w-[250px]" />
+          <Skeleton className="h4 w-[250px]" />
+          <Skeleton className="h4 w-[250px]" />
+        </div>
+        : <DataTable
+          columns={columns}
+          data={data}
+          rowSelection={rowSelection}
+          setRowSelection={setRowSelection}
+          user={session?.user}
+          handleRefetch={() => refetch()}
+          filter={{ column: "project", value: filterProject }}
+        />
+
+      }
     </div>
   )
 }

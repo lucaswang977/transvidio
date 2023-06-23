@@ -9,11 +9,12 @@ import { type ProjectRelatedUser } from "~/server/api/routers/project"
 import { RefreshCcw } from "lucide-react"
 import { Button } from "~/components/ui/button"
 import { type NextPageWithLayout } from "../_app"
+import { Skeleton } from "~/components/ui/skeleton"
 
 const ProjectManagement: NextPageWithLayout = () => {
   const { data: session } = useSession()
   const [rowSelection, setRowSelection] = React.useState({})
-  const { data: projects, refetch } = api.project.getAll.useQuery(
+  const { data: projects, status, refetch } = api.project.getAll.useQuery(
     undefined, // no input
     { enabled: session?.user !== undefined },
   );
@@ -63,14 +64,22 @@ const ProjectManagement: NextPageWithLayout = () => {
         </div>
       </div>
 
-      <DataTable
-        columns={columns}
-        data={data}
-        rowSelection={rowSelection}
-        setRowSelection={setRowSelection}
-        handleRefetch={handleRefetch}
-        user={session?.user}
-      />
+      {status === "loading" ?
+        <div className="space-y-2">
+          <Skeleton className="h4 w-[250px]" />
+          <Skeleton className="h4 w-[250px]" />
+          <Skeleton className="h4 w-[250px]" />
+        </div>
+        :
+        <DataTable
+          columns={columns}
+          data={data}
+          rowSelection={rowSelection}
+          setRowSelection={setRowSelection}
+          handleRefetch={handleRefetch}
+          user={session?.user}
+        />
+      }
     </div>
 
   )

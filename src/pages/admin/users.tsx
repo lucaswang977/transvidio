@@ -8,11 +8,12 @@ import { type NextPageWithLayout } from "../_app"
 import { naturalTime } from "~/utils/helper"
 import { Button } from "~/components/ui/button"
 import { RefreshCcw } from "lucide-react"
+import { Skeleton } from "~/components/ui/skeleton"
 
 const UserManagement: NextPageWithLayout = () => {
   const [rowSelection, setRowSelection] = React.useState({})
   const { data: session } = useSession();
-  const { data: users, refetch } = api.user.getAll.useQuery(
+  const { data: users, status, refetch } = api.user.getAll.useQuery(
     undefined, // no input
     { enabled: session?.user !== undefined },
   );
@@ -53,12 +54,21 @@ const UserManagement: NextPageWithLayout = () => {
 
       </div>
       <div>
-        <DataTable
-          columns={columns}
-          data={usersData}
-          rowSelection={rowSelection}
-          setRowSelection={setRowSelection}
-        />
+        {status === "loading" ?
+          <div className="space-y-2">
+            <Skeleton className="h4 w-[250px]" />
+            <Skeleton className="h4 w-[250px]" />
+            <Skeleton className="h4 w-[250px]" />
+          </div>
+          :
+
+          <DataTable
+            columns={columns}
+            data={usersData}
+            rowSelection={rowSelection}
+            setRowSelection={setRowSelection}
+          />
+        }
       </div>
     </div>
   )
