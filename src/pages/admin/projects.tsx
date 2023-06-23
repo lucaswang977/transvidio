@@ -9,7 +9,7 @@ import { type ProjectRelatedUser } from "~/server/api/routers/project"
 import { RefreshCcw } from "lucide-react"
 import { Button } from "~/components/ui/button"
 import { type NextPageWithLayout } from "../_app"
-import { Skeleton } from "~/components/ui/skeleton"
+import { TableLoading } from "~/components/ui/table-loading"
 
 const ProjectManagement: NextPageWithLayout = () => {
   const { data: session } = useSession()
@@ -65,11 +65,7 @@ const ProjectManagement: NextPageWithLayout = () => {
       </div>
 
       {status === "loading" ?
-        <div className="space-y-2">
-          <Skeleton className="h4 w-[250px]" />
-          <Skeleton className="h4 w-[250px]" />
-          <Skeleton className="h4 w-[250px]" />
-        </div>
+        <TableLoading className="mt-6" />
         :
         <DataTable
           columns={columns}

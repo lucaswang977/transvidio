@@ -130,29 +130,32 @@ export function DataTable<TData, TValue>({
           )}
         </TableBody>
       </Table>
-      {
-        (table.getPageCount() > 1) ?
-          <div className="flex items-center justify-end space-x-2 py-4 pr-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => table.previousPage()}
-              disabled={!table.getCanPreviousPage()}
-            >
-              Previous
-            </Button>
-            <p className="text-sm px-2">{pagination.pageIndex + 1} / {table.getPageCount()}</p>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => table.nextPage()}
-              disabled={!table.getCanNextPage()}
-            >
-              Next
-            </Button>
-          </div>
-          : <></>
-      }
+      <div className="flex items-center justify-between">
+        <p className="p-4 text-sm text-gray-400">Total {table.getFilteredRowModel().rows.length} items</p>
+        {
+          (table.getPageCount() > 1) ?
+            <div className="flex space-x-2 py-4 pr-4 items-center">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => table.previousPage()}
+                disabled={!table.getCanPreviousPage()}
+              >
+                Previous
+              </Button>
+              <p className="text-sm px-2">{pagination.pageIndex + 1} / {table.getPageCount()}</p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => table.nextPage()}
+                disabled={!table.getCanNextPage()}
+              >
+                Next
+              </Button>
+            </div>
+            : <></>
+        }
+      </div>
     </div>
   )
 }

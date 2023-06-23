@@ -214,6 +214,8 @@ export const columns: ColumnDef<DocumentColumn>[] = [
       const data = row.original
       const myself = table.options.meta?.user
       const refetch = table.options.meta?.refetchData
+      const isClaimed = (data.state !== "OPEN" && data.state !== "CLOSED") &&
+        (myself && data.user && data.user.id === myself.id)
       let editorUrl = "/"
       if (data.type === "INTRODUCTION") {
         editorUrl = "/editor/introduction/" + data.id
@@ -241,11 +243,11 @@ export const columns: ColumnDef<DocumentColumn>[] = [
                   <Button className="invisible w-20">Hidden</Button>
           }
 
-          <a href={editorUrl} target="_blank">
-            <Button variant="ghost">
+          <Button disabled={!isClaimed} variant="ghost">
+            <a href={editorUrl} target="_blank">
               <ExternalLink className="mr-2 h-4 w-4" />
-            </Button>
-          </a>
+            </a>
+          </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="h-8 w-8 p-0">
