@@ -24,6 +24,10 @@ An online translation collaborative platform which enables project-based transla
   - [ ] User profile(avatar, payment method)
   - [ ] Block user login / invalidate token
 - [ ] AI integration for productivity
+  - [ ] Prompt template
+  - [ ] Course intro, curriculum, article, quiz translation
+  - [ ] Video transcription & subtitle translation
+  - [ ] Attachment translation
 - [ ] Document edit history and restore back
 - [ ] Payment management
 - [ ] AI dubbing

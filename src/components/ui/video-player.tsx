@@ -13,7 +13,7 @@ const VideoPlayer = React.forwardRef<ReactPlayer, VideoPlayerProps & ReactPlayer
   ({ className, url, handleProgress, ...props }, ref) => (
     <ReactPlayer
       className={cn(
-        "border border-input bg-transparent px-3 py-2",
+        "border p-1",
         className
       )}
       ref={ref}

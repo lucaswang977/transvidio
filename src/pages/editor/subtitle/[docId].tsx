@@ -38,8 +38,8 @@ const SubtitleEditor = ({ srcObj, dstObj, onChange }: SubtitleEditorProps) => {
   const [captions, setCaptions] = React.useState({ src: "", dst: "" })
 
   return (
-    <div className="flex flex-col lg:flex-row lg:space-x-2 lg:py-6">
-      <div className="flex flex-col items-center space-y-2 mb-4 lg:order-last">
+    <div className="flex flex-col items-center lg:items-start lg:flex-row lg:space-x-2 lg:py-6">
+      <div className="flex flex-col items-center space-y-2 mb-4 lg:order-last lg:mx-4">
         <VideoPlayer
           url={srcObj.videoUrl}
           ref={reactPlayerRef}
@@ -53,8 +53,8 @@ const SubtitleEditor = ({ srcObj, dstObj, onChange }: SubtitleEditorProps) => {
               const srcItem = srcObj.subtitle[index]
               const dstItem = dstObj.subtitle[index]
               setCaptions({
-                src: srcItem?.text ? srcItem.text : "",
-                dst: dstItem?.text ? dstItem.text : ""
+                src: srcItem?.text ? srcItem.text : "<empty>",
+                dst: dstItem?.text ? dstItem.text : "<empty>"
               })
             }
           }}
@@ -65,19 +65,19 @@ const SubtitleEditor = ({ srcObj, dstObj, onChange }: SubtitleEditorProps) => {
       </div>
 
       <ScrollArea className="h-[50vh] lg:h-[80vh]">
-        <div className="flex space-x-6">
+        <div className="flex">
           <div className="flex flex-col space-y-2">
             {
               srcObj.subtitle.map((item, index) => {
                 return (
-                  <div key={`src-${index}`} className="flex space-x-1 w-96">
+                  <div key={`src-${index}`} className="flex space-x-1">
                     <div className="flex flex-col text-slate-300 py-2">
                       <Label className="text-xs h-full">{timeFormat(item.from)}</Label>
                       <Label className="text-xs">{timeFormat(item.to)}</Label>
                     </div>
                     <Textarea
                       value={item.text}
-                      className="overflow-hidden"
+                      className="overflow-hidden w-72"
                       onChange={(event) => {
                         const subtitles = [...srcObj.subtitle]
                         const subtitle = subtitles[index]
@@ -102,14 +102,10 @@ const SubtitleEditor = ({ srcObj, dstObj, onChange }: SubtitleEditorProps) => {
             {
               dstObj.subtitle.map((item, index) => {
                 return (
-                  <div key={`dst-${index}`} className="flex space-x-1 w-96">
-                    <div className="flex flex-col text-slate-300 py-2">
-                      <Label className="text-xs h-full">{timeFormat(item.from)}</Label>
-                      <Label className="text-xs">{timeFormat(item.to)}</Label>
-                    </div>
+                  <div key={`dst-${index}`} className="flex space-x-1">
                     <Textarea
                       value={item.text}
-                      className="overflow-hidden"
+                      className="overflow-hidden w-72"
                       onChange={(event) => {
                         const subtitles = [...dstObj.subtitle]
                         const subtitle = subtitles[index]
@@ -202,7 +198,7 @@ const DocEditorPage: NextPageWithLayout = () => {
       saveDisabled={!contentDirty}
     >
       {status === "loading" ? <span>Loading</span> :
-        <div className="flex flex-col items-center space-y-4 p-20">
+        <div className="flex flex-col items-center space-y-4 pt-20">
           <div className="flex items-center justify-between space-y-2">
             <h2 className="text-xl font-bold tracking-tight mx-auto">
               {docInfo?.title ? docInfo.title : "Curriculum Editor"}
