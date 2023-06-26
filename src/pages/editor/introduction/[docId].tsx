@@ -212,7 +212,7 @@ const DocEditorPage: NextPageWithLayout = () => {
             onSuccess: (res) => {
               setDstObj((dst) => {
                 const newObj = { ...dst }
-                newObj.title = res as string
+                newObj.title = res
                 return newObj
               })
             },
@@ -225,7 +225,7 @@ const DocEditorPage: NextPageWithLayout = () => {
             onSuccess: (res) => {
               setDstObj((dst) => {
                 const newObj = { ...dst }
-                newObj.headline = res as string
+                newObj.headline = res
                 return newObj
               })
             },
@@ -239,7 +239,7 @@ const DocEditorPage: NextPageWithLayout = () => {
             onSuccess: (res) => {
               setDstObj((dst) => {
                 const newObj = { ...dst }
-                newObj.description = res as string
+                newObj.description = res
                 return newObj
               })
             },
