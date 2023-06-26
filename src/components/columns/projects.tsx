@@ -4,6 +4,7 @@ import { type ColumnDef } from "@tanstack/react-table"
 import { Avatar, AvatarImage, AvatarFallback } from "~/components/ui/avatar"
 import { type ProjectRelatedUser } from "~/server/api/routers/project"
 import { AssignProjectToUserDialog } from "~/components/assign-project-to-user-dialog"
+import { AiParamsDialog } from "~/components/ai-params-dialog"
 import { MoreHorizontal } from "lucide-react"
 
 import { Button } from "~/components/ui/button"
@@ -22,6 +23,7 @@ import {
 import { extractLetters } from "~/utils/helper"
 import Link from "next/link"
 import { Badge } from "../ui/badge"
+import type { ProjectAiParamters } from "~/types"
 
 export type ProjectColumn = {
   id: string
@@ -30,6 +32,7 @@ export type ProjectColumn = {
   dstLang: string
   memo: string
   users: ProjectRelatedUser[]
+  aiParameter: ProjectAiParamters
   documentCount: { open?: number, working?: number, reviewing?: number, closed?: number, all: number }
 }
 
@@ -82,6 +85,31 @@ export const columns: ColumnDef<ProjectColumn>[] = [
   {
     accessorKey: "memo",
     header: "Memo"
+  },
+  {
+    accessorKey: "aiParameter",
+    header: "AI Param",
+    cell: ({ row, table }) => {
+      const myself = table.options.meta?.user
+      const projectId = row.original.id
+      const aiParameter = row.original.aiParameter
+
+      return (
+        <div className="flex space-x-1 items-center" >
+          {aiParameter ?
+            <span>Filled</span> :
+            <span className="text-gray-300">Empty</span>}
+          {(myself && myself.role === "ADMIN") ?
+            <>
+              <AiParamsDialog
+                projectId={projectId}
+                currentValue={aiParameter}
+                refetch={table.options.meta?.refetchData}
+              />
+            </> : <></>}
+        </div >
+      )
+    }
   },
   {
     accessorKey: "users",

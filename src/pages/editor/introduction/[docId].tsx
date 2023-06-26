@@ -32,8 +32,8 @@ type IntroductionEditorProps = {
 const IntroductionEditor = ({ srcObj, dstObj, onChange }: IntroductionEditorProps) => {
   return (
     <div className="flex-1 items-center space-y-2 justify-center">
-      <div className="flex flex-col space-y-2 items-center">
-        <p className="text-sm font-bold">Title</p>
+      <p className="text-sm font-bold">Title</p>
+      <div className="flex space-x-2">
         <Input
           type="text"
           className="w-full"
@@ -53,8 +53,8 @@ const IntroductionEditor = ({ srcObj, dstObj, onChange }: IntroductionEditorProp
             onChange("dst", obj)
           }} />
       </div>
-      <div className="flex flex-col space-y-2 items-center">
-        <p className="text-sm font-bold">Headline</p>
+      <p className="text-sm font-bold">Headline</p>
+      <div className="flex space-x-2">
         <Input
           type="text"
           value={srcObj.headline}
@@ -72,9 +72,10 @@ const IntroductionEditor = ({ srcObj, dstObj, onChange }: IntroductionEditorProp
             onChange("dst", obj)
           }} />
       </div>
-      <div className="flex flex-col space-y-2 items-center">
-        <p className="text-sm font-bold">Description</p>
+      <p className="text-sm font-bold">Description</p>
+      <div className="flex space-x-2">
         <RichtextEditor
+          height="500px"
           value={srcObj.description}
           onChange={(event) => {
             const obj = { ...srcObj }
@@ -89,8 +90,8 @@ const IntroductionEditor = ({ srcObj, dstObj, onChange }: IntroductionEditorProp
             onChange("dst", obj)
           }} />
       </div>
-      <div className="flex flex-col space-y-2 items-center">
-        <p className="text-sm font-bold">Prerequisites</p>
+      <p className="text-sm font-bold">Prerequisites</p>
+      <div className="flex flex-col space-y-2">
         <ComparativeArrayEditor
           src={srcObj.prerequisites}
           dst={dstObj.prerequisites}
@@ -106,8 +107,8 @@ const IntroductionEditor = ({ srcObj, dstObj, onChange }: IntroductionEditorProp
             }
           }} />
       </div>
-      <div className="flex flex-col space-y-2 items-center">
-        <p className="text-sm font-bold">Objectives</p>
+      <p className="text-sm font-bold">Objectives</p>
+      <div className="flex flex-col space-y-2">
         <ComparativeArrayEditor
           src={srcObj.objectives}
           dst={dstObj.objectives}
@@ -123,8 +124,8 @@ const IntroductionEditor = ({ srcObj, dstObj, onChange }: IntroductionEditorProp
             }
           }} />
       </div>
+      <p className="text-sm font-bold">Target Audiences</p>
       <div className="flex flex-col space-y-2 items-center">
-        <p className="text-sm font-bold">Target Audiences</p>
         <ComparativeArrayEditor
           src={srcObj.target_audiences}
           dst={dstObj.target_audiences}
@@ -149,6 +150,7 @@ const DocEditorPage: NextPageWithLayout = () => {
   const docId = router.query.docId as string
   const { data: session } = useSession()
   const mutation = api.document.save.useMutation()
+  const autofill = api.translate.translate.useMutation()
   const [contentDirty, setContentDirty] = React.useState(false)
   const [docInfo, setDocInfo] = React.useState<DocumentInfo>(
     { id: "", title: "", projectId: "", projectName: "", updatedAt: new Date(0) }
@@ -203,6 +205,49 @@ const DocEditorPage: NextPageWithLayout = () => {
       docInfo={docInfo}
       handleSave={saveDoc}
       saveDisabled={!contentDirty}
+      handleAutoFill={async (projectId) => {
+
+        await autofill.mutateAsync({ projectId: projectId, text: srcObj.title },
+          {
+            onSuccess: (res) => {
+              setDstObj((dst) => {
+                const newObj = { ...dst }
+                newObj.title = res as string
+                return newObj
+              })
+            },
+            onError: (err) => {
+              console.log(err)
+            }
+          })
+        await autofill.mutateAsync({ projectId: projectId, text: srcObj.headline },
+          {
+            onSuccess: (res) => {
+              setDstObj((dst) => {
+                const newObj = { ...dst }
+                newObj.headline = res as string
+                return newObj
+              })
+            },
+            onError: (err) => {
+              console.log(err)
+            }
+          })
+
+        await autofill.mutateAsync({ projectId: projectId, text: srcObj.description },
+          {
+            onSuccess: (res) => {
+              setDstObj((dst) => {
+                const newObj = { ...dst }
+                newObj.description = res as string
+                return newObj
+              })
+            },
+            onError: (err) => {
+              console.log(err)
+            }
+          })
+      }}
     >
       {status === "loading" ? <span>Loading</span> :
         <div className="flex flex-col items-center space-y-4 p-20">

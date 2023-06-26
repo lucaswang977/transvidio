@@ -72,3 +72,10 @@ export type AttachmentType = {
   filename: string,
   fileurl: string,
 }
+
+
+export type ProjectAiParamters = {
+  character: string,
+  background: string,
+  syllabus: string
+}

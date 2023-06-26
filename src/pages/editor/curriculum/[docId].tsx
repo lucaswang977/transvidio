@@ -91,9 +91,12 @@ const CurriculumListEditor = (props: CurriculumListEditorProps) => {
                         }} />
                     </div>
 
-                    <RichtextEditor value={item.description} onChange={(event) => {
-                      onChangeItemDescription(i, j, event.target.value)
-                    }} />
+                    <RichtextEditor
+                      height="150px"
+                      value={item.description}
+                      onChange={(event) => {
+                        onChangeItemDescription(i, j, event.target.value)
+                      }} />
                   </div>
                 )
               })

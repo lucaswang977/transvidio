@@ -10,6 +10,7 @@ import { RefreshCcw } from "lucide-react"
 import { Button } from "~/components/ui/button"
 import { type NextPageWithLayout } from "../_app"
 import { TableLoading } from "~/components/ui/table-loading"
+import { type ProjectAiParamters } from "~/types"
 
 const ProjectManagement: NextPageWithLayout = () => {
   const { data: session } = useSession()
@@ -28,6 +29,7 @@ const ProjectManagement: NextPageWithLayout = () => {
         srcLang: project.srcLang,
         dstLang: project.dstLang,
         memo: project.memo ? project.memo : "",
+        aiParameter: project.aiParameter as ProjectAiParamters,
         users: project.users.map((user: { user: ProjectRelatedUser }) => {
           return {
             id: user.user.id,

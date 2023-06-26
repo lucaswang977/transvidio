@@ -30,7 +30,7 @@ export const ComparativeArrayEditor = (props: ComparativeArrayEditorProps) => {
     <>
       {props.src.map((src, index) => {
         const dst = props.dst[index]
-        return (<div key={index} className="flex-col space-y-1 w-full">
+        return (<div key={index} className="flex space-x-2 w-full">
           <Input
             type="text"
             value={src ? src : ""}
@@ -41,7 +41,7 @@ export const ComparativeArrayEditor = (props: ComparativeArrayEditorProps) => {
             onChange={(event) => { onChange("dst", event.target.value, index) }} />
         </div>)
       })}
-      <Button className="text-gray-200" variant="outline" onClick={() => {
+      <Button className="hidden text-gray-200" variant="outline" onClick={() => {
         onChange("src", "", -1)
         onChange("dst", "", -1)
       }}><Plus /></Button>

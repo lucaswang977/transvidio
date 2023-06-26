@@ -5,7 +5,7 @@ import { UserNav } from "~/components/user-nav";
 import { Logo } from "~/components/logo-with-name"
 import { Button } from "~/components/ui/button"
 import Link from "next/link";
-import { Save } from "lucide-react";
+import { Bot, Save } from "lucide-react";
 import { naturalTime } from "~/utils/helper"
 import type { DocumentInfo } from "~/types";
 import { Beforeunload } from 'react-beforeunload';
@@ -15,6 +15,7 @@ type LayoutProps = {
   saveDisabled: boolean,
   children: React.ReactNode
   handleSave: () => void,
+  handleAutoFill?: (projectId: string) => void
 }
 
 const DocLayout = (props: LayoutProps) => {
@@ -33,6 +34,13 @@ const DocLayout = (props: LayoutProps) => {
               </p>
             </div>
             <div className="flex space-x-4 items-center">
+              <Button onClick={() => {
+                if (props.handleAutoFill) props.handleAutoFill(props.docInfo.projectId)
+              }} >
+                <Bot className="h-4 w-4 mr-1" />
+                <span>Auto Fill</span>
+              </Button>
+
               <Button disabled={props.saveDisabled} onClick={props.handleSave} >
                 <Save className="h-4 w-4 mr-1" />
                 <span>Save</span>
