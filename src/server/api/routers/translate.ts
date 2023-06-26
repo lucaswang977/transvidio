@@ -14,8 +14,10 @@ import {
 } from "langchain/prompts";
 import { LLMChain } from "langchain/chains";
 import { ChatOpenAI } from "langchain/chat_models/openai";
+import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 
 import type { ProjectAiParamters } from "~/types";
+import { SystemChatMessage } from "langchain/dist/schema";
 
 export const translateRouter = createTRPCRouter({
   saveAiParams: protectedProcedure
@@ -77,16 +79,24 @@ export const translateRouter = createTRPCRouter({
       }
 
       const aiParams = project.aiParameter as ProjectAiParamters
-      const messageTemplate = "Assume you are a specialist described as following: {character}.\nYou are going to help me to translate any content from {srcLang} to {dstLang}\nThe content we are going to translate is described as following: {background}\nYou should just answer the translated sentence without anything else."
 
-      const chat = new ChatOpenAI({ temperature: 0 });
+      const chat = new ChatOpenAI({
+        modelName: "gpt-3.5-turbo",
+        temperature: 0
+      });
+      const splitter = new RecursiveCharacterTextSplitter({
+        chunkSize: 500,
+        chunkOverlap: 1
+      })
+      const splitted = await splitter.splitText(input.text)
+
+      const systemMessageTemplate = "Assume you are a specialist described as following: {character}.\nYou are going to help me to translate any content from {srcLang} to {dstLang}.\nWe can describe the scope of the content that needs to be translated as follows: {background}\n"
       const chatPrompt = ChatPromptTemplate.fromPromptMessages([
-        SystemMessagePromptTemplate.fromTemplate(messageTemplate),
-        HumanMessagePromptTemplate.fromTemplate("{text}"),
+        SystemMessagePromptTemplate.fromTemplate(systemMessageTemplate),
+        HumanMessagePromptTemplate.fromTemplate("Your response should only include the translation result and should not add any additional content not mentioned in the original text. \nIf there are HTML tags in the original text, you should keep them, just translate the texts. \nIf you understand, please reply Yes\n"),
       ]);
-      const chain = new LLMChain({ prompt: chatPrompt, llm: chat })
 
-      const res = await chain.call({
+      const prompt0 = await chatPrompt.formatMessages({
         character: aiParams.character,
         background: aiParams.background,
         srcLang: project.srcLang,
@@ -94,7 +104,34 @@ export const translateRouter = createTRPCRouter({
         text: input.text
       })
 
-      console.log(res)
-      return (res as { text: string }).text
+      const messages = splitted.map(s => {
+        return ChatPromptTemplate.fromPromptMessages([
+          SystemMessagePromptTemplate.fromTemplate(systemMessageTemplate),
+          HumanMessagePromptTemplate.fromTemplate(s)
+        ]).formatMessages({
+          character: aiParams.character,
+          background: aiParams.background,
+          srcLang: project.srcLang,
+          dstLang: project.dstLang,
+          text: input.text
+        });
+      })
+
+      const m = await Promise.all(messages)
+
+      const res = await chat.generate([
+        prompt0,
+        ...m
+      ])
+
+      const resultText: string[] = []
+
+      res.generations.forEach((r, i) => {
+        if (i !== 0 && r[0]) resultText.push(r[0].text)
+      })
+
+
+      console.log(splitted, messages, res, resultText)
+      return resultText.join("")
     }),
 });
