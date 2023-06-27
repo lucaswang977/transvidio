@@ -13,7 +13,6 @@ import {
   SystemMessagePromptTemplate,
 } from "langchain/prompts";
 import { ChatOpenAI } from "langchain/chat_models/openai";
-import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 
 import type { ProjectAiParamters } from "~/types";
 
@@ -89,12 +88,6 @@ export const translateRouter = createTRPCRouter({
           },
         ],
       });
-      const splitter = new RecursiveCharacterTextSplitter({
-        chunkSize: 1000,
-        chunkOverlap: 1
-      })
-      const splitted = await splitter.splitText(input.text)
-
       const systemMessageTemplate = "Translate from {srcLang} to {dstLang}."
       const chatPrompt = ChatPromptTemplate.fromPromptMessages([
         SystemMessagePromptTemplate.fromTemplate(systemMessageTemplate),
@@ -109,24 +102,18 @@ export const translateRouter = createTRPCRouter({
         text: input.text
       })
 
-      const messages = splitted.map(s => {
-        return ChatPromptTemplate.fromPromptMessages([
-          SystemMessagePromptTemplate.fromTemplate(systemMessageTemplate),
-          HumanMessagePromptTemplate.fromTemplate(s)
-        ]).formatMessages({
-          character: aiParams.character,
-          background: aiParams.background,
-          srcLang: project.srcLang,
-          dstLang: project.dstLang,
-          text: input.text
-        });
-      })
-
-      const m = await Promise.all(messages)
+      const prompt = await ChatPromptTemplate.fromPromptMessages([
+        SystemMessagePromptTemplate.fromTemplate(systemMessageTemplate),
+        HumanMessagePromptTemplate.fromTemplate("{text}")
+      ]).formatMessages({
+        srcLang: project.srcLang,
+        dstLang: project.dstLang,
+        text: input.text
+      });
 
       const res = await chat.generate([
         prompt0,
-        ...m
+        prompt
       ])
 
       const resultText: string[] = []

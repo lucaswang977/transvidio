@@ -197,12 +197,6 @@ const DocEditorPage: NextPageWithLayout = () => {
   }
 
   const handleAutoFill = (projectId: string) => {
-    const splitter = new RecursiveCharacterTextSplitter({
-      chunkSize: 500,
-      chunkOverlap: 1
-    })
-
-
     return new Promise<void>(async resolve => {
       let modified = false
       if (dstObj.title.length === 0) {
@@ -218,12 +212,16 @@ const DocEditorPage: NextPageWithLayout = () => {
       }
 
       if (dstObj.description.length === 0) {
+        const splitter = RecursiveCharacterTextSplitter.fromLanguage("html", {
+          chunkSize: 2000,
+          chunkOverlap: 0
+        })
         const splitted = await splitter.splitText(srcObj.description)
         const result: string[] = []
         for (const s of splitted) {
           result.push(await autofill.mutateAsync({ projectId: projectId, text: s }))
+          setDstObj(o => { return { ...o, description: result.join("") } })
         }
-        setDstObj(o => { return { ...o, description: result.join("") } })
         modified = true
       }
 

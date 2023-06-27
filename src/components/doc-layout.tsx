@@ -35,20 +35,23 @@ const DocLayout = (props: LayoutProps) => {
               </p>
             </div>
             <div className="flex space-x-4 items-center">
-              <Button disabled={filling} onClick={async () => {
-                if (props.handleAutoFill) {
-                  setFilling(true)
-                  await props.handleAutoFill(props.docInfo.projectId)
-                  setFilling(false)
-                }
-              }} >
-                {filling ?
-                  <Loader2 className="w-4 animate-spin mr-1" />
-                  : <Bot className="h-4 w-4 mr-1" />
-                }
-                <span>{filling ? "Filling" : "Auto Fill"}</span>
-              </Button>
-
+              {
+                props.handleAutoFill ?
+                  <Button disabled={filling} onClick={async () => {
+                    if (props.handleAutoFill) {
+                      setFilling(true)
+                      await props.handleAutoFill(props.docInfo.projectId)
+                      setFilling(false)
+                    }
+                  }} >
+                    {filling ?
+                      <Loader2 className="w-4 animate-spin mr-1" />
+                      : <Bot className="h-4 w-4 mr-1" />
+                    }
+                    <span>{filling ? "Filling" : "Auto Fill"}</span>
+                  </Button>
+                  : <></>
+              }
               <Button disabled={props.saveDisabled} onClick={props.handleSave} >
                 <Save className="h-4 w-4 mr-1" />
                 <span>Save</span>

@@ -19,7 +19,7 @@ import { api } from "~/utils/api";
 import { VideoPlayer } from "~/components/ui/video-player"
 import { Label } from "~/components/ui/label"
 import { Textarea } from "~/components/ui/textarea"
-import type { SubtitleType, SrcOrDst, DocumentInfo } from "~/types"
+import type { SubtitleType, SrcOrDst, DocumentInfo, SubtitleItem } from "~/types"
 import { ScrollArea } from "~/components/ui/scroll-area"
 
 import { timeFormat } from "~/utils/helper"
@@ -137,6 +137,7 @@ const DocEditorPage: NextPageWithLayout = () => {
   const docId = router.query.docId as string
   const { data: session } = useSession()
   const mutation = api.document.save.useMutation()
+  const autofill = api.translate.translate.useMutation()
   const [contentDirty, setContentDirty] = React.useState(false)
   const [docInfo, setDocInfo] = React.useState<DocumentInfo>(
     { id: "", title: "", projectId: "", projectName: "", updatedAt: new Date(0) }
@@ -178,6 +179,61 @@ const DocEditorPage: NextPageWithLayout = () => {
     }
   )
 
+  const handleAutoFill = (projectId: string) => {
+    return new Promise<void>(async resolve => {
+      let modified = false
+      const regex = /[.,;!?]$/
+
+      console.log(srcObj.subtitle.length)
+      let sentence: string[] = []
+      let i = 0
+      for (const s of srcObj.subtitle) {
+        sentence.push(s.text)
+        if (regex.test(sentence.join(" ").trim())) {
+          const res = await autofill.mutateAsync({ projectId: projectId, text: sentence.join(" ") })
+          console.log(sentence.join(" "))
+          const translated: string[] = []
+          const sentenceLength = sentence.join(" ").split(" ").length
+          let index = 0
+          sentence.forEach(s => {
+            const len = Math.round(res.split("").length * s.split(" ").length / sentenceLength)
+            translated.push(res.slice(index, index + len))
+            index = index + len
+          })
+          console.log(translated)
+          setDstObj(o => {
+            const subs = [...o.subtitle]
+            const start = i - translated.length + 1
+            translated.forEach((t, j) => {
+              const src = srcObj.subtitle[start + j]
+              if (!subs[start + j] && src) {
+                subs[start + j] = {
+                  from: src.from,
+                  to: src.to,
+                  text: t
+                } as SubtitleItem
+              } else {
+                subs[start + j] = { ...subs[start + j], text: t } as SubtitleItem
+              }
+            })
+            return {
+              ...o,
+              subtitle: subs
+            }
+          })
+          sentence = []
+        }
+
+        i = i + 1
+      }
+      modified = true
+
+      if (modified) setContentDirty(modified)
+      resolve()
+    })
+  }
+
+
   function saveDoc() {
     mutation.mutate({
       documentId: docId,
@@ -196,6 +252,7 @@ const DocEditorPage: NextPageWithLayout = () => {
       docInfo={docInfo}
       handleSave={saveDoc}
       saveDisabled={!contentDirty}
+      handleAutoFill={handleAutoFill}
     >
       {status === "loading" ? <span>Loading</span> :
         <div className="flex flex-col items-center space-y-4 pt-20">
