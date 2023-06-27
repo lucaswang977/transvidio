@@ -18,14 +18,14 @@ import { type ProjectAiParamters } from "~/types"
 
 type AiParamsDialogProps = {
   projectId: string,
-  currentValue: ProjectAiParamters,
+  currentValue?: ProjectAiParamters,
   refetch?: () => void
 }
 
 export function AiParamsDialog(props: AiParamsDialogProps) {
   const [open, setIsOpen] = React.useState(false)
   const mutation = api.translate.saveAiParams.useMutation()
-  const [params, setParams] = React.useState<ProjectAiParamters>(props.currentValue)
+  const [params, setParams] = React.useState<ProjectAiParamters | undefined>(props.currentValue)
 
   function onSubmit() {
     mutation.mutate({
@@ -57,18 +57,36 @@ export function AiParamsDialog(props: AiParamsDialogProps) {
           </DialogHeader>
           <p>Character</p>
           <Textarea
-            value={params.character}
-            onChange={event => setParams({ ...params, character: event.target.value })}
+            value={params?.character}
+            onChange={event => {
+              if (params) {
+                setParams({ ...params, character: event.target.value })
+              } else {
+                setParams({ character: event.target.value, syllabus: "", background: "" })
+              }
+            }}
           />
           <p>Background</p>
           <Textarea
-            value={params.background}
-            onChange={event => setParams({ ...params, background: event.target.value })}
+            value={params?.background}
+            onChange={event => {
+              if (params) {
+                setParams({ ...params, background: event.target.value })
+              } else {
+                setParams({ background: event.target.value, syllabus: "", character: "" })
+              }
+            }}
           />
           <p>Syllabus</p>
           <Textarea
-            value={params.syllabus}
-            onChange={event => setParams({ ...params, syllabus: event.target.value })}
+            value={params?.syllabus}
+            onChange={event => {
+              if (params) {
+                setParams({ ...params, syllabus: event.target.value })
+              } else {
+                setParams({ syllabus: event.target.value, background: "", character: "" })
+              }
+            }}
           />
           <DialogFooter>
             <Button onClick={onSubmit}>Save</Button>
