@@ -92,14 +92,7 @@ export const columns: ColumnDef<ProjectColumn>[] = [
     cell: ({ row, table }) => {
       const myself = table.options.meta?.user
       const projectId = row.original.id
-      let aiParameter = row.original.aiParameter
-      if (!aiParameter) {
-        aiParameter = {
-          character: "",
-          background: "",
-          syllabus: "",
-        }
-      }
+      const aiParameter = row.original.aiParameter
 
       return (
         <div className="flex space-x-1 items-center" >

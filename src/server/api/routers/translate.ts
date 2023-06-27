@@ -90,7 +90,7 @@ export const translateRouter = createTRPCRouter({
         ],
       });
       const splitter = new RecursiveCharacterTextSplitter({
-        chunkSize: 500,
+        chunkSize: 1000,
         chunkOverlap: 1
       })
       const splitted = await splitter.splitText(input.text)

@@ -22,6 +22,7 @@ import DocLayout from "~/components/doc-layout";
 import { Input } from "~/components/ui/input";
 import { RichtextEditor } from "~/components/ui/richtext-editor";
 import { ComparativeArrayEditor } from "~/components/comparative-array-input";
+import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 
 type IntroductionEditorProps = {
   srcObj: Introduction,
@@ -196,6 +197,12 @@ const DocEditorPage: NextPageWithLayout = () => {
   }
 
   const handleAutoFill = (projectId: string) => {
+    const splitter = new RecursiveCharacterTextSplitter({
+      chunkSize: 500,
+      chunkOverlap: 1
+    })
+
+
     return new Promise<void>(async resolve => {
       let modified = false
       if (dstObj.title.length === 0) {
@@ -211,8 +218,12 @@ const DocEditorPage: NextPageWithLayout = () => {
       }
 
       if (dstObj.description.length === 0) {
-        const description = await autofill.mutateAsync({ projectId: projectId, text: srcObj.description })
-        setDstObj(o => { return { ...o, description: description } })
+        const splitted = await splitter.splitText(srcObj.description)
+        const result: string[] = []
+        for (const s of splitted) {
+          result.push(await autofill.mutateAsync({ projectId: projectId, text: s }))
+        }
+        setDstObj(o => { return { ...o, description: result.join("") } })
         modified = true
       }
 
