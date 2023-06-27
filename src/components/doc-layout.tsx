@@ -5,7 +5,7 @@ import { UserNav } from "~/components/user-nav";
 import { Logo } from "~/components/logo-with-name"
 import { Button } from "~/components/ui/button"
 import Link from "next/link";
-import { Bot, Save } from "lucide-react";
+import { Bot, Loader2, Save } from "lucide-react";
 import { naturalTime } from "~/utils/helper"
 import type { DocumentInfo } from "~/types";
 import { Beforeunload } from 'react-beforeunload';
@@ -15,10 +15,11 @@ type LayoutProps = {
   saveDisabled: boolean,
   children: React.ReactNode
   handleSave: () => void,
-  handleAutoFill?: (projectId: string) => void
+  handleAutoFill?: (projectId: string) => Promise<void>
 }
 
 const DocLayout = (props: LayoutProps) => {
+  const [filling, setFilling] = React.useState(false)
 
   return (
     <>
@@ -34,11 +35,18 @@ const DocLayout = (props: LayoutProps) => {
               </p>
             </div>
             <div className="flex space-x-4 items-center">
-              <Button onClick={() => {
-                if (props.handleAutoFill) props.handleAutoFill(props.docInfo.projectId)
+              <Button disabled={filling} onClick={async () => {
+                if (props.handleAutoFill) {
+                  setFilling(true)
+                  await props.handleAutoFill(props.docInfo.projectId)
+                  setFilling(false)
+                }
               }} >
-                <Bot className="h-4 w-4 mr-1" />
-                <span>Auto Fill</span>
+                {filling ?
+                  <Loader2 className="w-4 animate-spin mr-1" />
+                  : <Bot className="h-4 w-4 mr-1" />
+                }
+                <span>{filling ? "Filling" : "Auto Fill"}</span>
               </Button>
 
               <Button disabled={props.saveDisabled} onClick={props.handleSave} >

@@ -84,6 +84,7 @@ const IntroductionEditor = ({ srcObj, dstObj, onChange }: IntroductionEditorProp
           }} />
         <RichtextEditor
           value={dstObj.description}
+          height="500px"
           onChange={(event) => {
             const obj = { ...dstObj }
             obj.description = event.target.value
@@ -187,6 +188,93 @@ const DocEditorPage: NextPageWithLayout = () => {
     }
   )
 
+  const handleChange = (t: SrcOrDst, v: Introduction) => {
+    if (t === "src") setSrcObj(v)
+    else setDstObj(v)
+
+    setContentDirty(true)
+  }
+
+  const handleAutoFill = (projectId: string) => {
+    return new Promise<void>(async resolve => {
+      let modified = false
+      if (dstObj.title.length === 0) {
+        const title = await autofill.mutateAsync({ projectId: projectId, text: srcObj.title })
+        setDstObj(o => { return { ...o, title: title } })
+        modified = true
+      }
+
+      if (dstObj.headline.length === 0) {
+        const headline = await autofill.mutateAsync({ projectId: projectId, text: srcObj.headline })
+        setDstObj(o => { return { ...o, headline: headline } })
+        modified = true
+      }
+
+      if (dstObj.description.length === 0) {
+        const description = await autofill.mutateAsync({ projectId: projectId, text: srcObj.description })
+        setDstObj(o => { return { ...o, description: description } })
+        modified = true
+      }
+
+      if (dstObj.prerequisites.length >= 0) {
+        let i = 0
+        for (const p of srcObj.prerequisites) {
+          const value = dstObj.prerequisites[i]
+          if (!value || value.length === 0) {
+            const res = await autofill.mutateAsync({ projectId: projectId, text: p })
+            const index = i
+            setDstObj(o => {
+              const np = [...o.prerequisites]
+              np[index] = res
+              return { ...o, prerequisites: np }
+            })
+            modified = true
+          }
+          i = i + 1
+        }
+      }
+
+      if (dstObj.objectives.length >= 0) {
+        let i = 0
+        for (const p of srcObj.objectives) {
+          const value = dstObj.objectives[i]
+          if (!value || value.length === 0) {
+            const res = await autofill.mutateAsync({ projectId: projectId, text: p })
+            const index = i
+            setDstObj(o => {
+              const np = [...o.objectives]
+              np[index] = res
+              return { ...o, objectives: np }
+            })
+            modified = true
+          }
+          i = i + 1
+        }
+      }
+
+      if (dstObj.target_audiences.length >= 0) {
+        let i = 0
+        for (const p of srcObj.target_audiences) {
+          const value = dstObj.target_audiences[i]
+          if (!value || value.length === 0) {
+            const res = await autofill.mutateAsync({ projectId: projectId, text: p })
+            const index = i
+            setDstObj(o => {
+              const np = [...o.target_audiences]
+              np[index] = res
+              return { ...o, target_audiences: np }
+            })
+            modified = true
+          }
+          i = i + 1
+        }
+      }
+
+      if (modified) setContentDirty(modified)
+      resolve()
+    })
+  }
+
   function saveDoc() {
     mutation.mutate({
       documentId: docId,
@@ -205,50 +293,7 @@ const DocEditorPage: NextPageWithLayout = () => {
       docInfo={docInfo}
       handleSave={saveDoc}
       saveDisabled={!contentDirty}
-      handleAutoFill={async (projectId) => {
-
-        await autofill.mutateAsync({ projectId: projectId, text: srcObj.title },
-          {
-            onSuccess: (res) => {
-              setDstObj((dst) => {
-                const newObj = { ...dst }
-                newObj.title = res
-                return newObj
-              })
-            },
-            onError: (err) => {
-              console.log(err)
-            }
-          })
-        await autofill.mutateAsync({ projectId: projectId, text: srcObj.headline },
-          {
-            onSuccess: (res) => {
-              setDstObj((dst) => {
-                const newObj = { ...dst }
-                newObj.headline = res
-                return newObj
-              })
-            },
-            onError: (err) => {
-              console.log(err)
-            }
-          })
-
-        await autofill.mutateAsync({ projectId: projectId, text: srcObj.description },
-          {
-            onSuccess: (res) => {
-              setDstObj((dst) => {
-                const newObj = { ...dst }
-                newObj.description = res
-                return newObj
-              })
-            },
-            onError: (err) => {
-              console.log(err)
-            }
-          })
-      }}
-    >
+      handleAutoFill={handleAutoFill} >
       {status === "loading" ? <span>Loading</span> :
         <div className="flex flex-col items-center space-y-4 p-20">
           <div className="flex items-center justify-between space-y-2">
@@ -256,14 +301,10 @@ const DocEditorPage: NextPageWithLayout = () => {
               {docInfo?.title ? docInfo.title : "Introduction Editor"}
             </h2>
           </div>
-          <IntroductionEditor srcObj={srcObj} dstObj={dstObj} onChange={(t, v) => {
-            if (t === "src") setSrcObj(v)
-            else setDstObj(v)
-            setContentDirty(true)
-          }} />
+          <IntroductionEditor srcObj={srcObj} dstObj={dstObj} onChange={handleChange} />
         </div>
       }
-    </DocLayout>
+    </ DocLayout >
   )
 }
 

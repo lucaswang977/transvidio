@@ -50,21 +50,19 @@ export const authOptions: NextAuthOptions = {
     }
   },
   callbacks: {
-    async signIn({ user, account, profile, email, credentials }) {
-      console.log("signin", user, account, profile, email, credentials)
+    async signIn({ user }) {
       const u = await prisma.user.findUnique({
         where: {
           id: user.id
         }
       })
-      console.log("result: ", u)
       if (u && u.blocked) {
         console.log("user is blocked", u)
         return false
       }
       return true
     },
-    jwt: async ({ token, user, profile }) => {
+    jwt: async ({ token, user }) => {
       if (user) {
         token.email = user.email
         token.name = user.name
@@ -72,7 +70,7 @@ export const authOptions: NextAuthOptions = {
         token.id = user.id
       }
       if ("id" in token) {
-        const result = await prisma.user.update({
+        await prisma.user.update({
           data: {
             lastLogin: new Date()
           },
@@ -80,13 +78,11 @@ export const authOptions: NextAuthOptions = {
             id: token.id as string
           }
         })
-        console.log("login time refreshed", result)
       }
 
-      console.log("jwt", token, user, profile)
       return token
     },
-    session: ({ session, token, user }) => {
+    session: ({ session, token }) => {
       const newSession = {
         ...session,
         user: {
@@ -96,7 +92,6 @@ export const authOptions: NextAuthOptions = {
         }
       }
 
-      console.log("session", session, newSession, user)
       return newSession
     },
   },

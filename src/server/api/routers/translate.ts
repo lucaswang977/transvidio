@@ -12,12 +12,10 @@ import {
   HumanMessagePromptTemplate,
   SystemMessagePromptTemplate,
 } from "langchain/prompts";
-import { LLMChain } from "langchain/chains";
 import { ChatOpenAI } from "langchain/chat_models/openai";
 import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 
 import type { ProjectAiParamters } from "~/types";
-import { SystemChatMessage } from "langchain/dist/schema";
 
 export const translateRouter = createTRPCRouter({
   saveAiParams: protectedProcedure
@@ -82,7 +80,14 @@ export const translateRouter = createTRPCRouter({
 
       const chat = new ChatOpenAI({
         modelName: "gpt-3.5-turbo",
-        temperature: 0
+        temperature: 0.8,
+        callbacks: [
+          {
+            handleLLMError: (err: Error) => {
+              console.error(err);
+            },
+          },
+        ],
       });
       const splitter = new RecursiveCharacterTextSplitter({
         chunkSize: 500,
@@ -90,10 +95,10 @@ export const translateRouter = createTRPCRouter({
       })
       const splitted = await splitter.splitText(input.text)
 
-      const systemMessageTemplate = "Assume you are a specialist described as following: {character}.\nYou are going to help me to translate any content from {srcLang} to {dstLang}.\nWe can describe the scope of the content that needs to be translated as follows: {background}\n"
+      const systemMessageTemplate = "Translate from {srcLang} to {dstLang}."
       const chatPrompt = ChatPromptTemplate.fromPromptMessages([
         SystemMessagePromptTemplate.fromTemplate(systemMessageTemplate),
-        HumanMessagePromptTemplate.fromTemplate("Your response should only include the translation result and should not add any additional content not mentioned in the original text. \nIf there are HTML tags in the original text, you should keep them, just translate the texts. \nIf you understand, please reply Yes\n"),
+        HumanMessagePromptTemplate.fromTemplate("{character}.\nWe can describe the scope of the content that needs to be translated as follows: {background}\nYour response should only include the translation result and nothing else. If there are HTML tags in the original text, keep them, just translate the texts.\nIf you remember, please reply Yes\n"),
       ]);
 
       const prompt0 = await chatPrompt.formatMessages({
@@ -131,7 +136,7 @@ export const translateRouter = createTRPCRouter({
       })
 
 
-      console.log(splitted, messages, res, resultText)
+      console.log(res.llmOutput?.tokenUsage)
       return resultText.join("")
     }),
 });
