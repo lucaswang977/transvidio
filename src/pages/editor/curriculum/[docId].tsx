@@ -192,9 +192,12 @@ const DocEditorPage: NextPageWithLayout = () => {
     const createItems = async (srcItems: CurriculumItem[]) => {
       const dstItems: CurriculumItem[] = []
       for (const i of srcItems) {
-        const title = await autofill.mutateAsync({ projectId: projectId, text: i.title })
-        const description = await autofill.mutateAsync({ projectId: projectId, text: i.description })
-        dstItems.push({ ...i, title: title, description: description })
+        const item = { ...i }
+        if (i.title && i.title.length > 0)
+          item.title = await autofill.mutateAsync({ projectId: projectId, text: i.title })
+        if (i.description && i.description.length > 0)
+          item.description = await autofill.mutateAsync({ projectId: projectId, text: i.description })
+        dstItems.push(item)
       }
       return dstItems
     }
@@ -222,19 +225,26 @@ const DocEditorPage: NextPageWithLayout = () => {
                 const dstItem = s.items[j]
                 if (!dstItem) {
                   // create item
-                  const title = await autofill.mutateAsync({ projectId: projectId, text: item.title })
-                  const description = await autofill.mutateAsync({ projectId: projectId, text: item.description })
-                  s.items[j] = { ...item, title: title, description: description }
+                  const di = { ...item }
+                  if (item.title && item.title.length > 0)
+                    di.title = await autofill.mutateAsync({ projectId: projectId, text: item.title })
+                  if (item.description && item.description.length > 0)
+                    di.description = await autofill.mutateAsync({ projectId: projectId, text: item.description })
+                  s.items[j] = di
                   modified = true
                 } else {
                   // translate item
                   if (!dstItem.title || dstItem.title.length === 0) {
-                    dstItem.title = await autofill.mutateAsync({ projectId: projectId, text: item.title })
-                    modified = true
+                    if (item.title && item.title.length > 0) {
+                      dstItem.title = await autofill.mutateAsync({ projectId: projectId, text: item.title })
+                      modified = true
+                    }
                   }
                   if (!dstItem.description || dstItem.description.length === 0) {
-                    dstItem.description = await autofill.mutateAsync({ projectId: projectId, text: item.description })
-                    modified = true
+                    if (item.description && item.description.length > 0) {
+                      dstItem.description = await autofill.mutateAsync({ projectId: projectId, text: item.description })
+                      modified = true
+                    }
                   }
                 }
 
@@ -243,7 +253,7 @@ const DocEditorPage: NextPageWithLayout = () => {
             }
           } else {
             // create section
-            const title = await autofill.mutateAsync({ projectId: projectId, text: section.title })
+            const title = (section.title && section.title.length > 0) ? await autofill.mutateAsync({ projectId: projectId, text: section.title }) : ""
             const items = await createItems(section.items)
             obj.sections[i] = { title: title, index: section.index, items: items }
             modified = true

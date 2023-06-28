@@ -11,6 +11,8 @@ import type { NextPageWithLayout } from "~/pages/_app";
 import type { ArticleType, DocumentInfo, SrcOrDst } from "~/types";
 import DocLayout from "~/components/doc-layout";
 import { RichtextEditor } from "~/components/ui/richtext-editor";
+import { useToast } from "~/components/ui/use-toast";
+import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 
 type ArticleEditorProps = {
   srcObj: ArticleType,
@@ -19,9 +21,11 @@ type ArticleEditorProps = {
 }
 
 const ArticleEditor = ({ srcObj, dstObj, onChange }: ArticleEditorProps) => {
+  const { innerHeight: height } = window
   return (
-    <div className="flex-col space-y-4 w-full">
+    <div className="flex space-x-4 w-full">
       <RichtextEditor
+        height={`${height * 0.8}px`}
         value={srcObj.html}
         onChange={(event) => {
           const obj = { ...srcObj }
@@ -29,13 +33,13 @@ const ArticleEditor = ({ srcObj, dstObj, onChange }: ArticleEditorProps) => {
           onChange("src", obj)
         }} />
       <RichtextEditor
+        height={`${height * 0.8}px`}
         value={dstObj.html}
         onChange={(event) => {
           const obj = { ...dstObj }
           obj.html = event.target.value
           onChange("dst", obj)
         }} />
-
     </div>
   )
 }
@@ -45,6 +49,8 @@ const DocEditorPage: NextPageWithLayout = () => {
   const docId = router.query.docId as string
   const { data: session } = useSession()
   const mutation = api.document.save.useMutation()
+  const autofill = api.translate.translate.useMutation({ retry: 0 })
+  const { toast } = useToast()
   const [contentDirty, setContentDirty] = React.useState(false)
   const [docInfo, setDocInfo] = React.useState<DocumentInfo>(
     { id: "", title: "", projectId: "", projectName: "", updatedAt: new Date(0) }
@@ -77,6 +83,36 @@ const DocEditorPage: NextPageWithLayout = () => {
     }
   )
 
+  const handleAutoFill = (projectId: string) => {
+    return new Promise<void>(async resolve => {
+      let modified = false
+
+      try {
+        if (!dstObj.html || dstObj.html.length === 0) {
+          const splitter = RecursiveCharacterTextSplitter.fromLanguage("html", {
+            chunkSize: 2000,
+            chunkOverlap: 0
+          })
+          const splitted = await splitter.splitText(srcObj.html)
+          const result: string[] = []
+          for (const s of splitted) {
+            result.push(await autofill.mutateAsync({ projectId: projectId, text: s }))
+            setDstObj({ html: result.join("") })
+          }
+          modified = true
+        }
+
+      } catch (error) {
+        toast({ title: "Auto fill failed.", description: (error as { message: string }).message })
+        resolve()
+      } finally {
+      }
+
+      if (modified) setContentDirty(modified)
+      resolve()
+    })
+  }
+
   function saveDoc() {
     mutation.mutate({
       documentId: docId,
@@ -95,6 +131,7 @@ const DocEditorPage: NextPageWithLayout = () => {
       docInfo={docInfo}
       handleSave={saveDoc}
       saveDisabled={!contentDirty}
+      handleAutoFill={handleAutoFill}
     >
       {status === "loading" ? <span>Loading</span> :
         <div className="flex flex-col items-center space-y-4 p-20">
