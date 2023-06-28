@@ -23,7 +23,7 @@ import { api } from "~/utils/api";
 import { useSession } from "next-auth/react"
 import { Label } from "~/components/ui/label"
 import { Input } from "~/components/ui/input"
-import type { Curriculum, DocumentInfo, SrcOrDst } from "~/types"
+import type { Curriculum, CurriculumItem, DocumentInfo, SrcOrDst } from "~/types"
 import { RichtextEditor } from "~/components/ui/richtext-editor";
 import type { NextPageWithLayout } from "~/pages/_app";
 import DocLayout from "~/components/doc-layout";
@@ -134,6 +134,7 @@ const DocEditorPage: NextPageWithLayout = () => {
   const docId = router.query.docId as string
   const { data: session } = useSession()
   const mutation = api.document.save.useMutation()
+  const autofill = api.translate.translate.useMutation()
   const [contentDirty, setContentDirty] = React.useState(false)
   const [docInfo, setDocInfo] = React.useState<DocumentInfo>(
     { id: "", title: "", projectId: "", projectName: "", updatedAt: new Date(0) }
@@ -170,6 +171,75 @@ const DocEditorPage: NextPageWithLayout = () => {
     }
   )
 
+  const handleAutoFill = (projectId: string) => {
+    const createItems = async (srcItems: CurriculumItem[]) => {
+      const dstItems: CurriculumItem[] = []
+      for (const i of srcItems) {
+        const title = await autofill.mutateAsync({ projectId: projectId, text: i.title })
+        const description = await autofill.mutateAsync({ projectId: projectId, text: i.description })
+        dstItems.push({ ...i, title: title, description: description })
+      }
+      return dstItems
+    }
+
+    return new Promise<void>(async resolve => {
+      let modified = false
+      const obj = clone(dstObj)
+
+      let i = 0
+      for (const section of srcObj.sections) {
+        const s = obj.sections[i]
+        if (s) {
+          // translate section
+          s.title = await autofill.mutateAsync({ projectId: projectId, text: section.title })
+          if (!s.items || s.items.length === 0) {
+            // create items
+            s.items = await createItems(section.items)
+            modified = true
+          } else {
+            let j = 0
+            for (const item of section.items) {
+              // translate items
+              const dstItem = s.items[j]
+              if (!dstItem) {
+                // create item
+                const title = await autofill.mutateAsync({ projectId: projectId, text: item.title })
+                const description = await autofill.mutateAsync({ projectId: projectId, text: item.description })
+                s.items[j] = { ...item, title: title, description: description }
+                modified = true
+              } else {
+                // translate item
+                if (!dstItem.title || dstItem.title.length === 0) {
+                  dstItem.title = await autofill.mutateAsync({ projectId: projectId, text: item.title })
+                  modified = true
+                }
+                if (!dstItem.description || dstItem.description.length === 0) {
+                  dstItem.description = await autofill.mutateAsync({ projectId: projectId, text: item.description })
+                  modified = true
+                }
+              }
+
+              j = j + 1
+            }
+          }
+        } else {
+          // create section
+          const title = await autofill.mutateAsync({ projectId: projectId, text: section.title })
+          const items = await createItems(section.items)
+          obj.sections[i] = { title: title, index: section.index, items: items }
+          modified = true
+        }
+
+        setDstObj(obj)
+
+        i = i + 1
+      }
+
+      if (modified) setContentDirty(modified)
+      resolve()
+    })
+  }
+
   function saveDoc() {
     mutation.mutate({
       documentId: docId,
@@ -188,6 +258,7 @@ const DocEditorPage: NextPageWithLayout = () => {
       docInfo={docInfo}
       handleSave={saveDoc}
       saveDisabled={!contentDirty}
+      handleAutoFill={handleAutoFill}
     >
       {status === "loading" ? <span>Loading</span> :
         <div className="flex flex-col items-center space-y-4 p-20">
