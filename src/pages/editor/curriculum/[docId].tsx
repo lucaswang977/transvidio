@@ -28,6 +28,7 @@ import { RichtextEditor } from "~/components/ui/richtext-editor";
 import type { NextPageWithLayout } from "~/pages/_app";
 import DocLayout from "~/components/doc-layout";
 import { clone } from "ramda"
+import { useToast } from "~/components/ui/use-toast";
 
 type CurriculumListEditorProps = {
   value: Curriculum,
@@ -134,7 +135,8 @@ const DocEditorPage: NextPageWithLayout = () => {
   const docId = router.query.docId as string
   const { data: session } = useSession()
   const mutation = api.document.save.useMutation()
-  const autofill = api.translate.translate.useMutation()
+  const autofill = api.translate.translate.useMutation({ retry: 0 })
+  const { toast } = useToast()
   const [contentDirty, setContentDirty] = React.useState(false)
   const [docInfo, setDocInfo] = React.useState<DocumentInfo>(
     { id: "", title: "", projectId: "", projectName: "", updatedAt: new Date(0) }
@@ -163,7 +165,22 @@ const DocEditorPage: NextPageWithLayout = () => {
             setDstObj(doc.dstJson as Curriculum)
           } else {
             if (dstObj === null || dstObj.sections.length === 0) {
-              setDstObj({ ...(doc.srcJson as Curriculum) })
+              const obj: Curriculum = {
+                sections: (doc.srcJson as Curriculum).sections.map(s => {
+                  return {
+                    ...s,
+                    title: "",
+                    items: s.items.map(i => {
+                      return {
+                        ...i,
+                        title: "",
+                        description: ""
+                      }
+                    })
+                  }
+                })
+              }
+              setDstObj(obj)
             }
           }
         }
@@ -189,45 +206,53 @@ const DocEditorPage: NextPageWithLayout = () => {
       let i = 0
       for (const section of srcObj.sections) {
         const s = obj.sections[i]
-        if (s) {
-          // translate section
-          s.title = await autofill.mutateAsync({ projectId: projectId, text: section.title })
-          if (!s.items || s.items.length === 0) {
-            // create items
-            s.items = await createItems(section.items)
-            modified = true
-          } else {
-            let j = 0
-            for (const item of section.items) {
-              // translate items
-              const dstItem = s.items[j]
-              if (!dstItem) {
-                // create item
-                const title = await autofill.mutateAsync({ projectId: projectId, text: item.title })
-                const description = await autofill.mutateAsync({ projectId: projectId, text: item.description })
-                s.items[j] = { ...item, title: title, description: description }
-                modified = true
-              } else {
-                // translate item
-                if (!dstItem.title || dstItem.title.length === 0) {
-                  dstItem.title = await autofill.mutateAsync({ projectId: projectId, text: item.title })
+        try {
+          if (s) {
+            console.log(s)
+            // translate section
+            s.title = await autofill.mutateAsync({ projectId: projectId, text: section.title })
+            if (!s.items || s.items.length === 0) {
+              // create items
+              s.items = await createItems(section.items)
+              modified = true
+            } else {
+              let j = 0
+              for (const item of section.items) {
+                // translate items
+                const dstItem = s.items[j]
+                if (!dstItem) {
+                  // create item
+                  const title = await autofill.mutateAsync({ projectId: projectId, text: item.title })
+                  const description = await autofill.mutateAsync({ projectId: projectId, text: item.description })
+                  s.items[j] = { ...item, title: title, description: description }
                   modified = true
+                } else {
+                  // translate item
+                  if (!dstItem.title || dstItem.title.length === 0) {
+                    dstItem.title = await autofill.mutateAsync({ projectId: projectId, text: item.title })
+                    modified = true
+                  }
+                  if (!dstItem.description || dstItem.description.length === 0) {
+                    dstItem.description = await autofill.mutateAsync({ projectId: projectId, text: item.description })
+                    modified = true
+                  }
                 }
-                if (!dstItem.description || dstItem.description.length === 0) {
-                  dstItem.description = await autofill.mutateAsync({ projectId: projectId, text: item.description })
-                  modified = true
-                }
-              }
 
-              j = j + 1
+                j = j + 1
+              }
             }
+          } else {
+            // create section
+            const title = await autofill.mutateAsync({ projectId: projectId, text: section.title })
+            const items = await createItems(section.items)
+            obj.sections[i] = { title: title, index: section.index, items: items }
+            modified = true
           }
-        } else {
-          // create section
-          const title = await autofill.mutateAsync({ projectId: projectId, text: section.title })
-          const items = await createItems(section.items)
-          obj.sections[i] = { title: title, index: section.index, items: items }
-          modified = true
+        } catch (error) {
+          toast({ title: "Auto fill failed.", description: (error as { message: string }).message })
+          resolve()
+          break
+        } finally {
         }
 
         setDstObj(obj)

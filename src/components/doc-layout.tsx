@@ -40,8 +40,11 @@ const DocLayout = (props: LayoutProps) => {
                   <Button disabled={filling} onClick={async () => {
                     if (props.handleAutoFill) {
                       setFilling(true)
-                      await props.handleAutoFill(props.docInfo.projectId)
-                      setFilling(false)
+                      try {
+                        await props.handleAutoFill(props.docInfo.projectId)
+                      } finally {
+                        setFilling(false)
+                      }
                     }
                   }} >
                     {filling ?

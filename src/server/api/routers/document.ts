@@ -5,13 +5,14 @@ import {
 
 import { prisma } from "~/server/db";
 import { z } from "zod";
-import { DocumentType, type Prisma } from "@prisma/client"
+import { DocumentType, Prisma } from "@prisma/client"
 import { TRPCError } from "@trpc/server";
 import type { DocumentInfo } from "~/types";
 
 export const documentRouter = createTRPCRouter({
   getAll: protectedProcedure
     .query(async ({ ctx }) => {
+      await new Promise(resolve => setTimeout(resolve, 3000))
       if (ctx.session.user.role === "ADMIN") {
         return ctx.prisma.document.findMany({
           orderBy: {
@@ -222,7 +223,41 @@ export const documentRouter = createTRPCRouter({
         }
       })
     }),
+  resetByAdmin: protectedProcedure
+    .input(z.object({
+      documentId: z.string().nonempty(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const document = await prisma.document.findFirst({
+        where: {
+          id: input.documentId,
+        }
+      })
 
+      if (!document) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Document not existed."
+        })
+      }
+      if (ctx.session.user.role !== "ADMIN") {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only admin can close the document."
+        })
+      }
+
+      await prisma.document.update({
+        where: {
+          id: input.documentId
+        },
+        data: {
+          state: "OPEN",
+          dstJson: Prisma.DbNull,
+          userId: null
+        }
+      })
+    }),
 
   save: protectedProcedure
     .input(z.object({

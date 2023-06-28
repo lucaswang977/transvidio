@@ -7,7 +7,7 @@ import { ExternalLink, MoreHorizontal } from "lucide-react"
 
 import { Button } from "~/components/ui/button"
 import { Checkbox } from "~/components/ui/checkbox"
-import { Edit, Trash } from "lucide-react"
+import { Edit, Trash, Eraser } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,7 +21,7 @@ import type { DocumentState, DocumentType } from "@prisma/client"
 import { Badge } from "~/components/ui/badge"
 import { api } from "~/utils/api"
 import { useToast } from "~/components/ui/use-toast"
-import ConfirmDialog from "~/components/confirm-dialog"
+import { ConfirmDialog, ConfirmDialogInDropdown } from "~/components/confirm-dialog"
 
 const CloseDialog = (props: { documentId: string, refetch?: () => void }) => {
   const mutation = api.document.closeByAdmin.useMutation()
@@ -29,7 +29,7 @@ const CloseDialog = (props: { documentId: string, refetch?: () => void }) => {
 
   return (
     <ConfirmDialog
-      trigger="Close"
+      trigger={<Button>Close</Button>}
       title="Are you sure to close the document?"
       description="Once the document is closed, other people cannot modify it anymore."
       handleConfirm={() => {
@@ -51,7 +51,7 @@ const SubmitDialog = (props: { documentId: string, refetch?: () => void }) => {
 
   return (
     <ConfirmDialog
-      trigger="Submit"
+      trigger={<Button>Submit</Button>}
       title="Are you sure to submit the document?"
       description="Once you submit this document, others will come to review it."
       handleConfirm={() => {
@@ -74,7 +74,7 @@ const ClaimDialog = (props: { documentId: string, refetch?: () => void }) => {
 
   return (
     <ConfirmDialog
-      trigger="Claim"
+      trigger={<Button>Claim</Button>}
       title="Are you sure to claim the document?"
       description="Claiming the document to let others know you are working on it."
       handleConfirm={() => {
@@ -87,6 +87,30 @@ const ClaimDialog = (props: { documentId: string, refetch?: () => void }) => {
           }
         })
       }}
+    />
+  )
+}
+
+const ResetDocumentDialog = ({ disabled, documentId, refetch }: { disabled?: boolean, documentId: string, refetch?: () => void }) => {
+  const mutation = api.document.resetByAdmin.useMutation()
+  const { toast } = useToast()
+
+  return (
+    <ConfirmDialogInDropdown
+      disabled={disabled}
+      trigger={<><Eraser className="mr-2 h-4 w-4" /><span>Reset</span></>}
+      title="Reset the document"
+      description="This operation is dangerous! The translated part of this document will be erased. Do you confirm to do so?"
+      handleConfirm={() =>
+        mutation.mutate({ documentId: documentId }, {
+          onSuccess: () => {
+            if (refetch) refetch()
+          },
+          onError: (err) => {
+            toast({ title: "Claim failed.", description: err.message })
+          }
+        })
+      }
     />
   )
 }
@@ -262,10 +286,17 @@ export const columns: ColumnDef<DocumentColumn>[] = [
                 <Edit className="mr-2 h-4 w-4" />
                 <span>Edit</span>
               </DropdownMenuItem>
+
               <DropdownMenuItem disabled={myself && myself.role === "EDITOR"}>
                 <Trash className="mr-2 h-4 w-4" />
                 <span>Delete</span>
               </DropdownMenuItem>
+
+              <ResetDocumentDialog
+                disabled={myself && myself.role === "EDITOR"}
+                documentId={data.id}
+                refetch={() => { if (refetch) refetch() }}
+              />
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
