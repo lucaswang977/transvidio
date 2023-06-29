@@ -23,7 +23,7 @@ import { Input } from "~/components/ui/input";
 import { RichtextEditor } from "~/components/ui/richtext-editor";
 import { ComparativeArrayEditor } from "~/components/comparative-array-input";
 import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
-import { fetchEventSource } from '@microsoft/fetch-event-source';
+import { handleTranslate } from "~/pages/api/translate"
 
 type IntroductionEditorProps = {
   srcObj: Introduction,
@@ -198,36 +198,28 @@ const DocEditorPage: NextPageWithLayout = () => {
   }
 
   const handleAutoFill = (projectId: string, aiParams?: ProjectAiParamters) => {
-    const handleTranslate = async (text: string, callback: (output: string) => void) => {
-      const reqBody = JSON.stringify({
-        translate: text,
-        character: aiParams?.character ? aiParams?.character : "",
-        background: aiParams?.background ? aiParams?.background : "",
-        syllabus: aiParams?.syllabus ? aiParams?.syllabus : "",
-      })
-
-      await fetchEventSource(`/api/translate`, {
-        method: 'POST',
-        body: reqBody,
-        headers: { 'Content-Type': 'application/json' },
-        onmessage(ev) {
-          callback(ev.data)
-        },
-      });
-
+    let aip: ProjectAiParamters = {
+      character: "",
+      background: "",
+      syllabus: ""
     }
+
+    if (aiParams) {
+      aip = { ...aiParams }
+    }
+
     return new Promise<void>(async resolve => {
       let modified = false
 
       if (dstObj.title.length === 0) {
-        await handleTranslate(srcObj.title, (output) => {
+        await handleTranslate(aip, srcObj.title, (output) => {
           setDstObj(o => { return { ...o, title: `${o.title}${output}` } })
           modified = true
         })
       }
 
       if (dstObj.headline.length === 0) {
-        await handleTranslate(srcObj.headline, (output) => {
+        await handleTranslate(aip, srcObj.headline, (output) => {
           setDstObj(o => { return { ...o, headline: `${o.headline}${output}` } })
           modified = true
         })
@@ -240,7 +232,7 @@ const DocEditorPage: NextPageWithLayout = () => {
         })
         const splitted = await splitter.splitText(srcObj.description)
         for (const s of splitted) {
-          await handleTranslate(s, (output) => {
+          await handleTranslate(aip, s, (output) => {
             setDstObj(o => { return { ...o, description: `${o.description}${output}` } })
             modified = true
           })
@@ -248,65 +240,67 @@ const DocEditorPage: NextPageWithLayout = () => {
         modified = true
       }
 
-      // if (dstObj.prerequisites.length >= 0) {
-      //   let i = 0
-      //   for (const p of srcObj.prerequisites) {
-      //     const value = dstObj.prerequisites[i]
-      //     if (!value || value.length === 0) {
-      //       const res = await autofill.mutateAsync({ projectId: projectId, text: p })
-      //       const index = i
-      //       setDstObj(o => {
-      //         const np = [...o.prerequisites]
-      //         np[index] = res
-      //         return { ...o, prerequisites: np }
-      //       })
-      //       modified = true
-      //     }
-      //     i = i + 1
-      //   }
-      // }
-      //
-      // if (dstObj.objectives.length >= 0) {
-      //   let i = 0
-      //   for (const p of srcObj.objectives) {
-      //     const value = dstObj.objectives[i]
-      //     if (!value || value.length === 0) {
-      //       const res = await autofill.mutateAsync({ projectId: projectId, text: p })
-      //       const index = i
-      //       setDstObj(o => {
-      //         const np = [...o.objectives]
-      //         np[index] = res
-      //         return { ...o, objectives: np }
-      //       })
-      //       modified = true
-      //     }
-      //     i = i + 1
-      //   }
-      // }
-      //
-      // if (dstObj.target_audiences.length >= 0) {
-      //   let i = 0
-      //   for (const p of srcObj.target_audiences) {
-      //     const value = dstObj.target_audiences[i]
-      //     if (!value || value.length === 0) {
-      //       const res = await autofill.mutateAsync({ projectId: projectId, text: p })
-      //       const index = i
-      //       setDstObj(o => {
-      //         const np = [...o.target_audiences]
-      //         np[index] = res
-      //         return { ...o, target_audiences: np }
-      //       })
-      //       modified = true
-      //     }
-      //     i = i + 1
-      //   }
-      // }
-      //
+      if (dstObj.prerequisites.length >= 0) {
+        let i = 0
+        for (const p of srcObj.prerequisites) {
+          const value = dstObj.prerequisites[i]
+          if (!value || value.length === 0) {
+            await handleTranslate(aip, p, (output) => {
+              const index = i
+              setDstObj(o => {
+                const np = [...o.prerequisites]
+                // TODO
+                return { ...o, prerequisites: np }
+              })
+              modified = true
+            })
+            i = i + 1
+          }
+        }
+      }
+
+      if (dstObj.objectives.length >= 0) {
+        let i = 0
+        for (const p of srcObj.objectives) {
+          const value = dstObj.objectives[i]
+          if (!value || value.length === 0) {
+            await handleTranslate(aip, p, (output) => {
+              const index = i
+              setDstObj(o => {
+                const np = [...o.objectives]
+                // np[index] = `${np[index] ? np[index] : ""}${output}`
+                return { ...o, objectives: np }
+              })
+              modified = true
+            })
+            i = i + 1
+          }
+        }
+      }
+
+      if (dstObj.target_audiences.length >= 0) {
+        let i = 0
+        for (const p of srcObj.target_audiences) {
+          const value = dstObj.target_audiences[i]
+          if (!value || value.length === 0) {
+            await handleTranslate(aip, p, (output) => {
+              const index = i
+              setDstObj(o => {
+                const np = [...o.target_audiences]
+                // np[index] = `${np[index] ? np[index] : ""}${output}`
+                return { ...o, target_audiences: np }
+              })
+              modified = true
+            })
+            i = i + 1
+          }
+        }
+      }
+
       if (modified) setContentDirty(modified)
       resolve()
     })
   }
-
   function saveDoc() {
     mutation.mutate({
       documentId: docId,

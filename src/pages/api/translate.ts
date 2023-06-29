@@ -7,6 +7,7 @@ import {
 } from 'langchain/prompts';
 import type { NextRequest } from 'next/server';
 import type { ProjectAiParamters } from '~/types';
+import { fetchEventSource } from '@microsoft/fetch-event-source';
 
 export const runtime = 'edge';
 
@@ -87,5 +88,26 @@ export default async function handler(req: NextRequest) {
       });
     }
   }
+}
+
+export const handleTranslate = async (
+  aiParams: ProjectAiParamters,
+  text: string,
+  callback: (output: string) => void) => {
+  const reqBody = JSON.stringify({
+    translate: text,
+    character: aiParams.character,
+    background: aiParams.background,
+    syllabus: aiParams.syllabus,
+  })
+
+  await fetchEventSource(`/api/translate`, {
+    method: 'POST',
+    body: reqBody,
+    headers: { 'Content-Type': 'application/json' },
+    onmessage(ev) {
+      callback(ev.data)
+    },
+  });
 }
 
