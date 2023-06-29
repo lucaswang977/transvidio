@@ -18,9 +18,17 @@ export const documentRouter = createTRPCRouter({
           orderBy: {
             seq: "asc"
           },
-          include: {
+          select: {
+            id: true,
+            seq: true,
+            type: true,
+            title: true,
+            state: true,
+            memo: true,
+            createdAt: true,
+            updatedAt: true,
             user: true,
-            project: true,
+            project: true
           }
         })
       } else {
@@ -33,15 +41,23 @@ export const documentRouter = createTRPCRouter({
           orderBy: {
             seq: "asc"
           },
-          include: {
-            user: true,
-            project: true,
-          },
           where: {
             projectId: {
               in: projects.map((project) => project.projectId)
             }
           },
+          select: {
+            id: true,
+            seq: true,
+            type: true,
+            title: true,
+            state: true,
+            memo: true,
+            createdAt: true,
+            updatedAt: true,
+            user: true,
+            project: true
+          }
         })
 
       }
