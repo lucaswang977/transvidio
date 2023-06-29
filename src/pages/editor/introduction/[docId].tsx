@@ -17,12 +17,13 @@ import * as React from "react"
 import { api } from "~/utils/api";
 import { useSession } from "next-auth/react"
 
-import type { Introduction, SrcOrDst, DocumentInfo } from "~/types"
+import type { Introduction, SrcOrDst, DocumentInfo, ProjectAiParamters } from "~/types"
 import DocLayout from "~/components/doc-layout";
 import { Input } from "~/components/ui/input";
 import { RichtextEditor } from "~/components/ui/richtext-editor";
 import { ComparativeArrayEditor } from "~/components/comparative-array-input";
 import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
+import { fetchEventSource } from '@microsoft/fetch-event-source';
 
 type IntroductionEditorProps = {
   srcObj: Introduction,
@@ -152,7 +153,6 @@ const DocEditorPage: NextPageWithLayout = () => {
   const docId = router.query.docId as string
   const { data: session } = useSession()
   const mutation = api.document.save.useMutation()
-  const autofill = api.translate.translate.useMutation()
   const [contentDirty, setContentDirty] = React.useState(false)
   const [docInfo, setDocInfo] = React.useState<DocumentInfo>(
     { id: "", title: "", projectId: "", projectName: "", updatedAt: new Date(0) }
@@ -180,6 +180,7 @@ const DocEditorPage: NextPageWithLayout = () => {
             updatedAt: doc.updatedAt,
             projectId: doc.projectId,
             projectName: doc.project.name,
+            projectAiParamters: doc.project.aiParameter as ProjectAiParamters
           })
 
           if (doc.srcJson) setSrcObj(doc.srcJson as Introduction)
@@ -196,19 +197,40 @@ const DocEditorPage: NextPageWithLayout = () => {
     setContentDirty(true)
   }
 
-  const handleAutoFill = (projectId: string) => {
+  const handleAutoFill = (projectId: string, aiParams?: ProjectAiParamters) => {
+    const handleTranslate = async (text: string, callback: (output: string) => void) => {
+      const reqBody = JSON.stringify({
+        translate: text,
+        character: aiParams?.character ? aiParams?.character : "",
+        background: aiParams?.background ? aiParams?.background : "",
+        syllabus: aiParams?.syllabus ? aiParams?.syllabus : "",
+      })
+
+      await fetchEventSource(`/api/translate`, {
+        method: 'POST',
+        body: reqBody,
+        headers: { 'Content-Type': 'application/json' },
+        onmessage(ev) {
+          callback(ev.data)
+        },
+      });
+
+    }
     return new Promise<void>(async resolve => {
       let modified = false
+
       if (dstObj.title.length === 0) {
-        const title = await autofill.mutateAsync({ projectId: projectId, text: srcObj.title })
-        setDstObj(o => { return { ...o, title: title } })
-        modified = true
+        await handleTranslate(srcObj.title, (output) => {
+          setDstObj(o => { return { ...o, title: `${o.title}${output}` } })
+          modified = true
+        })
       }
 
       if (dstObj.headline.length === 0) {
-        const headline = await autofill.mutateAsync({ projectId: projectId, text: srcObj.headline })
-        setDstObj(o => { return { ...o, headline: headline } })
-        modified = true
+        await handleTranslate(srcObj.headline, (output) => {
+          setDstObj(o => { return { ...o, headline: `${o.headline}${output}` } })
+          modified = true
+        })
       }
 
       if (dstObj.description.length === 0) {
@@ -217,68 +239,69 @@ const DocEditorPage: NextPageWithLayout = () => {
           chunkOverlap: 0
         })
         const splitted = await splitter.splitText(srcObj.description)
-        const result: string[] = []
         for (const s of splitted) {
-          result.push(await autofill.mutateAsync({ projectId: projectId, text: s }))
-          setDstObj(o => { return { ...o, description: result.join("") } })
+          await handleTranslate(s, (output) => {
+            setDstObj(o => { return { ...o, description: `${o.description}${output}` } })
+            modified = true
+          })
         }
         modified = true
       }
 
-      if (dstObj.prerequisites.length >= 0) {
-        let i = 0
-        for (const p of srcObj.prerequisites) {
-          const value = dstObj.prerequisites[i]
-          if (!value || value.length === 0) {
-            const res = await autofill.mutateAsync({ projectId: projectId, text: p })
-            const index = i
-            setDstObj(o => {
-              const np = [...o.prerequisites]
-              np[index] = res
-              return { ...o, prerequisites: np }
-            })
-            modified = true
-          }
-          i = i + 1
-        }
-      }
-
-      if (dstObj.objectives.length >= 0) {
-        let i = 0
-        for (const p of srcObj.objectives) {
-          const value = dstObj.objectives[i]
-          if (!value || value.length === 0) {
-            const res = await autofill.mutateAsync({ projectId: projectId, text: p })
-            const index = i
-            setDstObj(o => {
-              const np = [...o.objectives]
-              np[index] = res
-              return { ...o, objectives: np }
-            })
-            modified = true
-          }
-          i = i + 1
-        }
-      }
-
-      if (dstObj.target_audiences.length >= 0) {
-        let i = 0
-        for (const p of srcObj.target_audiences) {
-          const value = dstObj.target_audiences[i]
-          if (!value || value.length === 0) {
-            const res = await autofill.mutateAsync({ projectId: projectId, text: p })
-            const index = i
-            setDstObj(o => {
-              const np = [...o.target_audiences]
-              np[index] = res
-              return { ...o, target_audiences: np }
-            })
-            modified = true
-          }
-          i = i + 1
-        }
-      }
-
+      // if (dstObj.prerequisites.length >= 0) {
+      //   let i = 0
+      //   for (const p of srcObj.prerequisites) {
+      //     const value = dstObj.prerequisites[i]
+      //     if (!value || value.length === 0) {
+      //       const res = await autofill.mutateAsync({ projectId: projectId, text: p })
+      //       const index = i
+      //       setDstObj(o => {
+      //         const np = [...o.prerequisites]
+      //         np[index] = res
+      //         return { ...o, prerequisites: np }
+      //       })
+      //       modified = true
+      //     }
+      //     i = i + 1
+      //   }
+      // }
+      //
+      // if (dstObj.objectives.length >= 0) {
+      //   let i = 0
+      //   for (const p of srcObj.objectives) {
+      //     const value = dstObj.objectives[i]
+      //     if (!value || value.length === 0) {
+      //       const res = await autofill.mutateAsync({ projectId: projectId, text: p })
+      //       const index = i
+      //       setDstObj(o => {
+      //         const np = [...o.objectives]
+      //         np[index] = res
+      //         return { ...o, objectives: np }
+      //       })
+      //       modified = true
+      //     }
+      //     i = i + 1
+      //   }
+      // }
+      //
+      // if (dstObj.target_audiences.length >= 0) {
+      //   let i = 0
+      //   for (const p of srcObj.target_audiences) {
+      //     const value = dstObj.target_audiences[i]
+      //     if (!value || value.length === 0) {
+      //       const res = await autofill.mutateAsync({ projectId: projectId, text: p })
+      //       const index = i
+      //       setDstObj(o => {
+      //         const np = [...o.target_audiences]
+      //         np[index] = res
+      //         return { ...o, target_audiences: np }
+      //       })
+      //       modified = true
+      //     }
+      //     i = i + 1
+      //   }
+      // }
+      //
       if (modified) setContentDirty(modified)
       resolve()
     })

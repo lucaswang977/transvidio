@@ -7,7 +7,7 @@ import { Button } from "~/components/ui/button"
 import Link from "next/link";
 import { Bot, Loader2, Save } from "lucide-react";
 import { naturalTime } from "~/utils/helper"
-import type { DocumentInfo } from "~/types";
+import type { DocumentInfo, ProjectAiParamters } from "~/types";
 import { Beforeunload } from 'react-beforeunload';
 
 type LayoutProps = {
@@ -15,7 +15,7 @@ type LayoutProps = {
   saveDisabled: boolean,
   children: React.ReactNode
   handleSave: () => void,
-  handleAutoFill?: (projectId: string) => Promise<void>
+  handleAutoFill?: (projectId: string, aiParams?: ProjectAiParamters) => Promise<void>
 }
 
 const DocLayout = (props: LayoutProps) => {
@@ -41,7 +41,7 @@ const DocLayout = (props: LayoutProps) => {
                     if (props.handleAutoFill) {
                       setFilling(true)
                       try {
-                        await props.handleAutoFill(props.docInfo.projectId)
+                        await props.handleAutoFill(props.docInfo.projectId, props.docInfo.projectAiParamters)
                       } finally {
                         setFilling(false)
                       }

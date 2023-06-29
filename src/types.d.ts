@@ -4,6 +4,7 @@ export type DocumentInfo = {
   updatedAt: Date,
   projectId: string,
   projectName: string,
+  projectAiParamters?: ProjectAiParamters
 }
 
 export type CurriculumItemEnum = "lecture" | "quiz" | "article" | "resource"
