@@ -72,6 +72,7 @@ CREATE TABLE "Project" (
     "srcLang" "Language" NOT NULL,
     "dstLang" "Language" NOT NULL,
     "memo" TEXT,
+    "aiParameter" JSONB,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
