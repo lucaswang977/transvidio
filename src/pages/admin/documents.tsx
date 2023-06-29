@@ -41,8 +41,6 @@ const DocumentManagement: NextPageWithLayout = () => {
         title: document.title,
         type: document.type,
         state: document.state,
-        srcJson: document.srcJson?.toString(),
-        dstJson: document.dstJson?.toString(),
         memo: document.memo,
         project: document.project.name,
         user: (document.user !== null) ? {

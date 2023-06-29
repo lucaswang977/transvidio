@@ -119,8 +119,6 @@ export type DocumentColumn = {
   id: string
   title: string
   type: DocumentType
-  srcJson: string | undefined
-  dstJson: string | undefined
   state: DocumentState
   memo: string | null
   project: string
