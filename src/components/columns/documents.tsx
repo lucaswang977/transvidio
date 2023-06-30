@@ -91,7 +91,15 @@ const ClaimDialog = (props: { documentId: string, refetch?: () => void }) => {
   )
 }
 
-const ResetDocumentDialog = ({ disabled, documentId, refetch }: { disabled?: boolean, documentId: string, refetch?: () => void }) => {
+const ResetDocumentDialog = (
+  { disabled,
+    documentId,
+    refetch }:
+    {
+      disabled?: boolean,
+      documentId: string,
+      refetch?: () => void
+    }) => {
   const mutation = api.document.resetByAdmin.useMutation()
   const { toast } = useToast()
 

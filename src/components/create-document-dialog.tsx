@@ -57,7 +57,10 @@ export function DocumentCreateDialog() {
   const mutation = api.document.create.useMutation()
   const { data: projectData } = api.project.getAll.useQuery(
     undefined, // no input
-    { enabled: sessionData?.user !== undefined },
+    {
+      enabled: sessionData?.user !== undefined,
+      refetchOnWindowFocus: false
+    },
   );
 
   let projects: ProjectInfo[] = []

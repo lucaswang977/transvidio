@@ -15,7 +15,10 @@ const UserManagement: NextPageWithLayout = () => {
   const { data: session } = useSession();
   const { data: users, status, refetch } = api.user.getAll.useQuery(
     undefined, // no input
-    { enabled: session?.user !== undefined },
+    {
+      enabled: session?.user !== undefined,
+      refetchOnWindowFocus: false
+    },
   );
 
   let usersData: UserColumn[] = []

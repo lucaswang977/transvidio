@@ -5,14 +5,14 @@ An online translation collaborative platform which enables project-based transla
 ## Fundamental functions
 - User registration with email & google account
 - Role based (admin, editor) user management
-- Project management
-- Document management
+- Project & document management
 - A variety of document editors:
   - Course introduction
   - Curriculum
   - Video subtitle
   - Attachment
   - Quiz
+- AI powered auto translation(auto filling)
 
 ## Functions to be implemented
 - [ ] Dashboard related
@@ -23,16 +23,12 @@ An online translation collaborative platform which enables project-based transla
   - [ ] Password reset
   - [ ] User profile(avatar, payment method)
   - [ ] Block user login / invalidate token
-- [ ] AI integration for productivity
-  - [ ] Prompt template
-  - [ ] Course intro, curriculum, article, quiz translation
-  - [ ] Video transcription & subtitle translation
+- [x] AI integration for productivity
+  - [x] Prompt template
+  - [x] Course intro, curriculum, article, quiz translation
+  - [x] Video transcription & subtitle translation
+  - [ ] OpenAI model global config
   - [ ] Attachment translation
 - [ ] Document edit history and restore back
 - [ ] Payment management
 - [ ] AI dubbing
-
-## Known important bugs
-- [ ] Pagination reset when focus is back [#1]
-- [x] Data batchly import should be outside the project
-- [x] Upload directly to S3 since the serverless function limitation

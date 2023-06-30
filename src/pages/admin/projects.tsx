@@ -17,7 +17,10 @@ const ProjectManagement: NextPageWithLayout = () => {
   const [rowSelection, setRowSelection] = React.useState({})
   const { data: projects, status, refetch } = api.project.getAll.useQuery(
     undefined, // no input
-    { enabled: session?.user !== undefined },
+    {
+      enabled: session?.user !== undefined,
+      refetchOnWindowFocus: false
+    },
   );
 
   let data: ProjectColumn[] = []

@@ -9,7 +9,15 @@ import { RefreshCcw } from "lucide-react"
 import { Button } from "~/components/ui/button"
 import { DocumentCreateDialog } from "~/components/create-document-dialog"
 import { type NextPageWithLayout } from "../_app"
-import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "~/components/ui/select"
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue
+} from "~/components/ui/select"
 import { truncateString } from "~/utils/helper"
 import { TableLoading } from "~/components/ui/table-loading"
 
@@ -26,11 +34,17 @@ const DocumentManagement: NextPageWithLayout = () => {
 
   const { data: documents, status, refetch } = api.document.getAll.useQuery(
     undefined,
-    { enabled: session?.user !== undefined },
+    {
+      enabled: session?.user !== undefined,
+      refetchOnWindowFocus: false
+    },
   );
   const { data: projects } = api.project.getAll.useQuery(
     undefined,
-    { enabled: session?.user !== undefined },
+    {
+      enabled: session?.user !== undefined,
+      refetchOnWindowFocus: false
+    },
   );
 
   let data: DocumentColumn[] = []

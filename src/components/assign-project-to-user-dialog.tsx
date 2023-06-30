@@ -31,7 +31,10 @@ export function AssignProjectToUserDialog(props: AssignProjectToUserDialogProps)
   const { data: sessionData } = useSession();
   const { data: users } = api.user.getAll.useQuery(
     undefined, // no input
-    { enabled: sessionData?.user !== undefined },
+    {
+      enabled: sessionData?.user !== undefined,
+      refetchOnWindowFocus: false
+    },
   );
 
   let allUsers: UserColumn[] = []
