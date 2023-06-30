@@ -19,13 +19,15 @@ import { api } from "~/utils/api";
 import { VideoPlayer } from "~/components/ui/video-player"
 import { Label } from "~/components/ui/label"
 import { Textarea } from "~/components/ui/textarea"
-import type { SubtitleType, SrcOrDst, DocumentInfo, SubtitleItem } from "~/types"
+import type { SubtitleType, SrcOrDst, DocumentInfo, ProjectAiParamters } from "~/types"
 import { ScrollArea } from "~/components/ui/scroll-area"
 
 import { timeFormat } from "~/utils/helper"
 import type { NextPageWithLayout } from "~/pages/_app"
 import DocLayout from "~/components/doc-layout"
 import type ReactPlayer from "react-player";
+import { handleTranslate } from "~/pages/api/translate"
+import { clone } from "ramda";
 
 type SubtitleEditorProps = {
   srcObj: SubtitleType,
@@ -137,7 +139,6 @@ const DocEditorPage: NextPageWithLayout = () => {
   const docId = router.query.docId as string
   const { data: session } = useSession()
   const mutation = api.document.save.useMutation()
-  const autofill = api.translate.translate.useMutation()
   const [contentDirty, setContentDirty] = React.useState(false)
   const [docInfo, setDocInfo] = React.useState<DocumentInfo>(
     { id: "", title: "", projectId: "", projectName: "", updatedAt: new Date(0) }
@@ -179,60 +180,51 @@ const DocEditorPage: NextPageWithLayout = () => {
     }
   )
 
-  const handleAutoFill = (projectId: string) => {
+  const handleAutoFill = (aiParams?: ProjectAiParamters) => {
+    let aip: ProjectAiParamters = {
+      character: "",
+      background: "",
+      syllabus: ""
+    }
+
+    if (aiParams) {
+      aip = { ...aiParams }
+    }
+
     return new Promise<void>(async resolve => {
       let modified = false
       const regex = /[.,;!?]$/
 
-      console.log(srcObj.subtitle.length)
-      let sentence: string[] = []
+      let sentences: string[] = []
       let i = 0
       for (const s of srcObj.subtitle) {
-        sentence.push(s.text)
-        if (regex.test(sentence.join(" ").trim())) {
-          const res = await autofill.mutateAsync({ projectId: projectId, text: sentence.join(" ") })
-          console.log(sentence.join(" "))
-          const translated: string[] = []
-          const sentenceLength = sentence.join(" ").split(" ").length
-          let index = 0
-          sentence.forEach(s => {
-            const len = Math.round(res.split("").length * s.split(" ").length / sentenceLength)
-            translated.push(res.slice(index, index + len))
-            index = index + len
-          })
-          console.log(translated)
-          setDstObj(o => {
-            const subs = [...o.subtitle]
-            const start = i - translated.length + 1
-            translated.forEach((t, j) => {
-              const src = srcObj.subtitle[start + j]
-              if (!subs[start + j] && src) {
-                subs[start + j] = {
-                  from: src.from,
-                  to: src.to,
-                  text: t
-                } as SubtitleItem
-              } else {
-                subs[start + j] = { ...subs[start + j], text: t } as SubtitleItem
-              }
+        const dst = dstObj.subtitle[i]
+        // skip the translated sentences
+        if (!dst || dst.text.length === 0) {
+          sentences.push(s.text)
+          const sentence = sentences.join(" ")
+          if (regex.test(sentence.trim())) {
+            await handleTranslate(aip, sentence, (output) => {
+              setDstObj(o => {
+                const obj = clone(o)
+                const t = obj.subtitle[i]
+                if (t) t.text = `${t.text}${output}`
+                else obj.subtitle[i] = { ...s, text: output }
+                return obj
+              })
+              modified = true
             })
-            return {
-              ...o,
-              subtitle: subs
-            }
-          })
-          sentence = []
-        }
 
+            sentences = []
+          }
+        }
         i = i + 1
       }
-      modified = true
 
       if (modified) setContentDirty(modified)
       resolve()
     })
   }
-
 
   function saveDoc() {
     mutation.mutate({

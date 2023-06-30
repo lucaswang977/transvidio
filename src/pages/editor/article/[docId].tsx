@@ -8,11 +8,12 @@ import { api } from "~/utils/api";
 import { useSession } from "next-auth/react"
 
 import type { NextPageWithLayout } from "~/pages/_app";
-import type { ArticleType, DocumentInfo, SrcOrDst } from "~/types";
+import type { ArticleType, DocumentInfo, ProjectAiParamters, SrcOrDst } from "~/types";
 import DocLayout from "~/components/doc-layout";
 import { RichtextEditor } from "~/components/ui/richtext-editor";
 import { useToast } from "~/components/ui/use-toast";
 import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
+import { handleTranslate } from "~/pages/api/translate"
 
 type ArticleEditorProps = {
   srcObj: ArticleType,
@@ -49,7 +50,6 @@ const DocEditorPage: NextPageWithLayout = () => {
   const docId = router.query.docId as string
   const { data: session } = useSession()
   const mutation = api.document.save.useMutation()
-  const autofill = api.translate.translate.useMutation({ retry: 0 })
   const { toast } = useToast()
   const [contentDirty, setContentDirty] = React.useState(false)
   const [docInfo, setDocInfo] = React.useState<DocumentInfo>(
@@ -82,8 +82,17 @@ const DocEditorPage: NextPageWithLayout = () => {
       }
     }
   )
+  const handleAutoFill = (aiParams?: ProjectAiParamters) => {
+    let aip: ProjectAiParamters = {
+      character: "",
+      background: "",
+      syllabus: ""
+    }
 
-  const handleAutoFill = (projectId: string) => {
+    if (aiParams) {
+      aip = { ...aiParams }
+    }
+
     return new Promise<void>(async resolve => {
       let modified = false
 
@@ -94,14 +103,14 @@ const DocEditorPage: NextPageWithLayout = () => {
             chunkOverlap: 0
           })
           const splitted = await splitter.splitText(srcObj.html)
-          const result: string[] = []
           for (const s of splitted) {
-            result.push(await autofill.mutateAsync({ projectId: projectId, text: s }))
-            setDstObj({ html: result.join("") })
+            await handleTranslate(aip, s, (output) => {
+              setDstObj(o => { return { ...o, html: `${o.html}${output}` } })
+              modified = true
+            })
           }
           modified = true
         }
-
       } catch (error) {
         toast({ title: "Auto fill failed.", description: (error as { message: string }).message })
         resolve()

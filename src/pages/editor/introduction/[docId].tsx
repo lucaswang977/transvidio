@@ -197,7 +197,7 @@ const DocEditorPage: NextPageWithLayout = () => {
     setContentDirty(true)
   }
 
-  const handleAutoFill = (projectId: string, aiParams?: ProjectAiParamters) => {
+  const handleAutoFill = (aiParams?: ProjectAiParamters) => {
     let aip: ProjectAiParamters = {
       character: "",
       background: "",
@@ -249,7 +249,9 @@ const DocEditorPage: NextPageWithLayout = () => {
               const index = i
               setDstObj(o => {
                 const np = [...o.prerequisites]
-                // TODO
+                const c = np[index]
+                if (c) np[index] = `${c}${output}`
+                else np[index] = output
                 return { ...o, prerequisites: np }
               })
               modified = true
@@ -268,7 +270,9 @@ const DocEditorPage: NextPageWithLayout = () => {
               const index = i
               setDstObj(o => {
                 const np = [...o.objectives]
-                // np[index] = `${np[index] ? np[index] : ""}${output}`
+                const c = np[index]
+                if (c) np[index] = `${c}${output}`
+                else np[index] = output
                 return { ...o, objectives: np }
               })
               modified = true
@@ -287,7 +291,9 @@ const DocEditorPage: NextPageWithLayout = () => {
               const index = i
               setDstObj(o => {
                 const np = [...o.target_audiences]
-                // np[index] = `${np[index] ? np[index] : ""}${output}`
+                const c = np[index]
+                if (c) np[index] = `${c}${output}`
+                else np[index] = output
                 return { ...o, target_audiences: np }
               })
               modified = true

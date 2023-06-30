@@ -23,7 +23,7 @@ import { api } from "~/utils/api";
 import { useSession } from "next-auth/react"
 import { Label } from "~/components/ui/label"
 import { Input } from "~/components/ui/input"
-import type { Curriculum, CurriculumItem, DocumentInfo, ProjectAiParamters, SrcOrDst } from "~/types"
+import type { Curriculum, DocumentInfo, ProjectAiParamters, SrcOrDst } from "~/types"
 import { RichtextEditor } from "~/components/ui/richtext-editor";
 import type { NextPageWithLayout } from "~/pages/_app";
 import DocLayout from "~/components/doc-layout";
@@ -136,7 +136,6 @@ const DocEditorPage: NextPageWithLayout = () => {
   const docId = router.query.docId as string
   const { data: session } = useSession()
   const mutation = api.document.save.useMutation()
-  const autofill = api.translate.translate.useMutation({ retry: 0 })
   const { toast } = useToast()
   const [contentDirty, setContentDirty] = React.useState(false)
   const [docInfo, setDocInfo] = React.useState<DocumentInfo>(
@@ -189,7 +188,7 @@ const DocEditorPage: NextPageWithLayout = () => {
     }
   )
 
-  const handleAutoFill = (projectId: string, aiParams?: ProjectAiParamters) => {
+  const handleAutoFill = (aiParams?: ProjectAiParamters) => {
     let aip: ProjectAiParamters = {
       character: "",
       background: "",
@@ -200,19 +199,6 @@ const DocEditorPage: NextPageWithLayout = () => {
       aip = { ...aiParams }
     }
 
-    const createItems = async (srcItems: CurriculumItem[]) => {
-      const dstItems: CurriculumItem[] = []
-      for (const i of srcItems) {
-        const item = { ...i }
-        if (i.title && i.title.length > 0)
-          item.title = await autofill.mutateAsync({ projectId: projectId, text: i.title })
-        if (i.description && i.description.length > 0)
-          item.description = await autofill.mutateAsync({ projectId: projectId, text: i.description })
-        dstItems.push(item)
-      }
-      return dstItems
-    }
-
     return new Promise<void>(async resolve => {
       let modified = false
       const obj = clone(dstObj)
@@ -221,138 +207,64 @@ const DocEditorPage: NextPageWithLayout = () => {
       for (const section of srcObj.sections) {
         const s = obj.sections[i]
         try {
+          console.log(s)
           if (s) {
-            // translate section
-            await handleTranslate(aip, section.title, (output) => {
-              s.title = `${s.title}${output}`
-              setDstObj(obj)
-              modified = true
-            })
-            if (!s.items || s.items.length === 0) {
-              // create items
-              s.items = await createItems(section.items)
-              // create section
-              if (section.title && section.title.length > 0) {
-                await handleTranslate(aip, section.title, (output) => {
-                  obj.sections[i] = { ...section, title: output, items: [] }
-                  setDstObj(obj)
-                  modified = true
-                })
-              }
-              let j = 0
-              for (const item of section.items) {
-                const n = { ...item }
-                if (item.title && item.title.length > 0) {
-                  await handleTranslate(aip, item.title, (output) => {
-                    n.title = `${n.title}${output}`
-                    const t = obj.sections[i]
-                    if (t) {
-                      t.items[j] = n
-                      setDstObj(obj)
-                      modified = true
-                    }
-                  })
-                }
-                if (item.description && item.description.length > 0) {
-                  await handleTranslate(aip, item.description, (output) => {
-                    n.description = `${n.description}${output}`
-                    const t = obj.sections[i]
-                    if (t) {
-                      t.items[j] = n
-                      setDstObj(obj)
-                      modified = true
-                    }
-                  })
-                }
-              }
-              j = j + 1
-            } else {
-              let j = 0
-              for (const item of section.items) {
-                // translate items
-                const dstItem = s.items[j]
-                if (!dstItem) {
-                  // create item
-                  const di = { ...item }
-                  s.items[j] = di
-                  if (item.title && item.title.length > 0) {
-                    await handleTranslate(aip, item.title, (output) => {
-                      di.title = `${di.title}${output}`
-                      setDstObj(obj)
-                      modified = true
-                    })
-                  }
-                  if (item.description && item.description.length > 0) {
-                    await handleTranslate(aip, item.description, (output) => {
-                      di.description = `${di.description}${output}`
-                      setDstObj(obj)
-                      modified = true
-                    })
-                  }
-                  modified = true
-                } else {
-                  // translate item
-                  if (!dstItem.title || dstItem.title.length === 0) {
-                    if (item.title && item.title.length > 0) {
-                      await handleTranslate(aip, item.title, (output) => {
-                        dstItem.title = `${dstItem.title}${output}`
-                        setDstObj(obj)
-                        modified = true
-                      })
-                    }
-                  }
-                  if (!dstItem.description || dstItem.description.length === 0) {
-                    if (item.description && item.description.length > 0) {
-                      await handleTranslate(aip, item.description, (output) => {
-                        dstItem.description = `${dstItem.description}${output}`
-                        setDstObj(obj)
-                        modified = true
-                      })
-                    }
-                  }
-                }
-
-                j = j + 1
-              }
-            }
-          } else {
-            // create section
-            if (section.title && section.title.length > 0) {
+            // translate section title
+            if (s.title.length === 0) {
               await handleTranslate(aip, section.title, (output) => {
-                obj.sections[i] = { ...section, title: output, items: [] }
-                setDstObj(obj)
+                setDstObj(o => {
+                  const obj = clone(o)
+                  const t = obj.sections[i]
+                  if (t) t.title = `${t.title}${output}`
+                  else obj.sections[i] = { ...section, title: output }
+                  return obj
+                })
                 modified = true
               })
             }
+
+            // translate section items
             let j = 0
             for (const item of section.items) {
-              const n = { ...item }
-              if (item.title && item.title.length > 0) {
+              if (!s.items[j]) {
+                s.items[j] = { ...item, title: "", description: "" }
+              }
+
+              const t = s.items[j]
+              if (item.title && item.title.length > 0 && t && t.title.length === 0) {
                 await handleTranslate(aip, item.title, (output) => {
-                  n.title = `${n.title}${output}`
-                  const t = obj.sections[i]
-                  if (t) {
-                    t.items[j] = n
-                    setDstObj(obj)
-                    modified = true
-                  }
+                  setDstObj(o => {
+                    const obj = clone(o)
+                    const q = obj.sections[i]
+                    if (q) {
+                      const r = q.items[j]
+                      if (r) r.title = `${r.title}${output}`
+                      else q.items[j] = { ...item, title: output }
+                    }
+                    return obj
+                  })
+                  modified = true
                 })
               }
-              if (item.description && item.description.length > 0) {
+              if (item.description && item.description.length > 0 && t?.description.length === 0) {
                 await handleTranslate(aip, item.description, (output) => {
-                  n.description = `${n.description}${output}`
-                  const t = obj.sections[i]
-                  if (t) {
-                    t.items[j] = n
-                    setDstObj(obj)
-                    modified = true
-                  }
+                  setDstObj(o => {
+                    const obj = clone(o)
+                    const q = obj.sections[i]
+                    if (q) {
+                      const r = q.items[j]
+                      if (r) r.description = `${r.description}${output}`
+                      else q.items[j] = { ...item, description: output }
+                    }
+                    return obj
+                  })
+                  modified = true
                 })
               }
               j = j + 1
             }
-
-            modified = true
+          } else {
+            console.log("should not be existed", i)
           }
         } catch (error) {
           toast({ title: "Auto fill failed.", description: (error as { message: string }).message })

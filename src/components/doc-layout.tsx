@@ -15,7 +15,7 @@ type LayoutProps = {
   saveDisabled: boolean,
   children: React.ReactNode
   handleSave: () => void,
-  handleAutoFill?: (projectId: string, aiParams?: ProjectAiParamters) => Promise<void>
+  handleAutoFill?: (aiParams?: ProjectAiParamters) => Promise<void>
 }
 
 const DocLayout = (props: LayoutProps) => {
@@ -41,7 +41,7 @@ const DocLayout = (props: LayoutProps) => {
                     if (props.handleAutoFill) {
                       setFilling(true)
                       try {
-                        await props.handleAutoFill(props.docInfo.projectId, props.docInfo.projectAiParamters)
+                        await props.handleAutoFill(props.docInfo.projectAiParamters)
                       } finally {
                         setFilling(false)
                       }

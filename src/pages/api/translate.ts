@@ -37,8 +37,8 @@ export default async function handler(req: NextRequest) {
         const stream = new TransformStream();
         const writer = stream.writable.getWriter();
         const chat = new ChatOpenAI({
-          // modelName: "gpt-3.5-turbo-0301",
-          modelName: "gpt-3.5-turbo",
+          modelName: "gpt-3.5-turbo-0301",
+          // modelName: "gpt-3.5-turbo",
           // modelName: "gpt-3.5-turbo-16k-0613",
           streaming,
           temperature: 0.9,
