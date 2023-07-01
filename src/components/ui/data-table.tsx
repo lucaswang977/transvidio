@@ -13,7 +13,6 @@ import {
   type OnChangeFn,
   type RowData,
   type ColumnFiltersState,
-  type PaginationState,
 } from "@tanstack/react-table"
 
 import {
@@ -56,23 +55,18 @@ export function DataTable<TData, TValue>({
   filter,
 }: DataTableProps<TData, TValue>) {
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
-  const [pagination, setPagination] = React.useState<PaginationState>({
-    pageSize: 10,
-    pageIndex: 0
-  })
+
   const table = useReactTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
     onRowSelectionChange: setRowSelection,
-    onPaginationChange: setPagination,
     getPaginationRowModel: getPaginationRowModel(),
     onColumnFiltersChange: setColumnFilters,
     getFilteredRowModel: getFilteredRowModel(),
     state: {
       rowSelection,
       columnFilters,
-      pagination
     },
     meta: {
       refetchData: handleRefetch,
@@ -143,7 +137,9 @@ export function DataTable<TData, TValue>({
               >
                 Previous
               </Button>
-              <p className="text-sm px-2">{pagination.pageIndex + 1} / {table.getPageCount()}</p>
+              <p className="text-sm px-2">
+                {table.getState().pagination.pageIndex + 1} / {table.getPageCount()}
+              </p>
               <Button
                 variant="outline"
                 size="sm"

@@ -19,7 +19,7 @@ const ProjectManagement: NextPageWithLayout = () => {
     undefined, // no input
     {
       enabled: session?.user !== undefined,
-      refetchOnWindowFocus: false
+      refetchOnWindowFocus: false,
     },
   );
 

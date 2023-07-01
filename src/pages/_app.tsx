@@ -33,7 +33,11 @@ function MyApp(
   const getLayout = Component.getLayout ?? ((page) => page)
   const getTitle = Component.getTitle ?? (() => "Transvid.io")
   return (
-    <SessionProvider session={session as Session}>
+    <SessionProvider
+      session={session as Session}
+      refetchInterval={5 * 60}
+      refetchOnWindowFocus={false}
+    >
       <Head>
         <title>{getTitle()}</title>
         <meta name="description" content="Transvidio: Online translation collaborative platform." />

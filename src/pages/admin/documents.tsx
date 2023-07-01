@@ -36,7 +36,7 @@ const DocumentManagement: NextPageWithLayout = () => {
     undefined,
     {
       enabled: session?.user !== undefined,
-      refetchOnWindowFocus: false
+      refetchOnWindowFocus: false,
     },
   );
   const { data: projects } = api.project.getAll.useQuery(
