@@ -105,7 +105,7 @@ export function DocumentCreateDialog() {
             New document
           </Button>
         </DialogTrigger>
-        <DialogContent>
+        <DialogContent className="w-1/3">
           <DialogHeader>
             <DialogTitle>Create a new document</DialogTitle>
           </DialogHeader>

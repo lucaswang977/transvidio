@@ -51,7 +51,7 @@ export function AiParamsDialog(props: AiParamsDialogProps) {
             <Edit className="h-4 w-4" />
           </Button>
         </DialogTrigger>
-        <DialogContent className="sm:max-w-2xl">
+        <DialogContent className="w-1/3">
           <DialogHeader>
             <DialogTitle>Fill the parameters for AI translation</DialogTitle>
           </DialogHeader>

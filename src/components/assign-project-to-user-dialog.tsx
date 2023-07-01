@@ -102,7 +102,7 @@ export function AssignProjectToUserDialog(props: AssignProjectToUserDialogProps)
             <Edit className="h-4 w-4" />
           </Button>
         </DialogTrigger>
-        <DialogContent className="sm:max-w-2xl">
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>Who can access this project?</DialogTitle>
           </DialogHeader>

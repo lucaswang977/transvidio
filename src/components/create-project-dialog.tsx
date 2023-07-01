@@ -90,7 +90,7 @@ export function ProjectCreateDialog(props: { refetch: () => void }) {
             New project
           </Button>
         </DialogTrigger>
-        <DialogContent>
+        <DialogContent className="w-1/3">
           <DialogHeader>
             <DialogTitle>Create a new project</DialogTitle>
           </DialogHeader>
