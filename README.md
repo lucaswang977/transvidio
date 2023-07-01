@@ -5,7 +5,7 @@ An online translation collaborative platform which enables project-based transla
 ## Fundamental functions
 - User registration with email & google account
 - Role based (admin, editor) user management
-- Project & document management
+- Project based document management
 - A variety of document editors:
   - Course introduction
   - Curriculum
