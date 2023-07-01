@@ -32,6 +32,9 @@ export const env = createEnv({
     S3_BUCKET_NAME: z.string().min(1),
     S3_UPLOAD_FOLDER_NAME: z.string().min(1),
     OPENAI_API_KEY: z.string().min(1),
+    DELAY_ALL_API: z.preprocess(
+      (str) => str === "true" ? true : false,
+      z.boolean().optional())
   },
 
   /**
@@ -63,6 +66,7 @@ export const env = createEnv({
     S3_BUCKET_NAME: process.env.S3_BUCKET_NAME,
     S3_UPLOAD_FOLDER_NAME: process.env.S3_UPLOAD_FOLDER_NAME,
     OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+    DELAY_ALL_API: process.env.DELAY_ALL_API,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation.

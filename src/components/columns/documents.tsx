@@ -26,19 +26,29 @@ import { ConfirmDialog, ConfirmDialogInDropdown } from "~/components/confirm-dia
 const CloseDialog = (props: { documentId: string, refetch?: () => void }) => {
   const mutation = api.document.closeByAdmin.useMutation()
   const { toast } = useToast()
+  const [open, setOpen] = React.useState(false)
+  const [working, setWorking] = React.useState(false)
 
   return (
     <ConfirmDialog
-      trigger={<Button>Close</Button>}
+      trigger={<Button variant="outline" className="text-xs w-14 h-8">Close</Button>}
+      open={open}
+      setOpen={setOpen}
+      working={working}
       title="Are you sure to close the document?"
       description="Once the document is closed, other people cannot modify it anymore."
       handleConfirm={() => {
+        setWorking(true)
         mutation.mutate({ documentId: props.documentId }, {
           onSuccess: () => {
             if (props.refetch) props.refetch()
+            setWorking(false)
+            setOpen(false)
           },
           onError: (err) => {
             toast({ title: "Close failed.", description: err.message })
+            setWorking(false)
+            setOpen(false)
           }
         })
       }}
@@ -48,19 +58,29 @@ const CloseDialog = (props: { documentId: string, refetch?: () => void }) => {
 const SubmitDialog = (props: { documentId: string, refetch?: () => void }) => {
   const mutation = api.document.submitByUser.useMutation()
   const { toast } = useToast()
+  const [open, setOpen] = React.useState(false)
+  const [working, setWorking] = React.useState(false)
 
   return (
     <ConfirmDialog
-      trigger={<Button>Submit</Button>}
+      trigger={<Button variant="outline" className="text-xs w-14 h-8">Submit</Button>}
+      open={open}
+      setOpen={setOpen}
+      working={working}
       title="Are you sure to submit the document?"
       description="Once you submit this document, others will come to review it."
       handleConfirm={() => {
-        mutation.mutate({ documentId: props.documentId }, {
+        setWorking(true)
+        return mutation.mutateAsync({ documentId: props.documentId }, {
           onSuccess: () => {
             if (props.refetch) props.refetch()
+            setWorking(false)
+            setOpen(false)
           },
           onError: (err) => {
             toast({ title: "Submit failed.", description: err.message })
+            setWorking(false)
+            setOpen(false)
           }
         })
       }}
@@ -70,20 +90,30 @@ const SubmitDialog = (props: { documentId: string, refetch?: () => void }) => {
 
 const ClaimDialog = (props: { documentId: string, refetch?: () => void }) => {
   const mutation = api.document.claimByUser.useMutation()
+  const [open, setOpen] = React.useState(false)
+  const [working, setWorking] = React.useState(false)
   const { toast } = useToast()
 
   return (
     <ConfirmDialog
-      trigger={<Button>Claim</Button>}
+      trigger={<Button variant="outline" className="text-xs w-14 h-8">Claim</Button>}
+      open={open}
+      setOpen={setOpen}
+      working={working}
       title="Are you sure to claim the document?"
       description="Claiming the document to let others know you are working on it."
       handleConfirm={() => {
+        setWorking(true)
         mutation.mutate({ documentId: props.documentId }, {
           onSuccess: () => {
             if (props.refetch) props.refetch()
+            setWorking(false)
+            setOpen(false)
           },
           onError: (err) => {
             toast({ title: "Claim failed.", description: err.message })
+            setWorking(false)
+            setOpen(false)
           }
         })
       }}
@@ -102,22 +132,33 @@ const ResetDocumentDialog = (
     }) => {
   const mutation = api.document.resetByAdmin.useMutation()
   const { toast } = useToast()
+  const [open, setOpen] = React.useState(false)
+  const [working, setWorking] = React.useState(false)
 
   return (
     <ConfirmDialogInDropdown
       disabled={disabled}
+      open={open}
+      setOpen={setOpen}
+      working={working}
       trigger={<><Eraser className="mr-2 h-4 w-4" /><span>Reset</span></>}
       title="Reset the document"
       description="This operation is dangerous! The translated part of this document will be erased. Do you confirm to do so?"
-      handleConfirm={() =>
+      handleConfirm={() => {
+        setWorking(true)
         mutation.mutate({ documentId: documentId }, {
           onSuccess: () => {
             if (refetch) refetch()
+            setWorking(false)
+            setOpen(false)
           },
           onError: (err) => {
             toast({ title: "Claim failed.", description: err.message })
+            setWorking(false)
+            setOpen(false)
           }
         })
+      }
       }
     />
   )

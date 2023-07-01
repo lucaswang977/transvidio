@@ -7,6 +7,7 @@ import { TRPCError } from "@trpc/server"
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner"
 import { env } from "~/env.mjs"
+import { delay } from "~/utils/helper";
 
 export const uploadRouter = createTRPCRouter({
   signUrl: protectedProcedure
@@ -15,6 +16,8 @@ export const uploadRouter = createTRPCRouter({
       filename: z.string()
     }))
     .mutation(async ({ input }) => {
+      if (env.DELAY_ALL_API) await delay(3000)
+
       const s3 = new S3Client({
         region: env.S3_REGION,
         credentials: {

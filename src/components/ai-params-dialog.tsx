@@ -24,7 +24,7 @@ type AiParamsDialogProps = {
 
 export function AiParamsDialog(props: AiParamsDialogProps) {
   const [open, setIsOpen] = React.useState(false)
-  const mutation = api.translate.saveAiParams.useMutation()
+  const mutation = api.project.saveAiParams.useMutation()
   const [params, setParams] = React.useState<ProjectAiParamters | undefined>(props.currentValue)
 
   function onSubmit() {

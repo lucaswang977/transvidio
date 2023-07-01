@@ -61,7 +61,7 @@ export const columns: ColumnDef<UserColumn>[] = [
   },
   {
     accessorKey: "lastLogin",
-    header: "Last login"
+    header: "Last active"
   },
   {
     accessorKey: "created",

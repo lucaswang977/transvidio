@@ -13,7 +13,7 @@ import { TableLoading } from "~/components/ui/table-loading"
 const UserManagement: NextPageWithLayout = () => {
   const [rowSelection, setRowSelection] = React.useState({})
   const { data: session } = useSession();
-  const { data: users, status, refetch } = api.user.getAll.useQuery(
+  const { data: users, status, isRefetching, refetch } = api.user.getAll.useQuery(
     undefined, // no input
     {
       enabled: session?.user !== undefined,
@@ -48,9 +48,8 @@ const UserManagement: NextPageWithLayout = () => {
       <div className="flex items-center justify-between space-y-2">
         <h2 className="text-3xl font-bold tracking-tight">All users</h2>
         <div className="flex space-x-2">
-          <Button size="sm" variant="outline"
-            onClick={handleRefetch}>
-            <RefreshCcw className="mr-2 h-4 w-4" />
+          <Button disabled={isRefetching} size="sm" variant="outline" onClick={handleRefetch}>
+            <RefreshCcw className={`mr-2 h-4 w-4 ${isRefetching ? "animate-spin" : ""}`} />
             Refresh
           </Button>
         </div>

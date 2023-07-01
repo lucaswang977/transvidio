@@ -44,3 +44,7 @@ export function truncateString(str: string, maxLength: number): string {
   const truncated = str.slice(0, maxLength);
   return truncated + '...';
 }
+
+export function delay(milliseconds: number) {
+  return new Promise<void>(resolve => setTimeout(() => { resolve() }, milliseconds))
+}

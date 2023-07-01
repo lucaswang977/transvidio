@@ -15,7 +15,7 @@ import { type ProjectAiParamters } from "~/types"
 const ProjectManagement: NextPageWithLayout = () => {
   const { data: session } = useSession()
   const [rowSelection, setRowSelection] = React.useState({})
-  const { data: projects, status, refetch } = api.project.getAll.useQuery(
+  const { data: projects, status, isRefetching, refetch } = api.project.getAll.useQuery(
     undefined, // no input
     {
       enabled: session?.user !== undefined,
@@ -56,9 +56,8 @@ const ProjectManagement: NextPageWithLayout = () => {
       <div className="flex items-center justify-between space-y-2">
         <h2 className="text-3xl font-bold tracking-tight">All projects</h2>
         <div className="flex space-x-2">
-          <Button size="sm" variant="outline"
-            onClick={handleRefetch}>
-            <RefreshCcw className="mr-2 h-4 w-4" />
+          <Button disabled={isRefetching} size="sm" variant="outline" onClick={handleRefetch}>
+            <RefreshCcw className={`mr-2 h-4 w-4 ${isRefetching ? "animate-spin" : ""}`} />
             Refresh
           </Button>
           {

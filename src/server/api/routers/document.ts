@@ -8,11 +8,14 @@ import { z } from "zod";
 import { DocumentType, Prisma } from "@prisma/client"
 import { TRPCError } from "@trpc/server";
 import type { DocumentInfo } from "~/types";
+import { env } from "~/env.mjs";
+import { delay } from "~/utils/helper";
 
 export const documentRouter = createTRPCRouter({
   getAll: protectedProcedure
     .query(async ({ ctx }) => {
-      await new Promise(resolve => setTimeout(resolve, 3000))
+      if (env.DELAY_ALL_API) await delay(3000)
+
       if (ctx.session.user.role === "ADMIN") {
         return ctx.prisma.document.findMany({
           orderBy: {
@@ -70,6 +73,8 @@ export const documentRouter = createTRPCRouter({
       projectId: z.string().nonempty()
     }))
     .mutation(async ({ input }) => {
+      if (env.DELAY_ALL_API) await delay(3000)
+
       const result = await prisma.document.create({
         data: {
           title: input.title,
@@ -85,11 +90,14 @@ export const documentRouter = createTRPCRouter({
 
       return result
     }),
+
   claimByUser: protectedProcedure
     .input(z.object({
       documentId: z.string().nonempty(),
     }))
     .mutation(async ({ ctx, input }) => {
+      if (env.DELAY_ALL_API) await delay(3000)
+
       const document = await prisma.document.findFirst({
         where: {
           id: input.documentId,
@@ -126,11 +134,14 @@ export const documentRouter = createTRPCRouter({
         }
       })
     }),
+
   unclaimByUser: protectedProcedure
     .input(z.object({
       documentId: z.string().nonempty(),
     }))
     .mutation(async ({ ctx, input }) => {
+      if (env.DELAY_ALL_API) await delay(3000)
+
       const document = await prisma.document.findFirst({
         where: {
           id: input.documentId,
@@ -166,11 +177,14 @@ export const documentRouter = createTRPCRouter({
         }
       })
     }),
+
   submitByUser: protectedProcedure
     .input(z.object({
       documentId: z.string().nonempty(),
     }))
     .mutation(async ({ ctx, input }) => {
+      if (env.DELAY_ALL_API) await delay(3000)
+
       const document = await prisma.document.findFirst({
         where: {
           id: input.documentId,
@@ -206,11 +220,14 @@ export const documentRouter = createTRPCRouter({
         }
       })
     }),
+
   closeByAdmin: protectedProcedure
     .input(z.object({
       documentId: z.string().nonempty(),
     }))
     .mutation(async ({ ctx, input }) => {
+      if (env.DELAY_ALL_API) await delay(3000)
+
       const document = await prisma.document.findFirst({
         where: {
           id: input.documentId,
@@ -282,6 +299,8 @@ export const documentRouter = createTRPCRouter({
       dst: z.string()
     }))
     .mutation(async ({ ctx, input }) => {
+      if (env.DELAY_ALL_API) await delay(3000)
+
       const document = await prisma.document.findFirst({
         where: {
           id: input.documentId,
@@ -337,11 +356,14 @@ export const documentRouter = createTRPCRouter({
 
       return docInfo
     }),
+
   load: protectedProcedure
     .input(z.object({
       documentId: z.string().nonempty(),
     }))
     .query(async ({ ctx, input }) => {
+      if (env.DELAY_ALL_API) await delay(3000)
+
       const document = await prisma.document.findFirst({
         where: {
           id: input.documentId,
@@ -369,6 +391,4 @@ export const documentRouter = createTRPCRouter({
         }
       })
     }),
-
-
 });

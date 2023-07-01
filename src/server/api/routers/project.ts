@@ -7,6 +7,9 @@ import { prisma } from "~/server/db";
 import { z } from "zod";
 import { Language } from "@prisma/client"
 import { TRPCError } from "@trpc/server";
+import { delay } from "~/utils/helper";
+import { env } from "~/env.mjs";
+import { type ProjectAiParamters } from "~/types";
 
 export type ProjectRelatedUser = {
   id: string,
@@ -15,7 +18,9 @@ export type ProjectRelatedUser = {
 }
 
 export const projectRouter = createTRPCRouter({
-  getAll: protectedProcedure.query(({ ctx }) => {
+  getAll: protectedProcedure.query(async ({ ctx }) => {
+    if (env.DELAY_ALL_API) await delay(3000)
+
     if (ctx.session.user.role === "ADMIN") {
       return ctx.prisma.project.findMany({
         include: {
@@ -56,6 +61,8 @@ export const projectRouter = createTRPCRouter({
       memo: z.string()
     }))
     .mutation(async ({ input }) => {
+      if (env.DELAY_ALL_API) await delay(3000)
+
       const project = await prisma.project.findFirst({
         where: {
           name: input.name,
@@ -89,6 +96,8 @@ export const projectRouter = createTRPCRouter({
       users: z.string().array()
     }))
     .mutation(async ({ input }) => {
+      if (env.DELAY_ALL_API) await delay(3000)
+
       const project = await prisma.project.findUnique({
         where: {
           id: input.id,
@@ -114,5 +123,44 @@ export const projectRouter = createTRPCRouter({
         })
       }
       return input
+    }),
+
+  saveAiParams: protectedProcedure
+    .input(z.object({
+      projectId: z.string().nonempty(),
+      value: z.string().nonempty()
+    }))
+    .mutation(async ({ input }) => {
+      const project = await prisma.project.findUnique({
+        where: {
+          id: input.projectId,
+        }
+      })
+
+      if (!project) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Project not existed."
+        })
+      }
+
+      const objVal = JSON.parse(input.value) as ProjectAiParamters
+      if (!objVal) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Value invalid."
+        })
+      }
+
+      const updatedProject = await prisma.project.update({
+        where: {
+          id: input.projectId
+        },
+        data: {
+          aiParameter: objVal
+        }
+      })
+
+      return updatedProject.id
     }),
 });

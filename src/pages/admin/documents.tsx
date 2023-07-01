@@ -32,7 +32,7 @@ const DocumentManagement: NextPageWithLayout = () => {
     if (filter && typeof filter === "string") setFilterProject(filter)
   }, [filter])
 
-  const { data: documents, status, refetch } = api.document.getAll.useQuery(
+  const { data: documents, status, isRefetching, refetch } = api.document.getAll.useQuery(
     undefined,
     {
       enabled: session?.user !== undefined,
@@ -90,8 +90,8 @@ const DocumentManagement: NextPageWithLayout = () => {
               </SelectGroup>
             </SelectContent>
           </Select>
-          <Button size="sm" variant="outline" onClick={() => refetch()}>
-            <RefreshCcw className="mr-2 h-4 w-4" />
+          <Button disabled={isRefetching} size="sm" variant="outline" onClick={() => refetch()}>
+            <RefreshCcw className={`mr-2 h-4 w-4 ${isRefetching ? "animate-spin" : ""}`} />
             Refresh
           </Button>
           {

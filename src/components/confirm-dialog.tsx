@@ -18,13 +18,15 @@ export type ConfirmDialogProps = {
   title: string,
   description: string,
   disabled?: boolean,
+  working: boolean,
+  open: boolean,
+  setOpen: (open: boolean) => void,
   handleConfirm: () => void
 }
 
 const ConfirmDialog = (props: ConfirmDialogProps) => {
-  const [open, setOpen] = React.useState(false)
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={props.open} onOpenChange={props.setOpen}>
       <DialogTrigger asChild className="w-20">
         {props.trigger}
       </DialogTrigger>
@@ -36,17 +38,19 @@ const ConfirmDialog = (props: ConfirmDialogProps) => {
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <Button onClick={() => {
-            props.handleConfirm()
-            setOpen(false)
-          }}>OK</Button>
-          <Button variant="secondary" onClick={() => setOpen(false)}>Cancel</Button>
+          <Button
+            disabled={props.working}
+            onClick={() => { props.handleConfirm() }}>
+            {props.working ? "Waiting" : "OK"}
+          </Button>
+          <Button variant="secondary" onClick={() => props.setOpen(false)}>Cancel</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   )
 }
 
+// https://codesandbox.io/embed/r9sq1q
 const ConfirmDialogInDropdown = (props: ConfirmDialogProps) => {
   const [open, setOpen] = React.useState(false)
   return (
@@ -71,7 +75,5 @@ const ConfirmDialogInDropdown = (props: ConfirmDialogProps) => {
     </DropdownMenuDialogItem>
   )
 }
-
-
 
 export { ConfirmDialog, ConfirmDialogInDropdown }

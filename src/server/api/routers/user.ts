@@ -8,6 +8,8 @@ import { TRPCError } from "@trpc/server"
 
 import { prisma } from "~/server/db";
 import bcrypt from "bcryptjs"
+import { env } from "~/env.mjs";
+import { delay } from "~/utils/helper";
 
 export const userRouter = createTRPCRouter({
   register: publicProcedure
@@ -17,6 +19,8 @@ export const userRouter = createTRPCRouter({
       password: z.string()
     }))
     .mutation(async ({ input }) => {
+      if (env.DELAY_ALL_API) await delay(3000)
+
       const user = await prisma.user.findFirst({
         where: {
           email: input.email
@@ -47,6 +51,8 @@ export const userRouter = createTRPCRouter({
       }
     }),
   getAll: protectedProcedure.query(async ({ ctx }) => {
+    if (env.DELAY_ALL_API) await delay(3000)
+
     return (await ctx.prisma.user.findMany()).map(
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       ({ emailVerified, pwd, updatedAt, ...rest }) => rest)
