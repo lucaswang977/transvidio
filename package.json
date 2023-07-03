@@ -64,6 +64,7 @@
     "zod": "^3.21.4"
   },
   "devDependencies": {
+    "@aws-sdk/lib-storage": "^3.363.0",
     "@types/bcryptjs": "^2.4.2",
     "@types/eslint": "^8.40.2",
     "@types/node": "^20.3.1",
