@@ -6,7 +6,7 @@
 // 2. Promotional video
 
 // Find the course ID first
-const COURSE_ID = 1300254;
+const COURSE_ID = 1877828;
 
 // Do not touch this URLs unless they are changed.
 const COURSE_INTRO_JSON_URL = `/api-2.0/courses/${COURSE_ID}/?fields[course]=title,headline,description,prerequisites,objectives,target_audiences`
