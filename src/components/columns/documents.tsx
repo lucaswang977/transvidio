@@ -3,7 +3,7 @@
 import * as React from "react"
 import { type ColumnDef } from "@tanstack/react-table"
 import { Avatar, AvatarImage, AvatarFallback } from "~/components/ui/avatar"
-import { ExternalLink, MoreHorizontal } from "lucide-react"
+import { ChevronRight, MoreHorizontal } from "lucide-react"
 
 import { Button } from "~/components/ui/button"
 import { Checkbox } from "~/components/ui/checkbox"
@@ -22,6 +22,7 @@ import { Badge } from "~/components/ui/badge"
 import { api } from "~/utils/api"
 import { useToast } from "~/components/ui/use-toast"
 import { ConfirmDialog, ConfirmDialogInDropdown } from "~/components/confirm-dialog"
+import Link from "next/link"
 
 const CloseDialog = (props: { documentId: string, refetch?: () => void }) => {
   const mutation = api.document.closeByAdmin.useMutation()
@@ -285,8 +286,9 @@ export const columns: ColumnDef<DocumentColumn>[] = [
       const data = row.original
       const myself = table.options.meta?.user
       const refetch = table.options.meta?.refetchData
-      const isClaimed = (data.state !== "OPEN" && data.state !== "CLOSED") &&
-        (myself && data.user && data.user.id === myself.id)
+      const isEditable = (data.state !== "OPEN" && data.state !== "CLOSED") &&
+        (myself && data.user && data.user.id === myself.id) ||
+        (myself && myself.role === "ADMIN")
       let editorUrl = "/"
       if (data.type === "INTRODUCTION") {
         editorUrl = "/editor/introduction/" + data.id
@@ -314,10 +316,10 @@ export const columns: ColumnDef<DocumentColumn>[] = [
                   <Button className="invisible w-20">Hidden</Button>
           }
 
-          <Button disabled={!isClaimed} variant="ghost">
-            <a href={editorUrl} target="_blank">
-              <ExternalLink className="mr-2 h-4 w-4" />
-            </a>
+          <Button disabled={!isEditable} variant="ghost">
+            <Link href={editorUrl} target="_blank">
+              <ChevronRight className="mr-2 h-4 w-4" />
+            </Link>
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
