@@ -18,7 +18,7 @@ const ProjectManagement: NextPageWithLayout = () => {
   const { data: projects, status, isRefetching, refetch } = api.project.getAll.useQuery(
     undefined, // no input
     {
-      enabled: session?.user !== undefined,
+      enabled: session?.user === undefined,
       refetchOnWindowFocus: false,
     },
   );
@@ -40,7 +40,7 @@ const ProjectManagement: NextPageWithLayout = () => {
             name: user.user.name
           }
         }),
-        documentCount: { all: project.documents.length }
+        documentCount: project.documents
       }
 
       return p

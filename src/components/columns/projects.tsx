@@ -33,7 +33,7 @@ export type ProjectColumn = {
   memo: string
   users: ProjectRelatedUser[]
   aiParameter: ProjectAiParamters
-  documentCount: { open?: number, working?: number, reviewing?: number, closed?: number, all: number }
+  documentCount: Record<string, number>
 }
 
 export const columns: ColumnDef<ProjectColumn>[] = [
@@ -147,7 +147,7 @@ export const columns: ColumnDef<ProjectColumn>[] = [
       const data = row.original
       return (
         <div className="flex px-2 place-items-center space-x-2">
-          <span>{data.documentCount.all}</span>
+          <span>{data.documentCount.OPEN} / {data.documentCount.ALL}</span>
           <Link href={`/admin/documents?filter=${data.name}`}>
             <ArrowRightCircle className="h-4 w-4" />
           </Link>
