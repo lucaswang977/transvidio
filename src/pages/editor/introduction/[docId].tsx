@@ -78,6 +78,7 @@ const IntroductionEditor = ({ srcObj, dstObj, onChange }: IntroductionEditorProp
       <div className="flex space-x-2">
         <RichtextEditor
           height="500px"
+          width="600px"
           value={srcObj.description}
           onChange={(event) => {
             const obj = { ...srcObj }
@@ -87,6 +88,7 @@ const IntroductionEditor = ({ srcObj, dstObj, onChange }: IntroductionEditorProp
         <RichtextEditor
           value={dstObj.description}
           height="500px"
+          width="600px"
           onChange={(event) => {
             const obj = { ...dstObj }
             obj.description = event.target.value
