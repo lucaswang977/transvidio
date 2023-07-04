@@ -4,6 +4,7 @@ import {
   BtnUndo,
   BtnRedo,
   Separator,
+  HtmlButton,
   BtnBold,
   BtnItalic,
   BtnUnderline,
@@ -43,6 +44,7 @@ function RichtextEditor({ height, width, ...props }: RichtextEditorProps) {
           <Separator />
           <BtnLink />
           <BtnClearFormatting />
+          <HtmlButton />
         </Toolbar>
       </Editor>
     </EditorProvider>

@@ -32,7 +32,7 @@ export function AssignProjectToUserDialog(props: AssignProjectToUserDialogProps)
   const { data: users } = api.user.getAll.useQuery(
     undefined, // no input
     {
-      enabled: sessionData?.user !== undefined,
+      enabled: sessionData?.user.role === "ADMIN",
       refetchOnWindowFocus: false
     },
   );

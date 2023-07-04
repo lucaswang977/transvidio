@@ -5,7 +5,7 @@ import {
 
 import { prisma } from "~/server/db";
 import { z } from "zod";
-import { Language } from "@prisma/client"
+import { Language, type Prisma } from "@prisma/client"
 import { TRPCError } from "@trpc/server";
 import { delay } from "~/utils/helper";
 import { env } from "~/env.mjs";
@@ -21,36 +21,38 @@ export const projectRouter = createTRPCRouter({
   getAll: protectedProcedure.query(async ({ ctx }) => {
     if (env.DELAY_ALL_API) await delay(3000)
 
-    if (ctx.session.user.role === "ADMIN") {
-      return ctx.prisma.project.findMany({
-        include: {
-          users: {
-            select: {
-              user: { select: { id: true, name: true, image: true } }
-            }
-          },
-          documents: true
-        },
-      })
-    } else {
-      return ctx.prisma.project.findMany({
-        include: {
-          users: {
-            select: {
-              user: { select: { id: true, name: true, image: true } }
-            }
-          },
-          documents: true
-        },
-        where: {
-          users: {
-            some: {
-              userId: ctx.session.user.id
-            }
+    let whereCondition: Prisma.ProjectWhereInput = {}
+
+    if (ctx.session.user.role !== "ADMIN") {
+      whereCondition = {
+        users: {
+          some: {
+            userId: ctx.session.user.id
           }
         }
-      })
+      }
     }
+
+    return ctx.prisma.project.findMany({
+      include: {
+        users: {
+          select: {
+            user: { select: { id: true, name: true, image: true } }
+          }
+        },
+        documents: {
+          select: { state: true }
+        }
+      },
+      where: whereCondition
+    }).then(projects => projects.map(project => ({
+      ...project,
+      documents: project.documents.reduce((acc: Record<string, number>, document) => {
+        acc[document.state] = (acc[document.state] || 0) + 1
+        acc["ALL"] = (acc["ALL"] || 0) + 1
+        return acc
+      }, {}),
+    })))
   }),
 
   create: protectedProcedure
