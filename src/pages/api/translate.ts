@@ -7,7 +7,6 @@ import {
 } from 'langchain/prompts';
 import type { NextRequest } from 'next/server';
 import type { ProjectAiParamters } from '~/types';
-import { fetchEventSource } from '@microsoft/fetch-event-source';
 
 export const runtime = 'edge';
 
@@ -37,11 +36,11 @@ export default async function handler(req: NextRequest) {
         const stream = new TransformStream();
         const writer = stream.writable.getWriter();
         const chat = new ChatOpenAI({
-          modelName: "gpt-3.5-turbo-0301",
-          // modelName: "gpt-3.5-turbo",
+          // modelName: "gpt-3.5-turbo-0301",
+          modelName: "gpt-3.5-turbo",
           // modelName: "gpt-3.5-turbo-16k-0613",
           streaming,
-          temperature: 0.9,
+          temperature: 0.8,
           callbackManager: CallbackManager.fromHandlers({
             handleLLMNewToken: async (token: string) => {
               await writer.ready;
@@ -90,24 +89,4 @@ export default async function handler(req: NextRequest) {
   }
 }
 
-export const handleTranslate = async (
-  aiParams: ProjectAiParamters,
-  text: string,
-  callback: (output: string) => void) => {
-  const reqBody = JSON.stringify({
-    translate: text,
-    character: aiParams.character,
-    background: aiParams.background,
-    syllabus: aiParams.syllabus,
-  })
-
-  await fetchEventSource(`/api/translate`, {
-    method: 'POST',
-    body: reqBody,
-    headers: { 'Content-Type': 'application/json' },
-    onmessage(ev) {
-      callback(ev.data)
-    },
-  });
-}
 

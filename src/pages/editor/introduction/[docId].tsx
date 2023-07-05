@@ -16,12 +16,16 @@ import { useRouter } from "next/router"
 import * as React from "react"
 
 import type { Introduction, ProjectAiParamters } from "~/types"
-import { DocumentEditor, type AutofillHandler, type HandleChangeInterface } from "~/components/doc-editor";
+import {
+  DocumentEditor,
+  handleTranslate,
+  type AutofillHandler,
+  type HandleChangeInterface
+} from "~/components/doc-editor";
 import { Input } from "~/components/ui/input";
 import { RichtextEditor } from "~/components/ui/richtext-editor";
 import { ComparativeArrayEditor } from "~/components/comparative-array-input";
-// import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
-// import { handleTranslate } from "~/pages/api/translate"
+import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 import type { Prisma } from "@prisma/client";
 
 type IntroductionEditorProps = {
@@ -47,115 +51,113 @@ const IntroductionEditor = React.forwardRef<AutofillHandler | null, Introduction
     if (srcJson) srcObj = srcJson as Introduction
     if (dstJson) dstObj = dstJson as Introduction
 
-    const handleAutoFill = (aiParams?: ProjectAiParamters) => {
-      // let aip: ProjectAiParamters = {
-      //   character: "",
-      //   background: "",
-      //   syllabus: ""
-      // }
-      //
-      // if (aiParams) {
-      //   aip = { ...aiParams }
-      // }
-      //
-      // return new Promise<void>(async resolve => {
-      //   let modified = false
-      //
-      //   if (dstObj.title.length === 0) {
-      //     await handleTranslate(aip, srcObj.title, (output) => {
-      //       setDstObj(o => { return { ...o, title: `${o.title}${output}` } })
-      //       modified = true
-      //     })
-      //   }
-      //
-      //   if (dstObj.headline.length === 0) {
-      //     await handleTranslate(aip, srcObj.headline, (output) => {
-      //       setDstObj(o => { return { ...o, headline: `${o.headline}${output}` } })
-      //       modified = true
-      //     })
-      //   }
-      //
-      //   if (dstObj.description.length === 0) {
-      //     const splitter = RecursiveCharacterTextSplitter.fromLanguage("html", {
-      //       chunkSize: 2000,
-      //       chunkOverlap: 0
-      //     })
-      //     const splitted = await splitter.splitText(srcObj.description)
-      //     for (const s of splitted) {
-      //       await handleTranslate(aip, s, (output) => {
-      //         setDstObj(o => { return { ...o, description: `${o.description}${output}` } })
-      //         modified = true
-      //       })
-      //     }
-      //     modified = true
-      //   }
-      //
-      //   if (dstObj.prerequisites.length >= 0) {
-      //     let i = 0
-      //     for (const p of srcObj.prerequisites) {
-      //       const value = dstObj.prerequisites[i]
-      //       if (!value || value.length === 0) {
-      //         await handleTranslate(aip, p, (output) => {
-      //           const index = i
-      //           setDstObj(o => {
-      //             const np = [...o.prerequisites]
-      //             const c = np[index]
-      //             if (c) np[index] = `${c}${output}`
-      //             else np[index] = output
-      //             return { ...o, prerequisites: np }
-      //           })
-      //           modified = true
-      //         })
-      //         i = i + 1
-      //       }
-      //     }
-      //   }
-      //
-      //   if (dstObj.objectives.length >= 0) {
-      //     let i = 0
-      //     for (const p of srcObj.objectives) {
-      //       const value = dstObj.objectives[i]
-      //       if (!value || value.length === 0) {
-      //         await handleTranslate(aip, p, (output) => {
-      //           const index = i
-      //           setDstObj(o => {
-      //             const np = [...o.objectives]
-      //             const c = np[index]
-      //             if (c) np[index] = `${c}${output}`
-      //             else np[index] = output
-      //             return { ...o, objectives: np }
-      //           })
-      //           modified = true
-      //         })
-      //         i = i + 1
-      //       }
-      //     }
-      //   }
-      //
-      //   if (dstObj.target_audiences.length >= 0) {
-      //     let i = 0
-      //     for (const p of srcObj.target_audiences) {
-      //       const value = dstObj.target_audiences[i]
-      //       if (!value || value.length === 0) {
-      //         await handleTranslate(aip, p, (output) => {
-      //           const index = i
-      //           setDstObj(o => {
-      //             const np = [...o.target_audiences]
-      //             const c = np[index]
-      //             if (c) np[index] = `${c}${output}`
-      //             else np[index] = output
-      //             return { ...o, target_audiences: np }
-      //           })
-      //           modified = true
-      //         })
-      //         i = i + 1
-      //       }
-      //     }
-      //   }
-      //
-      //   if (modified) setContentDirty(modified)
-      //   resolve()
-      // })
+    const handleAutoFill = async (aiParams?: ProjectAiParamters, abortCtrl?: AbortSignal) => {
+      const aip: ProjectAiParamters = aiParams ? aiParams : {
+        character: "",
+        background: "",
+        syllabus: ""
+      }
+
+      return new Promise<void>(async (resolve, reject) => {
+        if (dstObj.title.length === 0) {
+          await handleTranslate(aip, srcObj.title, (output) => {
+            handleChange("dst", o => {
+              const d = o ? (o as Introduction) : defaultIntroductionValue
+              return { ...d, title: `${d.title}${output}` }
+            })
+          }, abortCtrl).catch(err => { reject(err) })
+        }
+
+        if (dstObj.headline.length === 0) {
+          await handleTranslate(aip, srcObj.headline, (output) => {
+            handleChange("dst", o => {
+              const d = o ? (o as Introduction) : defaultIntroductionValue
+              return { ...d, headline: `${d.headline}${output}` }
+            })
+          }, abortCtrl).catch(err => { reject(err) })
+        }
+
+        if (dstObj.description.length === 0) {
+          const splitter = RecursiveCharacterTextSplitter.fromLanguage("html", {
+            chunkSize: 2000,
+            chunkOverlap: 0
+          })
+          const splitted = await splitter.splitText(srcObj.description)
+          for (const s of splitted) {
+            await handleTranslate(aip, s, (output) => {
+              handleChange("dst", o => {
+                const d = o ? (o as Introduction) : defaultIntroductionValue
+                return { ...d, description: `${d.description}${output}` }
+              })
+            }, abortCtrl).catch(err => { reject(err) })
+          }
+        }
+
+        if (srcObj.prerequisites.length >= 0) {
+          let i = 0
+          for (const p of srcObj.prerequisites) {
+            const value = dstObj.prerequisites[i]
+            if (!value || value.length === 0) {
+              await handleTranslate(aip, p, (output) => {
+                const index = i
+                handleChange("dst", o => {
+                  const d = o ? (o as Introduction) : defaultIntroductionValue
+                  const np = [...d.prerequisites]
+                  const c = np[index]
+                  if (c) np[index] = `${c}${output}`
+                  else np[index] = output
+                  return { ...d, prerequisites: np }
+                })
+              }, abortCtrl).catch(err => { reject(err) })
+            }
+            i = i + 1
+          }
+        }
+
+        if (srcObj.objectives.length >= 0) {
+          let i = 0
+          for (const p of srcObj.objectives) {
+            const value = dstObj.objectives[i]
+            if (!value || value.length === 0) {
+              await handleTranslate(aip, p, (output) => {
+                const index = i
+                handleChange("dst", o => {
+                  const d = o ? (o as Introduction) : defaultIntroductionValue
+                  const np = [...d.objectives]
+                  const c = np[index]
+                  if (c) np[index] = `${c}${output}`
+                  else np[index] = output
+                  return { ...d, objectives: np }
+                })
+              }, abortCtrl).catch(err => { reject(err) })
+            }
+            i = i + 1
+          }
+        }
+
+        if (srcObj.target_audiences.length >= 0) {
+          let i = 0
+          for (const p of srcObj.target_audiences) {
+            const value = dstObj.target_audiences[i]
+            if (!value || value.length === 0) {
+              await handleTranslate(aip, p, (output) => {
+                const index = i
+                handleChange("dst", o => {
+                  const d = o ? (o as Introduction) : defaultIntroductionValue
+                  const np = [...d.target_audiences]
+                  const c = np[index]
+                  if (c) np[index] = `${c}${output}`
+                  else np[index] = output
+                  return { ...d, target_audiences: np }
+                })
+              }, abortCtrl).catch(err => { reject(err) })
+            }
+            i = i + 1
+          }
+        }
+
+        resolve()
+      })
     }
 
 

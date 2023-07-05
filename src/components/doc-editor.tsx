@@ -12,15 +12,45 @@ import { Beforeunload } from 'react-beforeunload';
 import { useToast } from "~/components/ui/use-toast"
 import { api } from "~/utils/api";
 import { useSession } from "next-auth/react"
+import { fetchEventSource } from '@microsoft/fetch-event-source';
 import type { Prisma } from "@prisma/client";
 
 export interface HandleChangeInterface {
-  (t: SrcOrDst, v: Prisma.JsonValue | undefined): void
+  (t: SrcOrDst, updater: React.SetStateAction<Prisma.JsonValue | undefined>): void
 }
 
 export interface AutofillHandler {
-  autofillHandler?: (aiParams?: ProjectAiParamters) => void;
+  autofillHandler?: (aiParams?: ProjectAiParamters, abortCtrl?: AbortSignal) => Promise<void>;
 }
+
+export const handleTranslate = async (
+  aiParams: ProjectAiParamters,
+  text: string,
+  callback: (output: string) => void,
+  abortSignal?: AbortSignal,
+) => {
+  if (abortSignal && abortSignal.aborted) {
+    throw new Error(abortSignal.reason as string)
+  }
+
+  const reqBody = JSON.stringify({
+    translate: text,
+    character: aiParams.character,
+    background: aiParams.background,
+    syllabus: aiParams.syllabus,
+  })
+
+  return fetchEventSource(`/api/translate`, {
+    method: 'POST',
+    body: reqBody,
+    headers: { 'Content-Type': 'application/json' },
+    onmessage(ev) {
+      callback(ev.data)
+    },
+    signal: abortSignal
+  });
+}
+
 
 type DocumentEditorProps = {
   docId: string,
@@ -36,6 +66,7 @@ type DocumentEditorProps = {
 export const DocumentEditor = (props: DocumentEditorProps) => {
   const [filling, setFilling] = React.useState(false)
   const [saveState, setSaveState] = React.useState<"dirty" | "saving" | "saved">("saved")
+  const [abortCtrl] = React.useState(new AbortController())
   const childrenRef = React.useRef<AutofillHandler | null>(null);
   const { toast } = useToast()
   const { data: session } = useSession()
@@ -69,9 +100,9 @@ export const DocumentEditor = (props: DocumentEditorProps) => {
     }
   )
 
-  const handleChange: HandleChangeInterface = (t, v) => {
-    if (t === "src") setSrcObj(v)
-    else setDstObj(v)
+  const handleChange: HandleChangeInterface = (t, updater) => {
+    if (t === "src") setSrcObj(updater)
+    else setDstObj(updater)
     setSaveState("dirty")
   }
 
@@ -93,11 +124,32 @@ export const DocumentEditor = (props: DocumentEditorProps) => {
     })
   }
 
+  const startFilling = async () => {
+    const handler = childrenRef.current?.autofillHandler
+    if (handler) {
+      setFilling(true)
+      await handler(docInfo.projectAiParamters, abortCtrl.signal)
+        .catch(err => {
+          if ((err as Error).message === "UserClickedAbort") {
+            toast({ title: "Fill aborted." })
+          }
+        })
+        .finally(() => {
+          setFilling(false)
+        })
+    }
+  }
+
+  const cancelFilling = () => {
+    console.log("cancel clicked")
+    abortCtrl.abort("UserClickedAbort")
+  }
 
   return (
     status === "loading" ?
-      <div className="w-full h-full flex justify-center items-center">
+      <div className="w-full h-screen flex flex-col justify-center items-center space-y-2">
         <Loader2 className="animate-spin" />
+        <span className="text-gray-400 text-sm">Loading document...</span>
       </div>
       :
       <>
@@ -115,22 +167,12 @@ export const DocumentEditor = (props: DocumentEditorProps) => {
               <div className="flex space-x-4 items-center">
                 {
                   childrenRef.current && childrenRef.current.autofillHandler ?
-                    <Button disabled={filling} onClick={() => {
-                      const handler = childrenRef.current?.autofillHandler
-                      if (handler) {
-                        setFilling(true)
-                        try {
-                          handler(docInfo.projectAiParamters)
-                        } finally {
-                          setFilling(false)
-                        }
-                      }
-                    }} >
+                    <Button onClick={filling ? cancelFilling : startFilling} >
                       {filling ?
                         <Loader2 className="w-4 animate-spin mr-1" />
                         : <Bot className="h-4 w-4 mr-1" />
                       }
-                      <span>{filling ? "Filling" : "Auto Fill"}</span>
+                      <span>{filling ? "Cancel filling" : "Auto Fill"}</span>
                     </Button>
                     : <></>
                 }
