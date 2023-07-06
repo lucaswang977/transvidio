@@ -20,21 +20,14 @@ import {
   DocumentEditor,
   handleTranslate,
   type AutofillHandler,
-  type HandleChangeInterface
+  type EditorComponentProps,
 } from "~/components/doc-editor";
 import { Input } from "~/components/ui/input";
 import { RichtextEditor } from "~/components/ui/richtext-editor";
-import { ComparativeArrayEditor } from "~/components/comparative-array-input";
 import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
-import type { Prisma } from "@prisma/client";
+import { clone } from "ramda";
 
-type IntroductionEditorProps = {
-  srcJson: Prisma.JsonValue | undefined,
-  dstJson: Prisma.JsonValue | undefined,
-  handleChange: HandleChangeInterface
-}
-
-const IntroductionEditor = React.forwardRef<AutofillHandler | null, IntroductionEditorProps>(
+const IntroductionEditor = React.forwardRef<AutofillHandler | null, EditorComponentProps>(
   ({ srcJson, dstJson, handleChange }, ref) => {
     const defaultIntroductionValue: Introduction = {
       title: "",
@@ -62,7 +55,7 @@ const IntroductionEditor = React.forwardRef<AutofillHandler | null, Introduction
         if (dstObj.title.length === 0) {
           await handleTranslate(aip, srcObj.title, (output) => {
             handleChange("dst", o => {
-              const d = o ? (o as Introduction) : defaultIntroductionValue
+              const d = clone(o ? (o as Introduction) : defaultIntroductionValue)
               return { ...d, title: `${d.title}${output}` }
             })
           }, abortCtrl).catch(err => { reject(err) })
@@ -71,7 +64,7 @@ const IntroductionEditor = React.forwardRef<AutofillHandler | null, Introduction
         if (dstObj.headline.length === 0) {
           await handleTranslate(aip, srcObj.headline, (output) => {
             handleChange("dst", o => {
-              const d = o ? (o as Introduction) : defaultIntroductionValue
+              const d = clone(o ? (o as Introduction) : defaultIntroductionValue)
               return { ...d, headline: `${d.headline}${output}` }
             })
           }, abortCtrl).catch(err => { reject(err) })
@@ -86,7 +79,7 @@ const IntroductionEditor = React.forwardRef<AutofillHandler | null, Introduction
           for (const s of splitted) {
             await handleTranslate(aip, s, (output) => {
               handleChange("dst", o => {
-                const d = o ? (o as Introduction) : defaultIntroductionValue
+                const d = clone(o ? (o as Introduction) : defaultIntroductionValue)
                 return { ...d, description: `${d.description}${output}` }
               })
             }, abortCtrl).catch(err => { reject(err) })
@@ -101,7 +94,7 @@ const IntroductionEditor = React.forwardRef<AutofillHandler | null, Introduction
               await handleTranslate(aip, p, (output) => {
                 const index = i
                 handleChange("dst", o => {
-                  const d = o ? (o as Introduction) : defaultIntroductionValue
+                  const d = clone(o ? (o as Introduction) : defaultIntroductionValue)
                   const np = [...d.prerequisites]
                   const c = np[index]
                   if (c) np[index] = `${c}${output}`
@@ -122,7 +115,7 @@ const IntroductionEditor = React.forwardRef<AutofillHandler | null, Introduction
               await handleTranslate(aip, p, (output) => {
                 const index = i
                 handleChange("dst", o => {
-                  const d = o ? (o as Introduction) : defaultIntroductionValue
+                  const d = clone(o ? (o as Introduction) : defaultIntroductionValue)
                   const np = [...d.objectives]
                   const c = np[index]
                   if (c) np[index] = `${c}${output}`
@@ -143,7 +136,7 @@ const IntroductionEditor = React.forwardRef<AutofillHandler | null, Introduction
               await handleTranslate(aip, p, (output) => {
                 const index = i
                 handleChange("dst", o => {
-                  const d = o ? (o as Introduction) : defaultIntroductionValue
+                  const d = clone(o ? (o as Introduction) : defaultIntroductionValue)
                   const np = [...d.target_audiences]
                   const c = np[index]
                   if (c) np[index] = `${c}${output}`
@@ -155,19 +148,18 @@ const IntroductionEditor = React.forwardRef<AutofillHandler | null, Introduction
             i = i + 1
           }
         }
-
         resolve()
       })
     }
 
 
     return (
-      <div className="flex-1 items-center space-y-2 justify-center">
+      <div className="space-y-2 w-full">
         <p className="text-sm font-bold">Title</p>
-        <div className="flex space-x-2">
+        <div className="grid grid-rows-2 space-y-1 md:space-y-0 md:grid-rows-1 md:space-x-2 md:grid-cols-2">
           <Input
+            id="src.title"
             type="text"
-            className="w-full"
             value={srcObj.title}
             onChange={(event) => {
               const obj = { ...srcObj }
@@ -175,8 +167,8 @@ const IntroductionEditor = React.forwardRef<AutofillHandler | null, Introduction
               handleChange("src", obj)
             }} />
           <Input
+            id="dst.title"
             type="text"
-            className="w-full"
             value={dstObj.title}
             onChange={(event) => {
               const obj = { ...dstObj }
@@ -185,8 +177,9 @@ const IntroductionEditor = React.forwardRef<AutofillHandler | null, Introduction
             }} />
         </div>
         <p className="text-sm font-bold">Headline</p>
-        <div className="flex space-x-2">
+        <div className="grid grid-rows-2 space-y-1 md:space-y-0 md:grid-rows-1 md:space-x-2 md:grid-cols-2">
           <Input
+            id="src.headline"
             type="text"
             value={srcObj.headline}
             onChange={(event) => {
@@ -195,6 +188,7 @@ const IntroductionEditor = React.forwardRef<AutofillHandler | null, Introduction
               handleChange("src", obj)
             }} />
           <Input
+            id="dst.headline"
             type="text"
             value={dstObj.headline}
             onChange={(event) => {
@@ -204,10 +198,10 @@ const IntroductionEditor = React.forwardRef<AutofillHandler | null, Introduction
             }} />
         </div>
         <p className="text-sm font-bold">Description</p>
-        <div className="flex space-x-2">
+        <div className="grid grid-rows-2 space-y-1 md:space-y-0 md:grid-rows-1 md:space-x-2 md:grid-cols-2">
           <RichtextEditor
+            id="src.description"
             height="500px"
-            width="600px"
             value={srcObj.description}
             onChange={(event) => {
               const obj = { ...srcObj }
@@ -215,9 +209,9 @@ const IntroductionEditor = React.forwardRef<AutofillHandler | null, Introduction
               handleChange("src", obj)
             }} />
           <RichtextEditor
+            id="dst.description"
             value={dstObj.description}
             height="500px"
-            width="600px"
             onChange={(event) => {
               const obj = { ...dstObj }
               obj.description = event.target.value
@@ -226,54 +220,90 @@ const IntroductionEditor = React.forwardRef<AutofillHandler | null, Introduction
         </div>
         <p className="text-sm font-bold">Prerequisites</p>
         <div className="flex flex-col space-y-2">
-          <ComparativeArrayEditor
-            src={srcObj.prerequisites}
-            dst={dstObj.prerequisites}
-            onChange={(t, v) => {
-              if (t === "src") {
-                const obj = { ...srcObj }
-                obj.prerequisites = v
-                handleChange("src", obj)
-              } else {
-                const obj = { ...dstObj }
-                obj.prerequisites = v
-                handleChange("dst", obj)
-              }
-            }} />
+          {srcObj.prerequisites.map((src, index) => {
+            const dst = dstObj.prerequisites[index]
+            return (
+              <div key={`pre-${index}`} className="grid grid-rows-2 space-y-1 md:space-y-0 md:grid-rows-1 md:space-x-2 md:grid-cols-2">
+                <Input
+                  id={`src.prerequisites.${index}`}
+                  type="text"
+                  value={src ? src : ""}
+                  onChange={(event) => {
+                    const srcArray = srcObj.prerequisites
+                    if (index < 0) srcArray.push(event.target.value)
+                    else srcArray[index] = event.target.value
+                    handleChange("src", { ...srcObj })
+                  }} />
+                <Input
+                  id={`dst.prerequisites.${index}`}
+                  type="text"
+                  value={dst ? dst : ""}
+                  onChange={(event) => {
+                    const dstArray = dstObj.prerequisites
+                    if (index < 0) dstArray.push(event.target.value)
+                    else dstArray[index] = event.target.value
+                    handleChange("dst", { ...dstObj })
+                  }} />
+              </div>)
+          })}
         </div>
         <p className="text-sm font-bold">Objectives</p>
         <div className="flex flex-col space-y-2">
-          <ComparativeArrayEditor
-            src={srcObj.objectives}
-            dst={dstObj.objectives}
-            onChange={(t, v) => {
-              if (t === "src") {
-                const obj = { ...srcObj }
-                obj.objectives = v
-                handleChange("src", obj)
-              } else {
-                const obj = { ...dstObj }
-                obj.objectives = v
-                handleChange("dst", obj)
-              }
-            }} />
+          {srcObj.objectives.map((src, index) => {
+            const dst = dstObj.objectives[index]
+            return (
+              <div key={`ob-${index}`} className="grid grid-rows-2 space-y-1 md:space-y-0 md:grid-rows-1 md:space-x-2 md:grid-cols-2">
+                <Input
+                  id={`src.objectives.${index}`}
+                  type="text"
+                  value={src ? src : ""}
+                  onChange={(event) => {
+                    const srcArray = srcObj.objectives
+                    if (index < 0) srcArray.push(event.target.value)
+                    else srcArray[index] = event.target.value
+                    handleChange("src", { ...srcObj })
+                  }} />
+                <Input
+                  id={`dst.objectives.${index}`}
+                  type="text"
+                  value={dst ? dst : ""}
+                  onChange={(event) => {
+                    const dstArray = dstObj.objectives
+                    if (index < 0) dstArray.push(event.target.value)
+                    else dstArray[index] = event.target.value
+                    handleChange("dst", { ...dstObj })
+                  }} />
+              </div>)
+          })}
         </div>
         <p className="text-sm font-bold">Target Audiences</p>
-        <div className="flex flex-col space-y-2 items-center">
-          <ComparativeArrayEditor
-            src={srcObj.target_audiences}
-            dst={dstObj.target_audiences}
-            onChange={(t, v) => {
-              if (t === "src") {
-                const obj = { ...srcObj }
-                obj.target_audiences = v
-                handleChange("src", obj)
-              } else {
-                const obj = { ...dstObj }
-                obj.target_audiences = v
-                handleChange("dst", obj)
-              }
-            }} />
+        <div className="flex flex-col space-y-2">
+          {srcObj.target_audiences.map((src, index) => {
+            const dst = dstObj.target_audiences[index]
+            return (
+              <div key={`ta-${index}`} className="grid grid-rows-2 space-y-1 md:space-y-0 md:grid-rows-1 md:space-x-2 md:grid-cols-2">
+                <Input
+                  id={`src.target_audiences.${index}`}
+                  type="text"
+                  value={src ? src : ""}
+                  onChange={(event) => {
+                    const srcArray = srcObj.target_audiences
+                    if (index < 0) srcArray.push(event.target.value)
+                    else srcArray[index] = event.target.value
+                    handleChange("src", { ...srcObj })
+                  }} />
+                <Input
+                  id={`dst.target_audiences.${index}`}
+                  type="text"
+                  value={dst ? dst : ""}
+                  onChange={(event) => {
+                    const dstArray = dstObj.target_audiences
+                    if (index < 0) dstArray.push(event.target.value)
+                    else dstArray[index] = event.target.value
+                    handleChange("dst", { ...dstObj })
+                  }} />
+              </div>)
+          })}
         </div>
       </div>
     )
@@ -281,7 +311,7 @@ const IntroductionEditor = React.forwardRef<AutofillHandler | null, Introduction
 
 IntroductionEditor.displayName = "IntroductionEditor"
 
-const DocEditorPage: NextPageWithLayout = () => {
+const IntroductionEditorPage: NextPageWithLayout = () => {
   const router = useRouter()
   const docId = router.query.docId as string
 
@@ -290,8 +320,8 @@ const DocEditorPage: NextPageWithLayout = () => {
       docId={docId} >
       {(srcJson, dstJson, handleChange, childrenRef) => {
         return <IntroductionEditor
-          srcJson={srcJson as Introduction}
-          dstJson={dstJson as Introduction}
+          srcJson={srcJson}
+          dstJson={dstJson}
           handleChange={handleChange}
           ref={childrenRef}
         />
@@ -300,6 +330,6 @@ const DocEditorPage: NextPageWithLayout = () => {
   )
 }
 
-DocEditorPage.getTitle = () => "Document editor - Transvid.io"
+IntroductionEditorPage.getTitle = () => "Document editor - Transvid.io"
 
-export default DocEditorPage
+export default IntroductionEditorPage

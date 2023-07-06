@@ -15,6 +15,12 @@ import { useSession } from "next-auth/react"
 import { fetchEventSource } from '@microsoft/fetch-event-source';
 import type { Prisma } from "@prisma/client";
 
+export interface EditorComponentProps {
+  srcJson: Prisma.JsonValue | undefined,
+  dstJson: Prisma.JsonValue | undefined,
+  handleChange: HandleChangeInterface
+}
+
 export interface HandleChangeInterface {
   (t: SrcOrDst, updater: React.SetStateAction<Prisma.JsonValue | undefined>): void
 }
@@ -66,7 +72,7 @@ type DocumentEditorProps = {
 export const DocumentEditor = (props: DocumentEditorProps) => {
   const [filling, setFilling] = React.useState(false)
   const [saveState, setSaveState] = React.useState<"dirty" | "saving" | "saved">("saved")
-  const [abortCtrl] = React.useState(new AbortController())
+  const [abortCtrl, setAbortCtrl] = React.useState(new AbortController())
   const childrenRef = React.useRef<AutofillHandler | null>(null);
   const { toast } = useToast()
   const { data: session } = useSession()
@@ -141,8 +147,8 @@ export const DocumentEditor = (props: DocumentEditorProps) => {
   }
 
   const cancelFilling = () => {
-    console.log("cancel clicked")
     abortCtrl.abort("UserClickedAbort")
+    setAbortCtrl(new AbortController())
   }
 
   return (
@@ -156,7 +162,7 @@ export const DocumentEditor = (props: DocumentEditorProps) => {
         {saveState !== "saved" && (<Beforeunload onBeforeunload={(event) => event.preventDefault()} />)}
         <main className="flex min-h-screen flex-col">
           <div className="border-b">
-            <div className="fixed bg-white z-10 w-full border-b flex items-center justify-between h-16 px-4">
+            <div className="fixed bg-white z-100 w-full border-b flex items-center justify-between h-16 px-4">
               <Link href="/admin"><Logo /></Link>
               <div className="flex flex-col items-center">
                 <p className="text">{docInfo.title}</p>
@@ -195,7 +201,6 @@ export const DocumentEditor = (props: DocumentEditorProps) => {
             {props.children(srcObj, dstObj, handleChange, childrenRef)}
           </div>
         </main>
-
       </>
   )
 }
