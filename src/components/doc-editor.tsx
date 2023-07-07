@@ -65,6 +65,7 @@ type DocumentEditorProps = {
     dstObj: Prisma.JsonValue | undefined,
     handleChange: HandleChangeInterface,
     ref: React.Ref<AutofillHandler | null>,
+    projectId?: string,
   ) => React.ReactNode
   handleAutoFill?: (aiParams?: ProjectAiParamters) => Promise<void>
 }
@@ -198,7 +199,7 @@ export const DocumentEditor = (props: DocumentEditorProps) => {
                 {docInfo?.title ? docInfo.title : "Introduction Editor"}
               </h2>
             </div>
-            {props.children(srcObj, dstObj, handleChange, childrenRef)}
+            {props.children(srcObj, dstObj, handleChange, childrenRef, docInfo.projectId)}
           </div>
         </main>
       </>

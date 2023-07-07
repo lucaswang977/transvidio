@@ -29,7 +29,7 @@ import { clone } from "ramda";
 
 const IntroductionEditor = React.forwardRef<AutofillHandler | null, EditorComponentProps>(
   ({ srcJson, dstJson, handleChange }, ref) => {
-    const defaultIntroductionValue: Introduction = {
+    const defaultValue: Introduction = {
       title: "",
       headline: "",
       description: "",
@@ -39,8 +39,8 @@ const IntroductionEditor = React.forwardRef<AutofillHandler | null, EditorCompon
     }
     React.useImperativeHandle(ref, () => ({ autofillHandler: handleAutoFill }))
 
-    let srcObj = defaultIntroductionValue
-    let dstObj = defaultIntroductionValue
+    let srcObj = defaultValue
+    let dstObj = defaultValue
     if (srcJson) srcObj = srcJson as Introduction
     if (dstJson) dstObj = dstJson as Introduction
 
@@ -55,7 +55,7 @@ const IntroductionEditor = React.forwardRef<AutofillHandler | null, EditorCompon
         if (dstObj.title.length === 0) {
           await handleTranslate(aip, srcObj.title, (output) => {
             handleChange("dst", o => {
-              const d = clone(o ? (o as Introduction) : defaultIntroductionValue)
+              const d = clone(o ? (o as Introduction) : defaultValue)
               return { ...d, title: `${d.title}${output}` }
             })
           }, abortCtrl).catch(err => { reject(err) })
@@ -64,7 +64,7 @@ const IntroductionEditor = React.forwardRef<AutofillHandler | null, EditorCompon
         if (dstObj.headline.length === 0) {
           await handleTranslate(aip, srcObj.headline, (output) => {
             handleChange("dst", o => {
-              const d = clone(o ? (o as Introduction) : defaultIntroductionValue)
+              const d = clone(o ? (o as Introduction) : defaultValue)
               return { ...d, headline: `${d.headline}${output}` }
             })
           }, abortCtrl).catch(err => { reject(err) })
@@ -79,7 +79,7 @@ const IntroductionEditor = React.forwardRef<AutofillHandler | null, EditorCompon
           for (const s of splitted) {
             await handleTranslate(aip, s, (output) => {
               handleChange("dst", o => {
-                const d = clone(o ? (o as Introduction) : defaultIntroductionValue)
+                const d = clone(o ? (o as Introduction) : defaultValue)
                 return { ...d, description: `${d.description}${output}` }
               })
             }, abortCtrl).catch(err => { reject(err) })
@@ -94,7 +94,7 @@ const IntroductionEditor = React.forwardRef<AutofillHandler | null, EditorCompon
               await handleTranslate(aip, p, (output) => {
                 const index = i
                 handleChange("dst", o => {
-                  const d = clone(o ? (o as Introduction) : defaultIntroductionValue)
+                  const d = clone(o ? (o as Introduction) : defaultValue)
                   const np = [...d.prerequisites]
                   const c = np[index]
                   if (c) np[index] = `${c}${output}`
@@ -115,7 +115,7 @@ const IntroductionEditor = React.forwardRef<AutofillHandler | null, EditorCompon
               await handleTranslate(aip, p, (output) => {
                 const index = i
                 handleChange("dst", o => {
-                  const d = clone(o ? (o as Introduction) : defaultIntroductionValue)
+                  const d = clone(o ? (o as Introduction) : defaultValue)
                   const np = [...d.objectives]
                   const c = np[index]
                   if (c) np[index] = `${c}${output}`
@@ -136,7 +136,7 @@ const IntroductionEditor = React.forwardRef<AutofillHandler | null, EditorCompon
               await handleTranslate(aip, p, (output) => {
                 const index = i
                 handleChange("dst", o => {
-                  const d = clone(o ? (o as Introduction) : defaultIntroductionValue)
+                  const d = clone(o ? (o as Introduction) : defaultValue)
                   const np = [...d.target_audiences]
                   const c = np[index]
                   if (c) np[index] = `${c}${output}`

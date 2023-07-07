@@ -61,7 +61,6 @@ export type QuizItem = {
 }
 
 export type QuizType = {
-  count: number,
   results: QuizItem[]
 }
 
