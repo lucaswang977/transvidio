@@ -138,7 +138,7 @@ export const DocumentEditor = (props: DocumentEditorProps) => {
       await handler(docInfo.projectAiParamters, abortCtrl.signal)
         .catch(err => {
           if ((err as Error).message === "UserClickedAbort") {
-            toast({ title: "Fill aborted." })
+            toast({ title: "Filling canceled." })
           }
         })
         .finally(() => {

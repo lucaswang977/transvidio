@@ -56,17 +56,17 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
       }
 
       return new Promise<void>(async (resolve, reject) => {
-        const regex = /[.,;!?]$/
+        const regex = /[.,;!?)'"“”]+$/
 
         let sentences: string[] = []
         let i = 0
         for (const s of srcObj.subtitle) {
           const dst = dstObj.subtitle[i]
           // skip the translated sentences
-          if (!dst || dst.text.length === 0) {
-            sentences.push(s.text)
-            const sentence = sentences.join(" ")
-            if (regex.test(sentence.trim())) {
+          sentences.push(s.text)
+          const sentence = sentences.join(" ")
+          if (regex.test(sentence.trim())) {
+            if (!dst || dst.text.length === 0) {
               await handleTranslate(aip, sentence, (output) => {
                 handleChange("dst", o => {
                   const d = clone(o ? (o as SubtitleType) : defaultValue)
@@ -76,8 +76,8 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
                   return d
                 })
               }, abortCtrl).catch(err => { reject(err) })
-              sentences = []
             }
+            sentences = []
           }
           i = i + 1
         }
@@ -108,8 +108,8 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
             }}
           >
           </VideoPlayer>
-          <Label className="text-lg">{captions.dst}</Label>
-          <Label>{captions.src}</Label>
+          <p className="text-lg w-[500px] text-center">{captions.dst}</p>
+          <p className="text-sm w-[500px] text-center">{captions.src}</p>
         </div>
 
         <ScrollArea className="h-[50vh] lg:h-[80vh]">
@@ -124,6 +124,7 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
                         <Label className="text-xs">{timeFormat(item.to)}</Label>
                       </div>
                       <Textarea
+                        id={`src.items.${index}`}
                         value={item.text}
                         className="overflow-hidden w-72"
                         onChange={(event) => {
@@ -156,6 +157,7 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
                   return (
                     <div key={`dst-${index}`} className="flex space-x-1">
                       <Textarea
+                        id={`dst.items.${index}`}
                         value={dstItem?.text}
                         className="overflow-hidden w-72"
                         onChange={(event) => {
