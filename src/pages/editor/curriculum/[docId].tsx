@@ -19,306 +19,229 @@
 
 import { useRouter } from "next/router"
 import * as React from "react"
-import { api } from "~/utils/api";
-import { useSession } from "next-auth/react"
-import { Label } from "~/components/ui/label"
 import { Input } from "~/components/ui/input"
-import type { Curriculum, DocumentInfo, ProjectAiParamters, SrcOrDst } from "~/types"
+import type { Curriculum, ProjectAiParamters } from "~/types"
 import { RichtextEditor } from "~/components/ui/richtext-editor";
 import type { NextPageWithLayout } from "~/pages/_app";
-import DocLayout from "~/components/doc-layout";
-import { clone } from "ramda"
-import { useToast } from "~/components/ui/use-toast";
-import { handleTranslate } from "~/pages/api/translate"
+import {
+  type AutofillHandler,
+  DocumentEditor,
+  type EditorComponentProps,
+  handleTranslate,
+} from "~/components/doc-editor";
+import { clone } from "ramda";
 
-type CurriculumListEditorProps = {
-  value: Curriculum,
-  onChange: (v: Curriculum) => void
-}
-
-const CurriculumListEditor = (props: CurriculumListEditorProps) => {
-  const onChangeSectionTitle = (index: number, v: string) => {
-    const sections = clone(props.value.sections)
-    const section = sections[index]
-    if (section && section.title) {
-      section.title = v
-      props.onChange({ sections: sections })
+const CurriculumEditor = React.forwardRef<AutofillHandler | null, EditorComponentProps>(
+  ({ srcJson, dstJson, handleChange }, ref) => {
+    const defaultValue: Curriculum = {
+      sections: []
     }
-  }
+    React.useImperativeHandle(ref, () => ({ autofillHandler: handleAutoFill }))
 
-  const onChangeItemTitle = (i: number, j: number, v: string) => {
-    const sections = clone(props.value.sections)
-    const section = sections[i]
-    if (section && section.items && section.items[j]) {
-      const item = section.items[j]
-      if (item) item.title = v
-      props.onChange({ sections: sections })
-    }
-  }
+    let srcObj = defaultValue
+    let dstObj = defaultValue
+    if (srcJson) srcObj = srcJson as Curriculum
+    if (dstJson) dstObj = dstJson as Curriculum
 
-  const onChangeItemDescription = (i: number, j: number, v: string) => {
-    const sections = clone(props.value.sections)
-    const section = sections[i]
-    if (section && section.items && section.items[j]) {
-      const item = section.items[j]
-      if (item) item.description = v
-      props.onChange({ sections: sections })
-    }
-  }
-
-  return (
-    <div className="w-[500px] space-y-2">
-      {props.value.sections.map((section, i) => {
-        return (
-          <div key={`section${section.index}`} className="flex-col space-y-2">
-            <div className="flex space-x-2 items-center">
-              <Label htmlFor={`section${section.index}`} > Section</Label>
-              <Input
-                className="w-full"
-                id={`section${section.index}`}
-                value={section.title} onChange={(event) => {
-                  onChangeSectionTitle(i, event.target.value)
-                }} />
-            </div>
-            {
-              section.items.map((item, j) => {
-                return (
-                  <div className="ml-10 flex-col space-y-1" key={`item${item.id}`}>
-                    <div className="flex space-x-2 items-center" key={item.id}>
-                      <Label htmlFor={`item${item.id}`}>{item.item_type}</Label>
-                      <Input
-                        id={`item${item.id}`}
-                        value={item.title} onChange={(event) => {
-                          onChangeItemTitle(i, j, event.target.value)
-                        }} />
-                    </div>
-
-                    <RichtextEditor
-                      height="150px"
-                      value={item.description}
-                      onChange={(event) => {
-                        onChangeItemDescription(i, j, event.target.value)
-                      }} />
-                  </div>
-                )
-              })
-            }
-          </div>
-        )
-      })}
-    </div >
-  )
-}
-
-type CurriculumEditorProps = {
-  srcObj: Curriculum,
-  dstObj: Curriculum
-  onChange: (t: SrcOrDst, v: Curriculum) => void
-}
-
-const CurriculumEditor = ({ srcObj, dstObj, onChange }: CurriculumEditorProps) => {
-  return (
-    <div className="flex-col space-y-2">
-      <div className="flex space-x-10">
-        <CurriculumListEditor
-          value={srcObj}
-          onChange={(v) => onChange("src", v)} />
-        <CurriculumListEditor
-          value={dstObj}
-          onChange={(v) => onChange("dst", v)} />
-      </div>
-    </div>
-  )
-}
-
-const DocEditorPage: NextPageWithLayout = () => {
-  const router = useRouter()
-  const docId = router.query.docId as string
-  const { data: session } = useSession()
-  const mutation = api.document.save.useMutation()
-  const { toast } = useToast()
-  const [contentDirty, setContentDirty] = React.useState(false)
-  const [docInfo, setDocInfo] = React.useState<DocumentInfo>(
-    { id: "", title: "", projectId: "", projectName: "", updatedAt: new Date(0) }
-  )
-  const defaultCurriculumValue: Curriculum = {
-    sections: []
-  }
-  const [srcObj, setSrcObj] = React.useState(defaultCurriculumValue)
-  const [dstObj, setDstObj] = React.useState(defaultCurriculumValue)
-
-  const { status } = api.document.load.useQuery(
-    { documentId: docId },
-    {
-      enabled: (session?.user !== undefined && docId !== undefined && docInfo.id === ""),
-      onSuccess: (doc) => {
-        if (doc) {
-          setDocInfo({
-            id: doc.id,
-            title: doc.title,
-            updatedAt: doc.updatedAt,
-            projectId: doc.projectId,
-            projectName: doc.project.name,
-          })
-          if (doc.srcJson) setSrcObj(doc.srcJson as Curriculum)
-          if (doc.dstJson) {
-            setDstObj(doc.dstJson as Curriculum)
-          } else {
-            if (dstObj === null || dstObj.sections.length === 0) {
-              const obj: Curriculum = {
-                sections: (doc.srcJson as Curriculum).sections.map(s => {
-                  return {
-                    ...s,
-                    title: "",
-                    items: s.items.map(i => {
-                      return {
-                        ...i,
-                        title: "",
-                        description: ""
-                      }
-                    })
-                  }
-                })
-              }
-              setDstObj(obj)
-            }
-          }
-        }
+    const handleAutoFill = async (aiParams?: ProjectAiParamters, abortCtrl?: AbortSignal) => {
+      const aip: ProjectAiParamters = aiParams ? aiParams : {
+        character: "",
+        background: "",
+        syllabus: ""
       }
-    }
-  )
 
-  const handleAutoFill = (aiParams?: ProjectAiParamters) => {
-    let aip: ProjectAiParamters = {
-      character: "",
-      background: "",
-      syllabus: ""
-    }
+      return new Promise<void>(async (resolve, reject) => {
+        let i = 0
+        for (const section of srcObj.sections) {
+          if (!dstObj.sections[i]) {
+            dstObj.sections[i] = { ...section, title: "", items: [] }
+          }
+          const dstSection = dstObj.sections[i]
 
-    if (aiParams) {
-      aip = { ...aiParams }
-    }
-
-    return new Promise<void>(async resolve => {
-      let modified = false
-      const obj = clone(dstObj)
-
-      let i = 0
-      for (const section of srcObj.sections) {
-        const s = obj.sections[i]
-        try {
-          console.log(s)
-          if (s) {
-            // translate section title
-            if (s.title.length === 0) {
-              await handleTranslate(aip, section.title, (output) => {
-                setDstObj(o => {
-                  const obj = clone(o)
-                  const t = obj.sections[i]
-                  if (t) t.title = `${t.title}${output}`
-                  else obj.sections[i] = { ...section, title: output }
-                  return obj
-                })
-                modified = true
+          // translate section title
+          if (dstSection && dstSection.title.length === 0) {
+            await handleTranslate(aip, section.title, (output) => {
+              const index = i
+              handleChange("dst", o => {
+                const obj = clone(o ? (o as Curriculum) : defaultValue)
+                const t = obj.sections[index]
+                if (t) t.title = `${t.title}${output}`
+                else obj.sections[index] = { ...section, title: output }
+                return obj
               })
-            }
+            }, abortCtrl).catch(err => { reject(err) })
+          }
 
-            // translate section items
+          // translate section items
+          if (dstSection) {
             let j = 0
             for (const item of section.items) {
-              if (!s.items[j]) {
-                s.items[j] = { ...item, title: "", description: "" }
+              if (dstSection && !dstSection.items[j]) {
+                dstSection.items[j] = { ...item, title: "", description: "" }
               }
 
-              const t = s.items[j]
+              const t = dstSection.items[j]
               if (item.title && item.title.length > 0 && t && t.title.length === 0) {
                 await handleTranslate(aip, item.title, (output) => {
-                  setDstObj(o => {
-                    const obj = clone(o)
+                  handleChange("dst", o => {
+                    const obj = clone(o ? (o as Curriculum) : defaultValue)
                     const q = obj.sections[i]
                     if (q) {
                       const r = q.items[j]
                       if (r) r.title = `${r.title}${output}`
                       else q.items[j] = { ...item, title: output }
                     }
-                    return obj
+                    return { ...obj }
                   })
-                  modified = true
-                })
+                }, abortCtrl).catch(err => { reject(err) })
               }
-              if (item.description && item.description.length > 0 && t?.description.length === 0) {
+              if (item.description && item.description.length > 0 && t && t.description.length === 0) {
                 await handleTranslate(aip, item.description, (output) => {
-                  setDstObj(o => {
-                    const obj = clone(o)
+                  handleChange("dst", o => {
+                    const obj = clone(o ? (o as Curriculum) : defaultValue)
                     const q = obj.sections[i]
                     if (q) {
                       const r = q.items[j]
                       if (r) r.description = `${r.description}${output}`
                       else q.items[j] = { ...item, description: output }
                     }
-                    return obj
+                    return { ...obj }
                   })
-                  modified = true
-                })
+                }, abortCtrl).catch(err => { reject(err) })
               }
               j = j + 1
             }
-          } else {
-            console.log("should not be existed", i)
           }
-        } catch (error) {
-          toast({ title: "Auto fill failed.", description: (error as { message: string }).message })
-          resolve()
-          break
-        } finally {
+          i = i + 1
         }
+        resolve()
+      })
+    }
+    return (
+      <div className="w-full space-y-2">
+        <div className="flex flex-col space-y-2">
+          {srcObj.sections.map((section, i) => {
+            if (!dstObj.sections[i]) {
+              dstObj.sections[i] = {
+                index: section.index,
+                title: "",
+                items: section.items.map(item => {
+                  return { ...item, title: "", description: "" }
+                })
+              }
+            }
+            const dstSection = dstObj.sections[i]
 
-        i = i + 1
-      }
+            return (
+              <div key={`section${section.index}`} className="flex-col space-y-2">
+                <p className="font-bold">Section</p>
+                <div className="grid grid-rows-2 space-y-1 md:space-y-0 md:grid-rows-1 md:space-x-2 md:grid-cols-2">
+                  <Input
+                    id={`src.section.${section.index}`}
+                    className="w-full"
+                    value={section.title} onChange={(event) => {
+                      const section = srcObj.sections[i]
+                      if (section) {
+                        section.title = event.target.value
+                        handleChange("src", { ...srcObj })
+                      }
+                    }} />
+                  <Input
+                    id={`dst.section.${section.index}`}
+                    className="w-full"
+                    value={dstSection?.title} onChange={(event) => {
+                      const section = dstSection
+                      if (section) {
+                        section.title = event.target.value
+                        handleChange("dst", { ...dstObj })
+                      }
+                    }} />
+                </div>
+                <div className="ml-10 flex-col space-y-1" >
+                  {
+                    section.items.map((item, j) => {
+                      return (
+                        <div key={`section.item.${i}.${j}`} className="flex flex-col space-y-1">
+                          <p className="font-bold">{item.item_type}</p>
+                          <div className="grid grid-rows-2 space-y-1 md:space-y-0 md:grid-rows-1 md:space-x-2 md:grid-cols-2">
+                            <Input
+                              id={`src.section.item.${i}.${item.id}`}
+                              value={item.title} onChange={(event) => {
+                                const section = srcObj.sections[i]
+                                if (section && section.items && section.items[j]) {
+                                  const item = section.items[j]
+                                  if (item) item.title = event.target.value
+                                  handleChange("src", { ...srcObj })
+                                }
+                              }} />
+                            <Input
+                              id={`dst.section.item.${i}.${item.id}`}
+                              value={dstSection?.items[j]?.title} onChange={(event) => {
+                                if (dstSection && dstSection.items) {
+                                  const item = dstSection.items[j]
+                                  if (item) item.title = event.target.value
+                                  handleChange("dst", { ...dstObj })
+                                }
+                              }} />
 
-      if (modified) setContentDirty(modified)
-      resolve()
-    })
-  }
+                          </div>
+                          <div className="grid grid-rows-2 space-y-1 md:space-y-0 md:grid-rows-1 md:space-x-2 md:grid-cols-2">
+                            <RichtextEditor
+                              height="150px"
+                              value={item.description}
+                              onChange={(event) => {
+                                const section = srcObj.sections[i]
+                                if (section && section.items && section.items[j]) {
+                                  const item = section.items[j]
+                                  if (item) item.description = event.target.value
+                                  handleChange("src", { ...srcObj })
+                                }
+                              }} />
+                            <RichtextEditor
+                              height="150px"
+                              value={dstSection?.items[j]?.description}
+                              onChange={(event) => {
+                                if (dstSection && dstSection.items) {
+                                  const item = dstSection.items[j]
+                                  if (item) item.description = event.target.value
+                                  handleChange("src", { ...srcObj })
+                                }
+                              }} />
+                          </div>
+                        </div>
+                      )
+                    })
+                  }
+                </div>
+              </div>
+            )
+          })}
+        </div >
+      </div>
+    )
+  })
 
-  function saveDoc() {
-    mutation.mutate({
-      documentId: docId,
-      src: JSON.stringify(srcObj),
-      dst: JSON.stringify(dstObj)
-    }, {
-      onSuccess: (di) => {
-        setDocInfo(di)
-      }
-    })
-    setContentDirty(false)
-  }
+CurriculumEditor.displayName = "CurriculumEditor"
+
+const CurriculumEditorPage: NextPageWithLayout = () => {
+  const router = useRouter()
+  const docId = router.query.docId as string
 
   return (
-    <DocLayout
-      docInfo={docInfo}
-      handleSave={saveDoc}
-      saveDisabled={!contentDirty}
-      handleAutoFill={handleAutoFill}
-    >
-      {status === "loading" ? <span>Loading</span> :
-        <div className="flex flex-col items-center space-y-4 p-20">
-          <div className="flex items-center justify-between space-y-2">
-            <h2 className="text-xl font-bold tracking-tight mx-auto">
-              {docInfo?.title ? docInfo.title : "Curriculum Editor"}
-            </h2>
-          </div>
-          <CurriculumEditor srcObj={srcObj} dstObj={dstObj} onChange={(t, v) => {
-            if (t === "src") setSrcObj(v)
-            else setDstObj(v)
-            setContentDirty(true)
-          }} />
-        </div>
-      }
-    </DocLayout>
+    <DocumentEditor
+      docId={docId} >
+      {(srcJson, dstJson, handleChange, childrenRef) => {
+        return <CurriculumEditor
+          srcJson={srcJson}
+          dstJson={dstJson}
+          handleChange={handleChange}
+          ref={childrenRef}
+        />
+      }}
+    </DocumentEditor >
   )
 }
 
-DocEditorPage.getTitle = () => "Document editor - Transvid.io"
+CurriculumEditorPage.getTitle = () => "Document editor - Transvid.io"
 
-export default DocEditorPage
+export default CurriculumEditorPage

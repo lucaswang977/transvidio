@@ -14,334 +14,322 @@
 import { type NextPageWithLayout } from "~/pages/_app"
 import { useRouter } from "next/router"
 import * as React from "react"
-import { api } from "~/utils/api";
-import { useSession } from "next-auth/react"
 
-import type { Introduction, SrcOrDst, DocumentInfo, ProjectAiParamters } from "~/types"
-import DocLayout from "~/components/doc-layout";
+import type { Introduction, ProjectAiParamters } from "~/types"
+import {
+  DocumentEditor,
+  handleTranslate,
+  type AutofillHandler,
+  type EditorComponentProps,
+} from "~/components/doc-editor";
 import { Input } from "~/components/ui/input";
 import { RichtextEditor } from "~/components/ui/richtext-editor";
-import { ComparativeArrayEditor } from "~/components/comparative-array-input";
 import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
-import { handleTranslate } from "~/pages/api/translate"
+import { clone } from "ramda";
 
-type IntroductionEditorProps = {
-  srcObj: Introduction,
-  dstObj: Introduction,
-  onChange: (t: SrcOrDst, v: Introduction) => void
-}
+const IntroductionEditor = React.forwardRef<AutofillHandler | null, EditorComponentProps>(
+  ({ srcJson, dstJson, handleChange }, ref) => {
+    const defaultValue: Introduction = {
+      title: "",
+      headline: "",
+      description: "",
+      prerequisites: [],
+      objectives: [],
+      target_audiences: []
+    }
+    React.useImperativeHandle(ref, () => ({ autofillHandler: handleAutoFill }))
 
-const IntroductionEditor = ({ srcObj, dstObj, onChange }: IntroductionEditorProps) => {
-  return (
-    <div className="flex-1 items-center space-y-2 justify-center">
-      <p className="text-sm font-bold">Title</p>
-      <div className="flex space-x-2">
-        <Input
-          type="text"
-          className="w-full"
-          value={srcObj.title}
-          onChange={(event) => {
-            const obj = { ...srcObj }
-            obj.title = event.target.value
-            onChange("src", obj)
-          }} />
-        <Input
-          type="text"
-          className="w-full"
-          value={dstObj.title}
-          onChange={(event) => {
-            const obj = { ...dstObj }
-            obj.title = event.target.value
-            onChange("dst", obj)
-          }} />
-      </div>
-      <p className="text-sm font-bold">Headline</p>
-      <div className="flex space-x-2">
-        <Input
-          type="text"
-          value={srcObj.headline}
-          onChange={(event) => {
-            const obj = { ...srcObj }
-            obj.headline = event.target.value
-            onChange("src", obj)
-          }} />
-        <Input
-          type="text"
-          value={dstObj.headline}
-          onChange={(event) => {
-            const obj = { ...dstObj }
-            obj.headline = event.target.value
-            onChange("dst", obj)
-          }} />
-      </div>
-      <p className="text-sm font-bold">Description</p>
-      <div className="flex space-x-2">
-        <RichtextEditor
-          height="500px"
-          width="600px"
-          value={srcObj.description}
-          onChange={(event) => {
-            const obj = { ...srcObj }
-            obj.description = event.target.value
-            onChange("src", obj)
-          }} />
-        <RichtextEditor
-          value={dstObj.description}
-          height="500px"
-          width="600px"
-          onChange={(event) => {
-            const obj = { ...dstObj }
-            obj.description = event.target.value
-            onChange("dst", obj)
-          }} />
-      </div>
-      <p className="text-sm font-bold">Prerequisites</p>
-      <div className="flex flex-col space-y-2">
-        <ComparativeArrayEditor
-          src={srcObj.prerequisites}
-          dst={dstObj.prerequisites}
-          onChange={(t, v) => {
-            if (t === "src") {
-              const obj = { ...srcObj }
-              obj.prerequisites = v
-              onChange("src", obj)
-            } else {
-              const obj = { ...dstObj }
-              obj.prerequisites = v
-              onChange("dst", obj)
-            }
-          }} />
-      </div>
-      <p className="text-sm font-bold">Objectives</p>
-      <div className="flex flex-col space-y-2">
-        <ComparativeArrayEditor
-          src={srcObj.objectives}
-          dst={dstObj.objectives}
-          onChange={(t, v) => {
-            if (t === "src") {
-              const obj = { ...srcObj }
-              obj.objectives = v
-              onChange("src", obj)
-            } else {
-              const obj = { ...dstObj }
-              obj.objectives = v
-              onChange("dst", obj)
-            }
-          }} />
-      </div>
-      <p className="text-sm font-bold">Target Audiences</p>
-      <div className="flex flex-col space-y-2 items-center">
-        <ComparativeArrayEditor
-          src={srcObj.target_audiences}
-          dst={dstObj.target_audiences}
-          onChange={(t, v) => {
-            if (t === "src") {
-              const obj = { ...srcObj }
-              obj.target_audiences = v
-              onChange("src", obj)
-            } else {
-              const obj = { ...dstObj }
-              obj.target_audiences = v
-              onChange("dst", obj)
-            }
-          }} />
-      </div>
-    </div>
-  )
-}
+    let srcObj = defaultValue
+    let dstObj = defaultValue
+    if (srcJson) srcObj = srcJson as Introduction
+    if (dstJson) dstObj = dstJson as Introduction
 
-const DocEditorPage: NextPageWithLayout = () => {
+    const handleAutoFill = async (aiParams?: ProjectAiParamters, abortCtrl?: AbortSignal) => {
+      const aip: ProjectAiParamters = aiParams ? aiParams : {
+        character: "",
+        background: "",
+        syllabus: ""
+      }
+
+      return new Promise<void>(async (resolve, reject) => {
+        if (dstObj.title.length === 0) {
+          await handleTranslate(aip, srcObj.title, (output) => {
+            handleChange("dst", o => {
+              const d = clone(o ? (o as Introduction) : defaultValue)
+              return { ...d, title: `${d.title}${output}` }
+            })
+          }, abortCtrl).catch(err => { reject(err) })
+        }
+
+        if (dstObj.headline.length === 0) {
+          await handleTranslate(aip, srcObj.headline, (output) => {
+            handleChange("dst", o => {
+              const d = clone(o ? (o as Introduction) : defaultValue)
+              return { ...d, headline: `${d.headline}${output}` }
+            })
+          }, abortCtrl).catch(err => { reject(err) })
+        }
+
+        if (dstObj.description.length === 0) {
+          const splitter = RecursiveCharacterTextSplitter.fromLanguage("html", {
+            chunkSize: 2000,
+            chunkOverlap: 0
+          })
+          const splitted = await splitter.splitText(srcObj.description)
+          for (const s of splitted) {
+            await handleTranslate(aip, s, (output) => {
+              handleChange("dst", o => {
+                const d = clone(o ? (o as Introduction) : defaultValue)
+                return { ...d, description: `${d.description}${output}` }
+              })
+            }, abortCtrl).catch(err => { reject(err) })
+          }
+        }
+
+        if (srcObj.prerequisites.length >= 0) {
+          let i = 0
+          for (const p of srcObj.prerequisites) {
+            const value = dstObj.prerequisites[i]
+            if (!value || value.length === 0) {
+              await handleTranslate(aip, p, (output) => {
+                const index = i
+                handleChange("dst", o => {
+                  const d = clone(o ? (o as Introduction) : defaultValue)
+                  const np = [...d.prerequisites]
+                  const c = np[index]
+                  if (c) np[index] = `${c}${output}`
+                  else np[index] = output
+                  return { ...d, prerequisites: np }
+                })
+              }, abortCtrl).catch(err => { reject(err) })
+            }
+            i = i + 1
+          }
+        }
+
+        if (srcObj.objectives.length >= 0) {
+          let i = 0
+          for (const p of srcObj.objectives) {
+            const value = dstObj.objectives[i]
+            if (!value || value.length === 0) {
+              await handleTranslate(aip, p, (output) => {
+                const index = i
+                handleChange("dst", o => {
+                  const d = clone(o ? (o as Introduction) : defaultValue)
+                  const np = [...d.objectives]
+                  const c = np[index]
+                  if (c) np[index] = `${c}${output}`
+                  else np[index] = output
+                  return { ...d, objectives: np }
+                })
+              }, abortCtrl).catch(err => { reject(err) })
+            }
+            i = i + 1
+          }
+        }
+
+        if (srcObj.target_audiences.length >= 0) {
+          let i = 0
+          for (const p of srcObj.target_audiences) {
+            const value = dstObj.target_audiences[i]
+            if (!value || value.length === 0) {
+              await handleTranslate(aip, p, (output) => {
+                const index = i
+                handleChange("dst", o => {
+                  const d = clone(o ? (o as Introduction) : defaultValue)
+                  const np = [...d.target_audiences]
+                  const c = np[index]
+                  if (c) np[index] = `${c}${output}`
+                  else np[index] = output
+                  return { ...d, target_audiences: np }
+                })
+              }, abortCtrl).catch(err => { reject(err) })
+            }
+            i = i + 1
+          }
+        }
+        resolve()
+      })
+    }
+
+
+    return (
+      <div className="space-y-2 w-full">
+        <p className="text-sm font-bold">Title</p>
+        <div className="grid grid-rows-2 space-y-1 md:space-y-0 md:grid-rows-1 md:space-x-2 md:grid-cols-2">
+          <Input
+            id="src.title"
+            type="text"
+            value={srcObj.title}
+            onChange={(event) => {
+              const obj = { ...srcObj }
+              obj.title = event.target.value
+              handleChange("src", obj)
+            }} />
+          <Input
+            id="dst.title"
+            type="text"
+            value={dstObj.title}
+            onChange={(event) => {
+              const obj = { ...dstObj }
+              obj.title = event.target.value
+              handleChange("dst", obj)
+            }} />
+        </div>
+        <p className="text-sm font-bold">Headline</p>
+        <div className="grid grid-rows-2 space-y-1 md:space-y-0 md:grid-rows-1 md:space-x-2 md:grid-cols-2">
+          <Input
+            id="src.headline"
+            type="text"
+            value={srcObj.headline}
+            onChange={(event) => {
+              const obj = { ...srcObj }
+              obj.headline = event.target.value
+              handleChange("src", obj)
+            }} />
+          <Input
+            id="dst.headline"
+            type="text"
+            value={dstObj.headline}
+            onChange={(event) => {
+              const obj = { ...dstObj }
+              obj.headline = event.target.value
+              handleChange("dst", obj)
+            }} />
+        </div>
+        <p className="text-sm font-bold">Description</p>
+        <div className="grid grid-rows-2 space-y-1 md:space-y-0 md:grid-rows-1 md:space-x-2 md:grid-cols-2">
+          <RichtextEditor
+            id="src.description"
+            height="500px"
+            value={srcObj.description}
+            onChange={(event) => {
+              const obj = { ...srcObj }
+              obj.description = event.target.value
+              handleChange("src", obj)
+            }} />
+          <RichtextEditor
+            id="dst.description"
+            value={dstObj.description}
+            height="500px"
+            onChange={(event) => {
+              const obj = { ...dstObj }
+              obj.description = event.target.value
+              handleChange("dst", obj)
+            }} />
+        </div>
+        <p className="text-sm font-bold">Prerequisites</p>
+        <div className="flex flex-col space-y-2">
+          {srcObj.prerequisites.map((src, index) => {
+            const dst = dstObj.prerequisites[index]
+            return (
+              <div key={`pre-${index}`} className="grid grid-rows-2 space-y-1 md:space-y-0 md:grid-rows-1 md:space-x-2 md:grid-cols-2">
+                <Input
+                  id={`src.prerequisites.${index}`}
+                  type="text"
+                  value={src ? src : ""}
+                  onChange={(event) => {
+                    const srcArray = srcObj.prerequisites
+                    if (index < 0) srcArray.push(event.target.value)
+                    else srcArray[index] = event.target.value
+                    handleChange("src", { ...srcObj })
+                  }} />
+                <Input
+                  id={`dst.prerequisites.${index}`}
+                  type="text"
+                  value={dst ? dst : ""}
+                  onChange={(event) => {
+                    const dstArray = dstObj.prerequisites
+                    if (index < 0) dstArray.push(event.target.value)
+                    else dstArray[index] = event.target.value
+                    handleChange("dst", { ...dstObj })
+                  }} />
+              </div>)
+          })}
+        </div>
+        <p className="text-sm font-bold">Objectives</p>
+        <div className="flex flex-col space-y-2">
+          {srcObj.objectives.map((src, index) => {
+            const dst = dstObj.objectives[index]
+            return (
+              <div key={`ob-${index}`} className="grid grid-rows-2 space-y-1 md:space-y-0 md:grid-rows-1 md:space-x-2 md:grid-cols-2">
+                <Input
+                  id={`src.objectives.${index}`}
+                  type="text"
+                  value={src ? src : ""}
+                  onChange={(event) => {
+                    const srcArray = srcObj.objectives
+                    if (index < 0) srcArray.push(event.target.value)
+                    else srcArray[index] = event.target.value
+                    handleChange("src", { ...srcObj })
+                  }} />
+                <Input
+                  id={`dst.objectives.${index}`}
+                  type="text"
+                  value={dst ? dst : ""}
+                  onChange={(event) => {
+                    const dstArray = dstObj.objectives
+                    if (index < 0) dstArray.push(event.target.value)
+                    else dstArray[index] = event.target.value
+                    handleChange("dst", { ...dstObj })
+                  }} />
+              </div>)
+          })}
+        </div>
+        <p className="text-sm font-bold">Target Audiences</p>
+        <div className="flex flex-col space-y-2">
+          {srcObj.target_audiences.map((src, index) => {
+            const dst = dstObj.target_audiences[index]
+            return (
+              <div key={`ta-${index}`} className="grid grid-rows-2 space-y-1 md:space-y-0 md:grid-rows-1 md:space-x-2 md:grid-cols-2">
+                <Input
+                  id={`src.target_audiences.${index}`}
+                  type="text"
+                  value={src ? src : ""}
+                  onChange={(event) => {
+                    const srcArray = srcObj.target_audiences
+                    if (index < 0) srcArray.push(event.target.value)
+                    else srcArray[index] = event.target.value
+                    handleChange("src", { ...srcObj })
+                  }} />
+                <Input
+                  id={`dst.target_audiences.${index}`}
+                  type="text"
+                  value={dst ? dst : ""}
+                  onChange={(event) => {
+                    const dstArray = dstObj.target_audiences
+                    if (index < 0) dstArray.push(event.target.value)
+                    else dstArray[index] = event.target.value
+                    handleChange("dst", { ...dstObj })
+                  }} />
+              </div>)
+          })}
+        </div>
+      </div>
+    )
+  })
+
+IntroductionEditor.displayName = "IntroductionEditor"
+
+const IntroductionEditorPage: NextPageWithLayout = () => {
   const router = useRouter()
   const docId = router.query.docId as string
-  const { data: session } = useSession()
-  const mutation = api.document.save.useMutation()
-  const [contentDirty, setContentDirty] = React.useState(false)
-  const [docInfo, setDocInfo] = React.useState<DocumentInfo>(
-    { id: "", title: "", projectId: "", projectName: "", updatedAt: new Date(0) }
-  )
-  const defaultIntroductionValue: Introduction = {
-    title: "",
-    headline: "",
-    description: "",
-    prerequisites: [],
-    objectives: [],
-    target_audiences: []
-  }
-  const [srcObj, setSrcObj] = React.useState(defaultIntroductionValue)
-  const [dstObj, setDstObj] = React.useState(defaultIntroductionValue)
-
-  const { status } = api.document.load.useQuery(
-    { documentId: docId },
-    {
-      enabled: (session?.user !== undefined && docId !== undefined && docInfo.id === ""),
-      onSuccess: (doc) => {
-        if (doc) {
-          setDocInfo({
-            id: doc.id,
-            title: doc.title,
-            updatedAt: doc.updatedAt,
-            projectId: doc.projectId,
-            projectName: doc.project.name,
-            projectAiParamters: doc.project.aiParameter as ProjectAiParamters
-          })
-
-          if (doc.srcJson) setSrcObj(doc.srcJson as Introduction)
-          if (doc.dstJson) setDstObj(doc.dstJson as Introduction)
-        }
-      }
-    }
-  )
-
-  const handleChange = (t: SrcOrDst, v: Introduction) => {
-    if (t === "src") setSrcObj(v)
-    else setDstObj(v)
-
-    setContentDirty(true)
-  }
-
-  const handleAutoFill = (aiParams?: ProjectAiParamters) => {
-    let aip: ProjectAiParamters = {
-      character: "",
-      background: "",
-      syllabus: ""
-    }
-
-    if (aiParams) {
-      aip = { ...aiParams }
-    }
-
-    return new Promise<void>(async resolve => {
-      let modified = false
-
-      if (dstObj.title.length === 0) {
-        await handleTranslate(aip, srcObj.title, (output) => {
-          setDstObj(o => { return { ...o, title: `${o.title}${output}` } })
-          modified = true
-        })
-      }
-
-      if (dstObj.headline.length === 0) {
-        await handleTranslate(aip, srcObj.headline, (output) => {
-          setDstObj(o => { return { ...o, headline: `${o.headline}${output}` } })
-          modified = true
-        })
-      }
-
-      if (dstObj.description.length === 0) {
-        const splitter = RecursiveCharacterTextSplitter.fromLanguage("html", {
-          chunkSize: 2000,
-          chunkOverlap: 0
-        })
-        const splitted = await splitter.splitText(srcObj.description)
-        for (const s of splitted) {
-          await handleTranslate(aip, s, (output) => {
-            setDstObj(o => { return { ...o, description: `${o.description}${output}` } })
-            modified = true
-          })
-        }
-        modified = true
-      }
-
-      if (dstObj.prerequisites.length >= 0) {
-        let i = 0
-        for (const p of srcObj.prerequisites) {
-          const value = dstObj.prerequisites[i]
-          if (!value || value.length === 0) {
-            await handleTranslate(aip, p, (output) => {
-              const index = i
-              setDstObj(o => {
-                const np = [...o.prerequisites]
-                const c = np[index]
-                if (c) np[index] = `${c}${output}`
-                else np[index] = output
-                return { ...o, prerequisites: np }
-              })
-              modified = true
-            })
-            i = i + 1
-          }
-        }
-      }
-
-      if (dstObj.objectives.length >= 0) {
-        let i = 0
-        for (const p of srcObj.objectives) {
-          const value = dstObj.objectives[i]
-          if (!value || value.length === 0) {
-            await handleTranslate(aip, p, (output) => {
-              const index = i
-              setDstObj(o => {
-                const np = [...o.objectives]
-                const c = np[index]
-                if (c) np[index] = `${c}${output}`
-                else np[index] = output
-                return { ...o, objectives: np }
-              })
-              modified = true
-            })
-            i = i + 1
-          }
-        }
-      }
-
-      if (dstObj.target_audiences.length >= 0) {
-        let i = 0
-        for (const p of srcObj.target_audiences) {
-          const value = dstObj.target_audiences[i]
-          if (!value || value.length === 0) {
-            await handleTranslate(aip, p, (output) => {
-              const index = i
-              setDstObj(o => {
-                const np = [...o.target_audiences]
-                const c = np[index]
-                if (c) np[index] = `${c}${output}`
-                else np[index] = output
-                return { ...o, target_audiences: np }
-              })
-              modified = true
-            })
-            i = i + 1
-          }
-        }
-      }
-
-      if (modified) setContentDirty(modified)
-      resolve()
-    })
-  }
-  function saveDoc() {
-    mutation.mutate({
-      documentId: docId,
-      src: JSON.stringify(srcObj),
-      dst: JSON.stringify(dstObj)
-    }, {
-      onSuccess: (di) => {
-        setDocInfo(di)
-      }
-    })
-    setContentDirty(false)
-  }
 
   return (
-    <DocLayout
-      docInfo={docInfo}
-      handleSave={saveDoc}
-      saveDisabled={!contentDirty}
-      handleAutoFill={handleAutoFill} >
-      {status === "loading" ? <span>Loading</span> :
-        <div className="flex flex-col items-center space-y-4 p-20">
-          <div className="flex items-center justify-between space-y-2">
-            <h2 className="text-xl font-bold tracking-tight mx-auto">
-              {docInfo?.title ? docInfo.title : "Introduction Editor"}
-            </h2>
-          </div>
-          <IntroductionEditor srcObj={srcObj} dstObj={dstObj} onChange={handleChange} />
-        </div>
-      }
-    </ DocLayout >
+    <DocumentEditor
+      docId={docId} >
+      {(srcJson, dstJson, handleChange, childrenRef) => {
+        return <IntroductionEditor
+          srcJson={srcJson}
+          dstJson={dstJson}
+          handleChange={handleChange}
+          ref={childrenRef}
+        />
+      }}
+    </DocumentEditor >
   )
 }
 
-DocEditorPage.getTitle = () => "Document editor - Transvid.io"
+IntroductionEditorPage.getTitle = () => "Document editor - Transvid.io"
 
-export default DocEditorPage
+export default IntroductionEditorPage

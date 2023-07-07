@@ -18,7 +18,7 @@ const ProjectManagement: NextPageWithLayout = () => {
   const { data: projects, status, isRefetching, refetch } = api.project.getAll.useQuery(
     undefined, // no input
     {
-      enabled: session?.user === undefined,
+      enabled: session?.user !== undefined,
       refetchOnWindowFocus: false,
     },
   );
