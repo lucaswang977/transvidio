@@ -3,7 +3,7 @@
 import * as React from "react"
 import { type ColumnDef } from "@tanstack/react-table"
 import { Avatar, AvatarImage, AvatarFallback } from "~/components/ui/avatar"
-import { ChevronRight, MoreHorizontal } from "lucide-react"
+import { CheckCircle, ChevronRight, MoreHorizontal } from "lucide-react"
 
 import { Button } from "~/components/ui/button"
 import { Checkbox } from "~/components/ui/checkbox"
@@ -24,6 +24,13 @@ import { useToast } from "~/components/ui/use-toast"
 import { ConfirmDialog, ConfirmDialogInDropdown } from "~/components/confirm-dialog"
 import Link from "next/link"
 
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "~/components/ui/tooltip"
+
 const CloseDialog = (props: { documentId: string, refetch?: () => void }) => {
   const mutation = api.document.closeByAdmin.useMutation()
   const { toast } = useToast()
@@ -32,7 +39,12 @@ const CloseDialog = (props: { documentId: string, refetch?: () => void }) => {
 
   return (
     <ConfirmDialog
-      trigger={<Button variant="outline" className="text-xs w-14 h-8">Close</Button>}
+      trigger={
+        <>
+          <CheckCircle className="mr-2 h-4 w-4" />
+          <span>Close</span>
+        </>
+      }
       open={open}
       setOpen={setOpen}
       working={working}
@@ -63,8 +75,13 @@ const SubmitDialog = (props: { documentId: string, refetch?: () => void }) => {
   const [working, setWorking] = React.useState(false)
 
   return (
-    <ConfirmDialog
-      trigger={<Button variant="outline" className="text-xs w-14 h-8">Submit</Button>}
+    <ConfirmDialogInDropdown
+      trigger={
+        <>
+          <CheckCircle className="mr-2 h-4 w-4" />
+          <span>Submit</span>
+        </>
+      }
       open={open}
       setOpen={setOpen}
       working={working}
@@ -96,8 +113,13 @@ const ClaimDialog = (props: { documentId: string, refetch?: () => void }) => {
   const { toast } = useToast()
 
   return (
-    <ConfirmDialog
-      trigger={<Button variant="outline" className="text-xs w-14 h-8">Claim</Button>}
+    <ConfirmDialogInDropdown
+      trigger={
+        <>
+          <CheckCircle className="mr-2 h-4 w-4" />
+          <span>Claim</span>
+        </>
+      }
       open={open}
       setOpen={setOpen}
       working={working}
@@ -306,21 +328,24 @@ export const columns: ColumnDef<DocumentColumn>[] = [
 
       return (
         <div className="flex space-x-1 place-items-center">
-          {
-            (data.state === "OPEN") ?
-              <ClaimDialog refetch={refetch} documentId={data.id} /> :
-              (data.state === "WORKING") ?
-                <SubmitDialog refetch={refetch} documentId={data.id} /> :
-                (data.state === "REVIEW" && myself && myself.role === "ADMIN") ?
-                  <CloseDialog refetch={refetch} documentId={data.id} /> :
-                  <Button className="invisible w-20">Hidden</Button>
-          }
-
-          <Button disabled={!isEditable} variant="ghost">
-            <Link href={editorUrl} target="_blank">
-              <ChevronRight className="mr-2 h-4 w-4" />
-            </Link>
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger>
+                {
+                  isEditable ?
+                    <Link href={editorUrl} target="_blank">
+                      <ChevronRight className="mr-2 h-4 w-4" />
+                    </Link> :
+                    <ChevronRight className="mr-2 h-4 w-4 text-gray-300" />
+                }
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{
+                  isEditable ? "Open the document" : "Document is not claimed by you"
+                }</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="h-8 w-8 p-0">
@@ -331,6 +356,15 @@ export const columns: ColumnDef<DocumentColumn>[] = [
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
               <DropdownMenuSeparator />
+              {
+                (data.state === "OPEN") ?
+                  <ClaimDialog refetch={refetch} documentId={data.id} /> :
+                  (data.state === "WORKING") ?
+                    <SubmitDialog refetch={refetch} documentId={data.id} /> :
+                    (data.state === "REVIEW" && myself && myself.role === "ADMIN") ?
+                      <CloseDialog refetch={refetch} documentId={data.id} /> :
+                      <></>
+              }
               <DropdownMenuItem disabled={myself && myself.role === "EDITOR"}>
                 <Edit className="mr-2 h-4 w-4" />
                 <span>Edit</span>
