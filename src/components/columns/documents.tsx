@@ -21,7 +21,7 @@ import type { DocumentState, DocumentType } from "@prisma/client"
 import { Badge } from "~/components/ui/badge"
 import { api } from "~/utils/api"
 import { useToast } from "~/components/ui/use-toast"
-import { ConfirmDialog, ConfirmDialogInDropdown } from "~/components/confirm-dialog"
+import { ConfirmDialogInDropdown } from "~/components/confirm-dialog"
 import Link from "next/link"
 
 import {
@@ -38,7 +38,7 @@ const CloseDialog = (props: { documentId: string, refetch?: () => void }) => {
   const [working, setWorking] = React.useState(false)
 
   return (
-    <ConfirmDialog
+    <ConfirmDialogInDropdown
       trigger={
         <>
           <CheckCircle className="mr-2 h-4 w-4" />
