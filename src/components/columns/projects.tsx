@@ -183,5 +183,5 @@ export const columns: ColumnDef<ProjectColumn>[] = [
         </DropdownMenu>
       )
     },
-  }
+  },
 ]

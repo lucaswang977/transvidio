@@ -108,7 +108,7 @@ export function SignupForm() {
   }
 
   return (
-    <Card className={"w-[480px]"}>
+    <Card className={"w-full md:w-[480px]"}>
       <CardHeader>
         <CardTitle>Create an account with your email.</CardTitle>
       </CardHeader>

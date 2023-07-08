@@ -69,7 +69,7 @@ export function SigninForm() {
   }
 
   return (
-    <Card className={"w-[480px]"}>
+    <Card className={"w-full md:w-[480px]"}>
       <CardHeader>
         <CardTitle>Sign in with your account.</CardTitle>
       </CardHeader>
