@@ -68,11 +68,12 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
           if (regex.test(sentence.trim())) {
             if (!dst || dst.text.length === 0) {
               await handleTranslate(aip, sentence, (output) => {
+                const _i = i
                 handleChange("dst", o => {
                   const d = clone(o ? (o as SubtitleType) : defaultValue)
-                  const t = d.subtitle[i]
+                  const t = d.subtitle[_i]
                   if (t) t.text = `${t.text}${output}`
-                  else d.subtitle[i] = { ...s, text: output }
+                  else d.subtitle[_i] = { ...s, text: output }
                   return d
                 })
               }, abortCtrl).catch(err => { reject(err) })
@@ -176,7 +177,7 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
                         onFocus={() => {
                           if (reactPlayerRef.current) {
                             const duration = reactPlayerRef.current.getDuration()
-                            reactPlayerRef.current.seekTo(item.from / 1000 / duration, "fraction")
+                            reactPlayerRef.current.seekTo(item.from / 1000 / duration * 1.001, "fraction")
                           }
                         }}
                       />

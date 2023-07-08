@@ -7,7 +7,7 @@ const SignIn: NextPageWithLayout = () => {
 
   return (
     <>
-      <main className="flex min-h-screen flex-col items-center justify-center space-y-4">
+      <main className="flex min-h-screen flex-col items-center justify-center space-y-4 px-4">
         <Link href="/"><Logo /></Link>
         <SigninForm />
       </main>

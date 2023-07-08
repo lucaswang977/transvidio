@@ -6,7 +6,7 @@ import Link from 'next/link'
 const SignUp: NextPageWithLayout = () => {
   return (
     <>
-      <main className="flex min-h-screen flex-col items-center justify-center space-y-4">
+      <main className="flex min-h-screen flex-col items-center justify-center space-y-4 px-4 py-2">
         <Link href="/"><Logo /></Link>
         <SignupForm />
       </main>

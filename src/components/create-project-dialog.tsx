@@ -87,7 +87,7 @@ export function ProjectCreateDialog(props: { refetch: () => void }) {
         <DialogTrigger asChild>
           <Button size="sm" variant="outline">
             <PlusCircle className="mr-2 h-4 w-4" />
-            New project
+            New
           </Button>
         </DialogTrigger>
         <DialogContent className="w-1/3">

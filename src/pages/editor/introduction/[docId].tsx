@@ -92,13 +92,13 @@ const IntroductionEditor = React.forwardRef<AutofillHandler | null, EditorCompon
             const value = dstObj.prerequisites[i]
             if (!value || value.length === 0) {
               await handleTranslate(aip, p, (output) => {
-                const index = i
+                const _i = i
                 handleChange("dst", o => {
                   const d = clone(o ? (o as Introduction) : defaultValue)
                   const np = [...d.prerequisites]
-                  const c = np[index]
-                  if (c) np[index] = `${c}${output}`
-                  else np[index] = output
+                  const c = np[_i]
+                  if (c) np[_i] = `${c}${output}`
+                  else np[_i] = output
                   return { ...d, prerequisites: np }
                 })
               }, abortCtrl).catch(err => { reject(err) })
@@ -113,13 +113,13 @@ const IntroductionEditor = React.forwardRef<AutofillHandler | null, EditorCompon
             const value = dstObj.objectives[i]
             if (!value || value.length === 0) {
               await handleTranslate(aip, p, (output) => {
-                const index = i
+                const _i = i
                 handleChange("dst", o => {
                   const d = clone(o ? (o as Introduction) : defaultValue)
                   const np = [...d.objectives]
-                  const c = np[index]
-                  if (c) np[index] = `${c}${output}`
-                  else np[index] = output
+                  const c = np[_i]
+                  if (c) np[_i] = `${c}${output}`
+                  else np[_i] = output
                   return { ...d, objectives: np }
                 })
               }, abortCtrl).catch(err => { reject(err) })
@@ -134,13 +134,13 @@ const IntroductionEditor = React.forwardRef<AutofillHandler | null, EditorCompon
             const value = dstObj.target_audiences[i]
             if (!value || value.length === 0) {
               await handleTranslate(aip, p, (output) => {
-                const index = i
+                const _i = i
                 handleChange("dst", o => {
                   const d = clone(o ? (o as Introduction) : defaultValue)
                   const np = [...d.target_audiences]
-                  const c = np[index]
-                  if (c) np[index] = `${c}${output}`
-                  else np[index] = output
+                  const c = np[_i]
+                  if (c) np[_i] = `${c}${output}`
+                  else np[_i] = output
                   return { ...d, target_audiences: np }
                 })
               }, abortCtrl).catch(err => { reject(err) })

@@ -61,12 +61,12 @@ const CurriculumEditor = React.forwardRef<AutofillHandler | null, EditorComponen
           // translate section title
           if (dstSection && dstSection.title.length === 0) {
             await handleTranslate(aip, section.title, (output) => {
-              const index = i
+              const _i = i
               handleChange("dst", o => {
                 const obj = clone(o ? (o as Curriculum) : defaultValue)
-                const t = obj.sections[index]
+                const t = obj.sections[_i]
                 if (t) t.title = `${t.title}${output}`
-                else obj.sections[index] = { ...section, title: output }
+                else obj.sections[_i] = { ...section, title: output }
                 return obj
               })
             }, abortCtrl).catch(err => { reject(err) })
@@ -83,13 +83,15 @@ const CurriculumEditor = React.forwardRef<AutofillHandler | null, EditorComponen
               const t = dstSection.items[j]
               if (item.title && item.title.length > 0 && t && t.title.length === 0) {
                 await handleTranslate(aip, item.title, (output) => {
+                  const _i = i
+                  const _j = j
                   handleChange("dst", o => {
                     const obj = clone(o ? (o as Curriculum) : defaultValue)
-                    const q = obj.sections[i]
+                    const q = obj.sections[_i]
                     if (q) {
-                      const r = q.items[j]
+                      const r = q.items[_j]
                       if (r) r.title = `${r.title}${output}`
-                      else q.items[j] = { ...item, title: output }
+                      else q.items[_j] = { ...item, title: output }
                     }
                     return { ...obj }
                   })
@@ -97,13 +99,15 @@ const CurriculumEditor = React.forwardRef<AutofillHandler | null, EditorComponen
               }
               if (item.description && item.description.length > 0 && t && t.description.length === 0) {
                 await handleTranslate(aip, item.description, (output) => {
+                  const _i = i
+                  const _j = j
                   handleChange("dst", o => {
                     const obj = clone(o ? (o as Curriculum) : defaultValue)
-                    const q = obj.sections[i]
+                    const q = obj.sections[_i]
                     if (q) {
-                      const r = q.items[j]
+                      const r = q.items[_j]
                       if (r) r.description = `${r.description}${output}`
-                      else q.items[j] = { ...item, description: output }
+                      else q.items[_j] = { ...item, description: output }
                     }
                     return { ...obj }
                   })

@@ -74,9 +74,10 @@ const QuizEditor = React.forwardRef<AutofillHandler | null, EditorComponentProps
           // question
           if (dq && dq.prompt.question.length === 0) {
             await handleTranslate(aip, q.prompt.question, (output) => {
+              const _i = i
               handleChange("dst", o => {
                 const d = clone(o ? (o as QuizType) : defaultValue)
-                const v = d.results[i]?.prompt
+                const v = d.results[_i]?.prompt
                 if (v) v.question = `${v.question}${output}`
 
                 return d
@@ -94,13 +95,15 @@ const QuizEditor = React.forwardRef<AutofillHandler | null, EditorComponentProps
               const p = dq.prompt.answers[j]
               if (p !== undefined && p.length === 0) {
                 await handleTranslate(aip, a, (output) => {
+                  const _i = i
+                  const _j = j
                   handleChange("dst", o => {
                     const d = clone(o ? (o as QuizType) : defaultValue)
-                    const v = d.results[i]?.prompt.answers
+                    const v = d.results[_i]?.prompt.answers
                     if (v) {
-                      const s = v[j]
-                      if (s) v[j] = `${s}${output}`
-                      else v[j] = output
+                      const s = v[_j]
+                      if (s) v[_j] = `${s}${output}`
+                      else v[_j] = output
                     }
 
                     return d
@@ -121,13 +124,15 @@ const QuizEditor = React.forwardRef<AutofillHandler | null, EditorComponentProps
               const p = dq.prompt.feedbacks[j]
               if (p !== undefined && p.length === 0) {
                 await handleTranslate(aip, f, (output) => {
+                  const _i = i
+                  const _j = j
                   handleChange("dst", o => {
                     const d = clone(o ? (o as QuizType) : defaultValue)
-                    const v = d.results[i]?.prompt.feedbacks
+                    const v = d.results[_i]?.prompt.feedbacks
                     if (v) {
-                      const s = v[j]
-                      if (s) v[j] = `${s}${output}`
-                      else v[j] = output
+                      const s = v[_j]
+                      if (s) v[_j] = `${s}${output}`
+                      else v[_j] = output
                     }
 
                     return d

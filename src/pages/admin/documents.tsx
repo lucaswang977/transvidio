@@ -72,12 +72,12 @@ const DocumentManagement: NextPageWithLayout = () => {
   return (
     <div className="flex-1 space-y-4 p-8 pt-6">
       <div className="flex items-center justify-between space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight">All documents</h2>
+        <h2 className="text-xl md:text-3xl font-bold tracking-tight">All documents</h2>
         <div className="flex space-x-2">
           <Select onValueChange={(v) => {
             setFilterProject(v)
           }}>
-            <SelectTrigger className="w-[240px] text-xs h-9">
+            <SelectTrigger className="text-xs h-9">
               <SelectValue placeholder="Select a project" />
             </SelectTrigger>
             <SelectContent>
