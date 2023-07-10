@@ -198,6 +198,38 @@ export type DocumentColumn = {
   updated: Date
 }
 
+export const getDocStateBadges = (state?: DocumentState) => {
+  const stateBadges = {
+    OPEN: <Badge className="bg-sky-500">OPEN</Badge>,
+    WORKING: <Badge className="bg-red-500">WORKING</Badge>,
+    REVIEW: <Badge className="bg-teal-500">REVIEW</Badge>,
+    CLOSED: <Badge className="bg-gray-500">CLOSED</Badge>,
+  }
+
+  if (state) {
+    return stateBadges[state]
+  } else {
+    return stateBadges
+  }
+}
+
+export const getDocTypeBadges = (type?: DocumentType) => {
+  const typeBadges = {
+    INTRODUCTION: <Badge variant="secondary">INTRO</Badge>,
+    CURRICULUM: <Badge variant="secondary">CURRICULUM</Badge>,
+    SUBTITLE: <Badge variant="secondary">VIDEO</Badge>,
+    ARTICLE: <Badge variant="secondary">ARTICLE</Badge>,
+    ATTACHMENT: <Badge variant="secondary">ATTACHMENT</Badge>,
+    QUIZ: <Badge variant="secondary">QUIZ</Badge>,
+  }
+
+  if (type) {
+    return typeBadges[type]
+  } else {
+    return typeBadges
+  }
+}
+
 export const columns: ColumnDef<DocumentColumn>[] = [
   {
     id: "select",
@@ -240,36 +272,16 @@ export const columns: ColumnDef<DocumentColumn>[] = [
     accessorKey: "type",
     header: "Type",
     cell: ({ row }) => {
-      const typeName = row.getValue("type")
-      if (typeName === "INTRODUCTION") {
-        return <Badge variant="secondary">INTRO</Badge>
-      } else if (typeName === "CURRICULUM") {
-        return <Badge variant="secondary">CURRICULUM</Badge>
-      } else if (typeName === "SUBTITLE") {
-        return <Badge variant="secondary">VIDEO</Badge>
-      } else if (typeName === "ATTACHMENT") {
-        return <Badge variant="secondary">FILE</Badge>
-      } else if (typeName === "ARTICLE") {
-        return <Badge variant="secondary">ARTICLE</Badge>
-      } else if (typeName === "QUIZ") {
-        return <Badge variant="secondary">QUIZ</Badge>
-      }
+      const typeName: DocumentType = row.getValue("type")
+      return getDocTypeBadges(typeName)
     }
   },
   {
     accessorKey: "state",
     header: "State",
     cell: ({ row }) => {
-      const stateName = row.getValue("state")
-      if (stateName === "OPEN") {
-        return <Badge className="bg-sky-500">OPEN</Badge>
-      } else if (stateName === "WORKING") {
-        return <Badge className="bg-red-500">WORKING</Badge>
-      } else if (stateName === "REVIEW") {
-        return <Badge className="bg-teal-500">REVIEW</Badge>
-      } else if (stateName === "CLOSED") {
-        return <Badge className="bg-gray-500">CLOSED</Badge>
-      }
+      const stateName: DocumentState = row.getValue("state")
+      return getDocStateBadges(stateName)
     }
   },
   {

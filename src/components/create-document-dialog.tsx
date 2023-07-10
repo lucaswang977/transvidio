@@ -100,7 +100,7 @@ export function DocumentCreateDialog() {
     <div>
       <Dialog open={open} onOpenChange={setIsOpen}>
         <DialogTrigger asChild>
-          <Button size="sm" variant="outline">
+          <Button className="w-28" variant="outline">
             <PlusCircle className="mr-2 h-4 w-4" />
             New
           </Button>

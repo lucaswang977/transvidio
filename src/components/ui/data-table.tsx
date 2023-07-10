@@ -12,7 +12,6 @@ import {
   useReactTable,
   type OnChangeFn,
   type RowData,
-  type ColumnFiltersState,
 } from "@tanstack/react-table"
 
 import {
@@ -43,7 +42,7 @@ interface DataTableProps<TData, TValue> {
   setRowSelection: OnChangeFn<RowSelectionState> | undefined,
   handleRefetch?: () => void,
   user?: { id: string, role: UserRole },
-  filter?: { column: string, value: string },
+  filter?: { column: string, value: string }[],
 }
 
 export function DataTable<TData, TValue>({
@@ -55,7 +54,6 @@ export function DataTable<TData, TValue>({
   user,
   filter,
 }: DataTableProps<TData, TValue>) {
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
 
   const table = useReactTable({
     data,
@@ -63,11 +61,9 @@ export function DataTable<TData, TValue>({
     getCoreRowModel: getCoreRowModel(),
     onRowSelectionChange: setRowSelection,
     getPaginationRowModel: getPaginationRowModel(),
-    onColumnFiltersChange: setColumnFilters,
     getFilteredRowModel: getFilteredRowModel(),
     state: {
       rowSelection,
-      columnFilters,
     },
     meta: {
       refetchData: handleRefetch,
@@ -77,7 +73,8 @@ export function DataTable<TData, TValue>({
 
   React.useEffect(() => {
     if (filter) {
-      table.getColumn(filter.column)?.setFilterValue(filter.value)
+      for (const f of filter)
+        table.getColumn(f.column)?.setFilterValue(f.value)
     }
   }, [filter])
 
