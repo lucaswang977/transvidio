@@ -78,6 +78,7 @@ const ProjectManagement: NextPageWithLayout = () => {
           setRowSelection={setRowSelection}
           handleRefetch={handleRefetch}
           user={session?.user}
+          total={data.length}
         />
       }
     </div>
