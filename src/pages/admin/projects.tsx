@@ -56,7 +56,7 @@ const ProjectManagement: NextPageWithLayout = () => {
       <div className="flex items-center justify-between space-y-2">
         <h2 className="text-xl md:text-3xl font-bold tracking-tight">All projects</h2>
         <div className="flex space-x-2">
-          <Button disabled={isRefetching} variant="outline" onClick={handleRefetch}>
+          <Button size="sm" disabled={isRefetching} variant="outline" onClick={handleRefetch}>
             <RefreshCcw className={`mr-2 h-4 w-4 ${isRefetching ? "animate-spin" : ""}`} />
             Refresh
           </Button>
