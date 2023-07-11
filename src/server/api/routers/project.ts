@@ -34,6 +34,9 @@ export const projectRouter = createTRPCRouter({
     }
 
     return ctx.prisma.project.findMany({
+      orderBy: {
+        createdAt: "desc"
+      },
       include: {
         users: {
           select: {

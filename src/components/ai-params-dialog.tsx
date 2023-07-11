@@ -27,6 +27,10 @@ export function AiParamsDialog(props: AiParamsDialogProps) {
   const mutation = api.project.saveAiParams.useMutation()
   const [params, setParams] = React.useState<ProjectAiParamters | undefined>(props.currentValue)
 
+  React.useEffect(() => {
+    setParams(props.currentValue)
+  }, [props.currentValue])
+
   function onSubmit() {
     mutation.mutate({
       projectId: props.projectId,
@@ -42,6 +46,7 @@ export function AiParamsDialog(props: AiParamsDialogProps) {
 
     setIsOpen(false)
   }
+  console.log(props)
 
   return (
     <div>
@@ -54,10 +59,11 @@ export function AiParamsDialog(props: AiParamsDialogProps) {
         <DialogContent className="w-1/3">
           <DialogHeader>
             <DialogTitle>Fill the parameters for AI translation</DialogTitle>
+            <p className="text-xs text-gray-400">{props.projectId}</p>
           </DialogHeader>
           <p>Character</p>
           <Textarea
-            value={params?.character}
+            value={params ? params.character : ""}
             onChange={event => {
               if (params) {
                 setParams({ ...params, character: event.target.value })
@@ -68,7 +74,7 @@ export function AiParamsDialog(props: AiParamsDialogProps) {
           />
           <p>Background</p>
           <Textarea
-            value={params?.background}
+            value={params ? params.background : ""}
             onChange={event => {
               if (params) {
                 setParams({ ...params, background: event.target.value })
@@ -79,7 +85,7 @@ export function AiParamsDialog(props: AiParamsDialogProps) {
           />
           <p>Syllabus</p>
           <Textarea
-            value={params?.syllabus}
+            value={params ? params.syllabus : ""}
             onChange={event => {
               if (params) {
                 setParams({ ...params, syllabus: event.target.value })
