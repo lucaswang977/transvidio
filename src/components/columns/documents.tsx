@@ -383,21 +383,25 @@ export const columns: ColumnDef<DocumentColumn>[] = [
                       <CloseDialog refetch={() => { if (refetch) refetch() }} documentId={data.id} /> :
                       <></>
               }
-              <DropdownMenuItem disabled={myself && myself.role === "EDITOR"}>
-                <Edit className="mr-2 h-4 w-4" />
-                <span>Edit</span>
-              </DropdownMenuItem>
+              {
+                (myself && myself.role === "ADMIN") ?
+                  <>
+                    <DropdownMenuItem>
+                      <Edit className="mr-2 h-4 w-4" />
+                      <span>Edit</span>
+                    </DropdownMenuItem>
 
-              <DropdownMenuItem disabled={myself && myself.role === "EDITOR"}>
-                <Trash className="mr-2 h-4 w-4" />
-                <span>Delete</span>
-              </DropdownMenuItem>
+                    <DropdownMenuItem>
+                      <Trash className="mr-2 h-4 w-4" />
+                      <span>Delete</span>
+                    </DropdownMenuItem>
 
-              <ResetDocumentDialog
-                disabled={myself && myself.role === "EDITOR"}
-                documentId={data.id}
-                refetch={() => { if (refetch) refetch() }}
-              />
+                    <ResetDocumentDialog
+                      documentId={data.id}
+                      refetch={() => { if (refetch) refetch() }}
+                    /></>
+                  : <></>
+              }
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
