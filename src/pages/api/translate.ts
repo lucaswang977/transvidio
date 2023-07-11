@@ -62,6 +62,7 @@ export default async function handler(req: NextRequest) {
           `You will help me to translate some sentences. \
           Your character: {character}. \
           Content background: {background} \
+          Translation recommendation: {syllabus} \
           Reply requirement: Your response should only include the translation result and nothing else. \
           Use a natural tone and with professional vocabularies to deliver your point of view. \
           If there are HTML tags in the original text, keep them, just translate the texts.`
@@ -74,7 +75,8 @@ export default async function handler(req: NextRequest) {
           background: aiParams.background,
           srcLang: "en-US",
           dstLang: "zh-CN",
-          translate: translate
+          translate: translate,
+          syllabus: syllabus
         });
 
         chat.call(prompt).then((m) => {
