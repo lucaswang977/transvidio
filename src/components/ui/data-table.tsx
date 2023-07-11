@@ -7,11 +7,10 @@ import {
   type RowSelectionState,
   flexRender,
   getCoreRowModel,
-  getPaginationRowModel,
-  getFilteredRowModel,
   useReactTable,
   type OnChangeFn,
   type RowData,
+  type PaginationState,
 } from "@tanstack/react-table"
 
 import {
@@ -43,6 +42,10 @@ interface DataTableProps<TData, TValue> {
   handleRefetch?: () => void,
   user?: { id: string, role: UserRole },
   filter?: { column: string, value: string }[],
+  pagination?: { pageIndex: number, pageSize: number },
+  setPagination?: OnChangeFn<PaginationState>,
+  total?: number,
+  pageCount?: number,
 }
 
 export function DataTable<TData, TValue>({
@@ -53,17 +56,22 @@ export function DataTable<TData, TValue>({
   handleRefetch,
   user,
   filter,
+  pagination,
+  total,
+  setPagination,
 }: DataTableProps<TData, TValue>) {
 
   const table = useReactTable({
     data,
     columns,
+    pageCount: (total !== undefined && pagination !== undefined) ? Math.ceil(total / pagination.pageSize) : 0,
     getCoreRowModel: getCoreRowModel(),
     onRowSelectionChange: setRowSelection,
-    getPaginationRowModel: getPaginationRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
+    manualPagination: true,
+    onPaginationChange: setPagination,
     state: {
       rowSelection,
+      pagination
     },
     meta: {
       refetchData: handleRefetch,
@@ -123,7 +131,7 @@ export function DataTable<TData, TValue>({
         </TableBody>
       </Table>
       <div className="flex items-center justify-between">
-        <p className="p-4 text-sm text-gray-400">Total {table.getFilteredRowModel().rows.length} items</p>
+        <p className="p-4 text-sm text-gray-400">Total {total} items</p>
         {
           (table.getPageCount() > 1) ?
             <div className="flex space-x-2 py-4 pr-4 items-center">

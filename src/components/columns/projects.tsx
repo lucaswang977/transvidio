@@ -148,7 +148,7 @@ export const columns: ColumnDef<ProjectColumn>[] = [
       return (
         <div className="flex px-2 place-items-center space-x-2">
           <span>{data.documentCount.OPEN} / {data.documentCount.ALL}</span>
-          <Link href={`/admin/documents?filter=${data.name}`}>
+          <Link href={`/admin/documents?p=${data.id}`}>
             <ArrowRightCircle className="h-4 w-4" />
           </Link>
         </div>

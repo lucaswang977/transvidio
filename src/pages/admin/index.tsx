@@ -9,7 +9,7 @@ const Dashboard: NextPageWithLayout = () => {
       </div>
       <div className="flex flex-col items-center text-gray-400">
         <p className="pt-40">
-          This page is under construction.
+          This page is currently under construction.
         </p>
       </div>
     </div>

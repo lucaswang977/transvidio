@@ -129,7 +129,10 @@ const ClaimDialog = (props: { documentId: string, refetch?: () => void }) => {
         setWorking(true)
         mutation.mutate({ documentId: props.documentId }, {
           onSuccess: () => {
-            if (props.refetch) props.refetch()
+            if (props.refetch) {
+              props.refetch()
+            }
+            toast({ title: "Document claimed." })
             setWorking(false)
             setOpen(false)
           },
@@ -193,7 +196,7 @@ export type DocumentColumn = {
   type: DocumentType
   state: DocumentState
   memo: string | null
-  project: string
+  project: { id: string, name: string }
   user: { id: string, name: string, image: string } | null
   updated: Date
 }
@@ -254,11 +257,11 @@ export const columns: ColumnDef<DocumentColumn>[] = [
     accessorKey: "project",
     header: "Project",
     cell: ({ row }) => {
-      const project: string = row.getValue("project")
+      const project: { id: string, name: string } = row.getValue("project")
       return (
         <div className="flex">
           <p className="text-xs text-gray-400 whitespace-nowrap">
-            {truncateString(project, 20)}
+            {truncateString(project.name, 20)}
           </p>
         </div>
       )
