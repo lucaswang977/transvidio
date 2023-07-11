@@ -36,11 +36,12 @@ export default async function handler(req: NextRequest) {
         const stream = new TransformStream();
         const writer = stream.writable.getWriter();
         const chat = new ChatOpenAI({
+          // modelName: "gpt-4-0613",
           // modelName: "gpt-3.5-turbo-0301",
           modelName: "gpt-3.5-turbo",
           // modelName: "gpt-3.5-turbo-16k-0613",
           streaming,
-          temperature: 0.9,
+          temperature: 0.95,
           callbackManager: CallbackManager.fromHandlers({
             handleLLMNewToken: async (token: string) => {
               await writer.ready;
@@ -62,6 +63,7 @@ export default async function handler(req: NextRequest) {
           Your character: {character}. \
           Content background: {background} \
           Reply requirement: Your response should only include the translation result and nothing else. \
+          Use a natural tone and with professional vocabularies to deliver your point of view. \
           If there are HTML tags in the original text, keep them, just translate the texts.`
 
         const prompt = await ChatPromptTemplate.fromPromptMessages([

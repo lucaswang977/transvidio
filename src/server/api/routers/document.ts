@@ -5,7 +5,7 @@ import {
 
 import { prisma } from "~/server/db";
 import { z } from "zod";
-import { DocumentType, Prisma } from "@prisma/client"
+import { DocumentState, DocumentType, Prisma } from "@prisma/client"
 import { TRPCError } from "@trpc/server";
 import type { DocumentInfo } from "~/types";
 import { env } from "~/env.mjs";
@@ -13,58 +13,70 @@ import { delay } from "~/utils/helper";
 
 export const documentRouter = createTRPCRouter({
   getAll: protectedProcedure
-    .query(async ({ ctx }) => {
+    .input(z.object({
+      pageSize: z.number(),
+      pageIndex: z.number(),
+      filterByType: z.nativeEnum(DocumentType).optional(),
+      filterByState: z.nativeEnum(DocumentState).optional(),
+      filterByProject: z.string().optional(),
+    }))
+    .query(async ({ ctx, input }) => {
       if (env.DELAY_ALL_API) await delay(3000)
+      const projects = await ctx.prisma.projectsOfUsers.findMany({
+        where: {
+          userId: ctx.session.user.id
+        }
+      })
 
-      if (ctx.session.user.role === "ADMIN") {
-        return ctx.prisma.document.findMany({
-          orderBy: {
-            seq: "asc"
-          },
-          select: {
-            id: true,
-            seq: true,
-            type: true,
-            title: true,
-            state: true,
-            memo: true,
-            createdAt: true,
-            updatedAt: true,
-            user: true,
-            project: true
-          }
-        })
+      let where = undefined
+      if (ctx.session.user.role !== "ADMIN") {
+        where = {
+          type: input.filterByType,
+          state: input.filterByState,
+          projectId: (input.filterByProject && projects.find(p => p.projectId === input.filterByProject)) ?
+            input.filterByProject :
+            { in: projects.map((project) => project.projectId) }
+        }
       } else {
-        const projects = await ctx.prisma.projectsOfUsers.findMany({
-          where: {
-            userId: ctx.session.user.id
-          }
-        })
-        return ctx.prisma.document.findMany({
-          orderBy: {
-            seq: "asc"
-          },
-          where: {
-            projectId: {
-              in: projects.map((project) => project.projectId)
-            }
-          },
-          select: {
-            id: true,
-            seq: true,
-            type: true,
-            title: true,
-            state: true,
-            memo: true,
-            createdAt: true,
-            updatedAt: true,
-            user: true,
-            project: true
-          }
-        })
+        where = {
+          type: input.filterByType,
+          projectId: input.filterByProject,
+          state: input.filterByState
+        }
+      }
 
+      return {
+        pagination: {
+          pageIndex: input.pageIndex,
+          pageSize: input.pageSize,
+          total: await ctx.prisma.document.count({ where: where })
+        },
+        data: await ctx.prisma.document.findMany(
+          {
+            skip: input.pageSize * input.pageIndex,
+            take: input.pageSize,
+            orderBy: {
+              seq: "asc"
+            },
+            select: {
+              id: true,
+              seq: true,
+              type: true,
+              title: true,
+              state: true,
+              memo: true,
+              createdAt: true,
+              updatedAt: true,
+              user: { select: { name: true, id: true, image: true } },
+              project: { select: { id: true, name: true } }
+            },
+            where: where
+          }
+
+        )
       }
     }),
+
   create: protectedProcedure
     .input(z.object({
       title: z.string().nonempty(),
@@ -261,6 +273,7 @@ export const documentRouter = createTRPCRouter({
       documentId: z.string().nonempty(),
     }))
     .mutation(async ({ ctx, input }) => {
+      if (env.DELAY_ALL_API) await delay(3000)
       const document = await prisma.document.findFirst({
         where: {
           id: input.documentId,

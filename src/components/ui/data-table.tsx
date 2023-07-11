@@ -7,12 +7,10 @@ import {
   type RowSelectionState,
   flexRender,
   getCoreRowModel,
-  getPaginationRowModel,
-  getFilteredRowModel,
   useReactTable,
   type OnChangeFn,
   type RowData,
-  type ColumnFiltersState,
+  type PaginationState,
 } from "@tanstack/react-table"
 
 import {
@@ -43,7 +41,11 @@ interface DataTableProps<TData, TValue> {
   setRowSelection: OnChangeFn<RowSelectionState> | undefined,
   handleRefetch?: () => void,
   user?: { id: string, role: UserRole },
-  filter?: { column: string, value: string },
+  pagination?: { pageIndex: number, pageSize: number },
+  setPagination?: OnChangeFn<PaginationState>,
+  total?: number,
+  pageCount?: number,
+  disabled?: boolean,
 }
 
 export function DataTable<TData, TValue>({
@@ -53,21 +55,23 @@ export function DataTable<TData, TValue>({
   setRowSelection,
   handleRefetch,
   user,
-  filter,
+  pagination,
+  total,
+  setPagination,
+  disabled,
 }: DataTableProps<TData, TValue>) {
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
 
   const table = useReactTable({
     data,
     columns,
+    pageCount: (total !== undefined && pagination !== undefined) ? Math.ceil(total / pagination.pageSize) : 0,
     getCoreRowModel: getCoreRowModel(),
     onRowSelectionChange: setRowSelection,
-    getPaginationRowModel: getPaginationRowModel(),
-    onColumnFiltersChange: setColumnFilters,
-    getFilteredRowModel: getFilteredRowModel(),
+    manualPagination: true,
+    onPaginationChange: setPagination,
     state: {
       rowSelection,
-      columnFilters,
+      pagination
     },
     meta: {
       refetchData: handleRefetch,
@@ -75,14 +79,12 @@ export function DataTable<TData, TValue>({
     }
   })
 
-  React.useEffect(() => {
-    if (filter) {
-      table.getColumn(filter.column)?.setFilterValue(filter.value)
-    }
-  }, [filter])
-
   return (
-    <div className="w-full rounded-md border">
+    <div className="w-full rounded-md border relative">
+      {disabled ?
+        <div className="absolute inset-0 bg-white opacity-70 z-10"></div>
+        : <></>
+      }
       <Table className="relative">
         <TableHeader>
           {table.getHeaderGroups().map((headerGroup) => (
@@ -126,7 +128,7 @@ export function DataTable<TData, TValue>({
         </TableBody>
       </Table>
       <div className="flex items-center justify-between">
-        <p className="p-4 text-sm text-gray-400">Total {table.getFilteredRowModel().rows.length} items</p>
+        <p className="p-4 text-sm text-gray-400">Total {total} items</p>
         {
           (table.getPageCount() > 1) ?
             <div className="flex space-x-2 py-4 pr-4 items-center">
