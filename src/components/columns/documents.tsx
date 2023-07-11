@@ -172,7 +172,6 @@ const ResetDocumentDialog = (
         setWorking(true)
         mutation.mutate({ documentId: documentId }, {
           onSuccess: () => {
-            console.log("refetching")
             refetch()
             setWorking(false)
             setOpen(false)
