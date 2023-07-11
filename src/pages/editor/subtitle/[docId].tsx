@@ -66,6 +66,7 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
           sentences.push(s.text)
           const sentence = sentences.join(" ")
           if (regex.test(sentence.trim())) {
+            console.log(sentence)
             if (!dst || dst.text.length === 0) {
               await handleTranslate(aip, sentence, (output) => {
                 const _i = i
