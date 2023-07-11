@@ -56,7 +56,7 @@ const DocumentManagement: NextPageWithLayout = () => {
     }
   }, [p])
 
-  const { data: result, isRefetching, refetch, isPreviousData } = api.document.getAll.useQuery(
+  const { data: result, isFetching, refetch, isPreviousData } = api.document.getAll.useQuery(
     {
       pageSize: pageSize,
       pageIndex: pageIndex,
@@ -88,6 +88,7 @@ const DocumentManagement: NextPageWithLayout = () => {
         title: document.title,
         type: document.type,
         state: document.state,
+        seq: document.seq,
         memo: document.memo,
         project: { id: document.project.id, name: document.project.name },
         user: (document.user !== null) ? {
@@ -173,9 +174,9 @@ const DocumentManagement: NextPageWithLayout = () => {
         </div>
 
         <div className="flex flex-col space-y-2 md:flex-row md:space-y-0 md:space-x-2">
-          <Button className="w-28" disabled={isRefetching} variant="outline" onClick={() => refetch()}>
-            <RefreshCcw className={`mr-2 h-4 w-4 ${(isRefetching) ? "animate-spin" : ""}`} />
-            {(isRefetching) ? "Loading" : "Refresh"}
+          <Button className="w-28" disabled={isFetching} variant="outline" onClick={() => refetch()}>
+            <RefreshCcw className={`mr-2 h-4 w-4 ${(isFetching) ? "animate-spin" : ""}`} />
+            {(isFetching) ? "Loading" : "Refresh"}
           </Button>
           {
             session?.user.role === "ADMIN" ?

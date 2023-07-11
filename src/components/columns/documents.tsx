@@ -191,6 +191,7 @@ const ResetDocumentDialog = (
 export type DocumentColumn = {
   id: string
   title: string
+  seq: number
   type: DocumentType
   state: DocumentState
   memo: string | null
@@ -264,6 +265,10 @@ export const columns: ColumnDef<DocumentColumn>[] = [
         </div>
       )
     },
+  },
+  {
+    accessorKey: "seq",
+    header: "#",
   },
   {
     accessorKey: "title",

@@ -84,7 +84,6 @@ async function createCurriculum(
 
   let seq = 1 // intro and curriculum will be 0, 1
   for (const item of curriculum) {
-    seq = seq + 1
     if (item.type === "chapter") {
       const data: CurriculumSection = {
         index: item.id,
@@ -100,6 +99,7 @@ async function createCurriculum(
     } else if (item.type === "lecture") {
       let dataType: CurriculumItemEnum = "lecture"
       if (item.assetType === "Video") {
+        seq = seq + 1
         dataType = "lecture"
         const supItem = supplement.find((si) =>
           si.lectureId === item.id && si.assetId === item.assetId)
@@ -138,6 +138,7 @@ async function createCurriculum(
           console.log("Subtitle doc creation failed: ", item.title, item.id)
         }
       } else if (item.assetType === "Article") {
+        seq = seq + 1
         dataType = "article"
         const docResp = await fetch(`${env.CDN_BASE_URL}/${projectId}/${item.assetId}.html`)
         if (docResp.ok) {
@@ -164,6 +165,7 @@ async function createCurriculum(
         supplement.forEach((sup) => {
           if (sup.lectureId == item.id) {
             if (sup.assetType === "File") {
+              seq = seq + 1
               promises.push(prisma.document.create({
                 data: {
                   seq: seq,
@@ -202,6 +204,7 @@ async function createCurriculum(
       const quizResp = await fetch(`${env.CDN_BASE_URL}/${projectId}/quiz_${item.id}.json`)
       if (quizResp.ok) {
         const quizJson = await quizResp.json() as QuizType
+        seq = seq + 1
         await prisma.document.create({
           data: {
             seq: seq,
@@ -221,7 +224,7 @@ async function createCurriculum(
     }
   }
 
-  const result = await prisma.document.create({
+  await prisma.document.create({
     data: {
       seq: 1,
       title: "Course Curriculum",
