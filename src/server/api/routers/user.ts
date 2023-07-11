@@ -53,7 +53,13 @@ export const userRouter = createTRPCRouter({
   getAll: protectedProcedure.query(async ({ ctx }) => {
     if (env.DELAY_ALL_API) await delay(3000)
 
-    return (await ctx.prisma.user.findMany()).map(
+    return (await ctx.prisma.user.findMany(
+      {
+        orderBy: {
+          createdAt: "desc"
+        },
+      }
+    )).map(
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       ({ emailVerified, pwd, updatedAt, ...rest }) => rest)
   }),
