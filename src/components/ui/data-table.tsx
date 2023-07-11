@@ -41,11 +41,11 @@ interface DataTableProps<TData, TValue> {
   setRowSelection: OnChangeFn<RowSelectionState> | undefined,
   handleRefetch?: () => void,
   user?: { id: string, role: UserRole },
-  filter?: { column: string, value: string }[],
   pagination?: { pageIndex: number, pageSize: number },
   setPagination?: OnChangeFn<PaginationState>,
   total?: number,
   pageCount?: number,
+  disabled?: boolean,
 }
 
 export function DataTable<TData, TValue>({
@@ -55,10 +55,10 @@ export function DataTable<TData, TValue>({
   setRowSelection,
   handleRefetch,
   user,
-  filter,
   pagination,
   total,
   setPagination,
+  disabled,
 }: DataTableProps<TData, TValue>) {
 
   const table = useReactTable({
@@ -79,15 +79,12 @@ export function DataTable<TData, TValue>({
     }
   })
 
-  React.useEffect(() => {
-    if (filter) {
-      for (const f of filter)
-        table.getColumn(f.column)?.setFilterValue(f.value)
-    }
-  }, [filter])
-
   return (
-    <div className="w-full rounded-md border">
+    <div className="w-full rounded-md border relative">
+      {disabled ?
+        <div className="absolute inset-0 bg-white opacity-70 z-10"></div>
+        : <></>
+      }
       <Table className="relative">
         <TableHeader>
           {table.getHeaderGroups().map((headerGroup) => (

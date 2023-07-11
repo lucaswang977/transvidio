@@ -21,7 +21,7 @@ import type { DocumentState, DocumentType } from "@prisma/client"
 import { Badge } from "~/components/ui/badge"
 import { api } from "~/utils/api"
 import { useToast } from "~/components/ui/use-toast"
-import { ConfirmDialog, ConfirmDialogInDropdown } from "~/components/confirm-dialog"
+import { ConfirmDialogInDropdown } from "~/components/confirm-dialog"
 import Link from "next/link"
 
 import {
@@ -31,14 +31,14 @@ import {
   TooltipTrigger,
 } from "~/components/ui/tooltip"
 
-const CloseDialog = (props: { documentId: string, refetch?: () => void }) => {
+const CloseDialog = (props: { documentId: string, refetch: () => void }) => {
   const mutation = api.document.closeByAdmin.useMutation()
   const { toast } = useToast()
   const [open, setOpen] = React.useState(false)
   const [working, setWorking] = React.useState(false)
 
   return (
-    <ConfirmDialog
+    <ConfirmDialogInDropdown
       trigger={
         <>
           <CheckCircle className="mr-2 h-4 w-4" />
@@ -54,7 +54,7 @@ const CloseDialog = (props: { documentId: string, refetch?: () => void }) => {
         setWorking(true)
         mutation.mutate({ documentId: props.documentId }, {
           onSuccess: () => {
-            if (props.refetch) props.refetch()
+            props.refetch()
             setWorking(false)
             setOpen(false)
           },
@@ -68,7 +68,7 @@ const CloseDialog = (props: { documentId: string, refetch?: () => void }) => {
     />
   )
 }
-const SubmitDialog = (props: { documentId: string, refetch?: () => void }) => {
+const SubmitDialog = (props: { documentId: string, refetch: () => void }) => {
   const mutation = api.document.submitByUser.useMutation()
   const { toast } = useToast()
   const [open, setOpen] = React.useState(false)
@@ -91,7 +91,7 @@ const SubmitDialog = (props: { documentId: string, refetch?: () => void }) => {
         setWorking(true)
         return mutation.mutateAsync({ documentId: props.documentId }, {
           onSuccess: () => {
-            if (props.refetch) props.refetch()
+            props.refetch()
             setWorking(false)
             setOpen(false)
           },
@@ -106,7 +106,7 @@ const SubmitDialog = (props: { documentId: string, refetch?: () => void }) => {
   )
 }
 
-const ClaimDialog = (props: { documentId: string, refetch?: () => void }) => {
+const ClaimDialog = (props: { documentId: string, refetch: () => void }) => {
   const mutation = api.document.claimByUser.useMutation()
   const [open, setOpen] = React.useState(false)
   const [working, setWorking] = React.useState(false)
@@ -129,9 +129,7 @@ const ClaimDialog = (props: { documentId: string, refetch?: () => void }) => {
         setWorking(true)
         mutation.mutate({ documentId: props.documentId }, {
           onSuccess: () => {
-            if (props.refetch) {
-              props.refetch()
-            }
+            props.refetch()
             toast({ title: "Document claimed." })
             setWorking(false)
             setOpen(false)
@@ -154,7 +152,7 @@ const ResetDocumentDialog = (
     {
       disabled?: boolean,
       documentId: string,
-      refetch?: () => void
+      refetch: () => void
     }) => {
   const mutation = api.document.resetByAdmin.useMutation()
   const { toast } = useToast()
@@ -174,7 +172,8 @@ const ResetDocumentDialog = (
         setWorking(true)
         mutation.mutate({ documentId: documentId }, {
           onSuccess: () => {
-            if (refetch) refetch()
+            console.log("refetching")
+            refetch()
             setWorking(false)
             setOpen(false)
           },
@@ -373,11 +372,11 @@ export const columns: ColumnDef<DocumentColumn>[] = [
               <DropdownMenuSeparator />
               {
                 (data.state === "OPEN") ?
-                  <ClaimDialog refetch={refetch} documentId={data.id} /> :
+                  <ClaimDialog refetch={() => { if (refetch) refetch() }} documentId={data.id} /> :
                   (data.state === "WORKING") ?
-                    <SubmitDialog refetch={refetch} documentId={data.id} /> :
+                    <SubmitDialog refetch={() => { if (refetch) refetch() }} documentId={data.id} /> :
                     (data.state === "REVIEW" && myself && myself.role === "ADMIN") ?
-                      <CloseDialog refetch={refetch} documentId={data.id} /> :
+                      <CloseDialog refetch={() => { if (refetch) refetch() }} documentId={data.id} /> :
                       <></>
               }
               <DropdownMenuItem disabled={myself && myself.role === "EDITOR"}>

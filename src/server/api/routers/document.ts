@@ -273,6 +273,7 @@ export const documentRouter = createTRPCRouter({
       documentId: z.string().nonempty(),
     }))
     .mutation(async ({ ctx, input }) => {
+      if (env.DELAY_ALL_API) await delay(3000)
       const document = await prisma.document.findFirst({
         where: {
           id: input.documentId,

@@ -24,7 +24,6 @@ import {
   SelectValue
 } from "~/components/ui/select"
 import { truncateString } from "~/utils/helper"
-import { TableLoading } from "~/components/ui/table-loading"
 import type { DocumentState, DocumentType } from "@prisma/client"
 import type { PaginationState } from "@tanstack/react-table"
 
@@ -57,7 +56,7 @@ const DocumentManagement: NextPageWithLayout = () => {
     }
   }, [p])
 
-  const { data: result, status, isRefetching, refetch } = api.document.getAll.useQuery(
+  const { data: result, isRefetching, refetch, isPreviousData } = api.document.getAll.useQuery(
     {
       pageSize: pageSize,
       pageIndex: pageIndex,
@@ -68,13 +67,13 @@ const DocumentManagement: NextPageWithLayout = () => {
     {
       enabled: session?.user !== undefined,
       refetchOnWindowFocus: false,
+      keepPreviousData: true,
     },
   );
   const { data: projects } = api.project.getAll.useQuery(
     undefined,
     {
       enabled: session?.user !== undefined,
-      keepPreviousData: true,
       refetchOnWindowFocus: false
     },
   );
@@ -174,9 +173,9 @@ const DocumentManagement: NextPageWithLayout = () => {
         </div>
 
         <div className="flex flex-col space-y-2 md:flex-row md:space-y-0 md:space-x-2">
-          <Button className="w-28" disabled={isRefetching || status === "loading"} variant="outline" onClick={() => refetch()}>
-            <RefreshCcw className={`mr-2 h-4 w-4 ${(isRefetching || status === "loading") ? "animate-spin" : ""}`} />
-            {(isRefetching || status === "loading") ? "Loading" : "Refresh"}
+          <Button className="w-28" disabled={isRefetching} variant="outline" onClick={() => refetch()}>
+            <RefreshCcw className={`mr-2 h-4 w-4 ${(isRefetching) ? "animate-spin" : ""}`} />
+            {(isRefetching) ? "Loading" : "Refresh"}
           </Button>
           {
             session?.user.role === "ADMIN" ?
@@ -186,22 +185,18 @@ const DocumentManagement: NextPageWithLayout = () => {
         </div>
       </div>
 
-      {
-        (status === "loading") ?
-          <TableLoading />
-          :
-          <DataTable
-            columns={columns}
-            data={data}
-            rowSelection={rowSelection}
-            setRowSelection={setRowSelection}
-            user={session?.user}
-            handleRefetch={() => refetch()}
-            pagination={pagination}
-            setPagination={setPagination}
-            total={total}
-          />
-      }
+      <DataTable
+        disabled={isPreviousData}
+        columns={columns}
+        data={data}
+        rowSelection={rowSelection}
+        setRowSelection={setRowSelection}
+        user={session?.user}
+        handleRefetch={() => refetch()}
+        pagination={pagination}
+        setPagination={setPagination}
+        total={total}
+      />
     </div>
   )
 }
