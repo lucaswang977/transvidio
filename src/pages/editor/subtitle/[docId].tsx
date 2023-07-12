@@ -32,10 +32,13 @@ import {
 } from "~/components/doc-editor";
 
 const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentProps>(
-  ({ srcJson, dstJson, handleChange, permission }, ref) => {
+  ({ srcJson, dstJson, handleChange, permission, setAutoFillInit }, ref) => {
     const reactPlayerRef = React.useRef<ReactPlayer>(null);
     const [captions, setCaptions] = React.useState({ src: "", dst: "" })
-    React.useImperativeHandle(ref, () => ({ autofillHandler: handleAutoFill }))
+    React.useImperativeHandle(ref, () => {
+      if (setAutoFillInit) setAutoFillInit(true)
+      return { autofillHandler: handleAutoFill }
+    }, [])
 
     const defaultValue: SubtitleType = {
       videoUrl: "",
@@ -204,13 +207,19 @@ const SubtitleEditorPage: NextPageWithLayout = () => {
   return (
     <DocumentEditor
       docId={docId} >
-      {(srcJson, dstJson, handleChange, childrenRef, permission) => {
+      {(srcJson, dstJson,
+        handleChange,
+        childrenRef,
+        permission,
+        _,
+        setAutoFillInit) => {
         return <SubtitleEditor
           srcJson={srcJson}
           dstJson={dstJson}
           handleChange={handleChange}
           permission={permission}
           ref={childrenRef}
+          setAutoFillInit={setAutoFillInit}
         />
       }}
     </DocumentEditor >

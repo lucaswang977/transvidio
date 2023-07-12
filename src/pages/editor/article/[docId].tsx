@@ -18,12 +18,16 @@ import {
 import { clone } from "ramda";
 
 const ArticleEditor = React.forwardRef<AutofillHandler | null, EditorComponentProps>(
-  ({ srcJson, dstJson, handleChange, permission }, ref) => {
+  ({ srcJson, dstJson, handleChange, permission, setAutoFillInit }, ref) => {
 
     const defaultValue: ArticleType = {
       html: "",
     }
-    React.useImperativeHandle(ref, () => ({ autofillHandler: handleAutoFill }))
+    React.useImperativeHandle(ref, () => {
+      if (setAutoFillInit) setAutoFillInit(true)
+      return { autofillHandler: handleAutoFill }
+    }, [])
+
 
     let srcObj = defaultValue
     let dstObj = defaultValue
@@ -92,13 +96,14 @@ const ArticleEditorPage: NextPageWithLayout = () => {
   return (
     <DocumentEditor
       docId={docId} >
-      {(srcJson, dstJson, handleChange, childrenRef, permission) => {
+      {(srcJson, dstJson, handleChange, childrenRef, permission, _, setAutoFillInit) => {
         return <ArticleEditor
           srcJson={srcJson}
           dstJson={dstJson}
           handleChange={handleChange}
           permission={permission}
           ref={childrenRef}
+          setAutoFillInit={setAutoFillInit}
         />
       }}
     </DocumentEditor >

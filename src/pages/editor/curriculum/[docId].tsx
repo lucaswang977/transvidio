@@ -32,11 +32,14 @@ import {
 import { clone } from "ramda";
 
 const CurriculumEditor = React.forwardRef<AutofillHandler | null, EditorComponentProps>(
-  ({ srcJson, dstJson, handleChange, permission }, ref) => {
+  ({ srcJson, dstJson, handleChange, permission, setAutoFillInit }, ref) => {
     const defaultValue: Curriculum = {
       sections: []
     }
-    React.useImperativeHandle(ref, () => ({ autofillHandler: handleAutoFill }))
+    React.useImperativeHandle(ref, () => {
+      if (setAutoFillInit) setAutoFillInit(true)
+      return { autofillHandler: handleAutoFill }
+    }, [])
 
     let srcObj = defaultValue
     let dstObj = defaultValue
@@ -240,13 +243,14 @@ const CurriculumEditorPage: NextPageWithLayout = () => {
   return (
     <DocumentEditor
       docId={docId} >
-      {(srcJson, dstJson, handleChange, childrenRef, permission) => {
+      {(srcJson, dstJson, handleChange, childrenRef, permission, _, setAutoFillInit) => {
         return <CurriculumEditor
           srcJson={srcJson}
           dstJson={dstJson}
           handleChange={handleChange}
           permission={permission}
           ref={childrenRef}
+          setAutoFillInit={setAutoFillInit}
         />
       }}
     </DocumentEditor >

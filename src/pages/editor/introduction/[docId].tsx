@@ -28,7 +28,7 @@ import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 import { clone } from "ramda";
 
 const IntroductionEditor = React.forwardRef<AutofillHandler | null, EditorComponentProps>(
-  ({ srcJson, dstJson, handleChange, permission }, ref) => {
+  ({ srcJson, dstJson, handleChange, permission, setAutoFillInit }, ref) => {
     const defaultValue: Introduction = {
       title: "",
       headline: "",
@@ -37,7 +37,10 @@ const IntroductionEditor = React.forwardRef<AutofillHandler | null, EditorCompon
       objectives: [],
       target_audiences: []
     }
-    React.useImperativeHandle(ref, () => ({ autofillHandler: handleAutoFill }))
+    React.useImperativeHandle(ref, () => {
+      if (setAutoFillInit) setAutoFillInit(true)
+      return { autofillHandler: handleAutoFill }
+    }, [])
 
     let srcObj = defaultValue
     let dstObj = defaultValue
@@ -330,13 +333,14 @@ const IntroductionEditorPage: NextPageWithLayout = () => {
   return (
     <DocumentEditor
       docId={docId} >
-      {(srcJson, dstJson, handleChange, childrenRef, permission) => {
+      {(srcJson, dstJson, handleChange, childrenRef, permission, _, setAutoFillInit) => {
         return <IntroductionEditor
           srcJson={srcJson}
           dstJson={dstJson}
           handleChange={handleChange}
           permission={permission}
           ref={childrenRef}
+          setAutoFillInit={setAutoFillInit}
         />
       }}
     </DocumentEditor >

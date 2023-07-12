@@ -19,7 +19,8 @@ export interface EditorComponentProps {
   srcJson: Prisma.JsonValue | undefined,
   dstJson: Prisma.JsonValue | undefined,
   handleChange: HandleChangeInterface,
-  permission: DocPermission
+  permission: DocPermission,
+  setAutoFillInit?: (v: boolean) => void
 }
 
 export interface HandleChangeInterface {
@@ -68,6 +69,7 @@ type DocumentEditorProps = {
     ref: React.Ref<AutofillHandler | null>,
     docPermission: DocPermission,
     projectId?: string,
+    setAutoFillInit?: (v: boolean) => void
   ) => React.ReactNode
   handleAutoFill?: (aiParams?: ProjectAiParamters) => Promise<void>
 }
@@ -76,9 +78,12 @@ export const DocumentEditor = (props: DocumentEditorProps) => {
   const [filling, setFilling] = React.useState(false)
   const [saveState, setSaveState] = React.useState<"dirty" | "saving" | "saved">("saved")
   const [abortCtrl, setAbortCtrl] = React.useState(new AbortController())
-  const childrenRef = React.useRef<AutofillHandler | null>(null);
   const { toast } = useToast()
   const { data: session } = useSession()
+
+  const childrenRef = React.useRef<AutofillHandler | null>(null);
+  const [isAutoFillInit, setAutoFillInit] = React.useState(false);
+
   const mutation = api.document.save.useMutation()
   const [docInfo, setDocInfo] = React.useState<DocumentInfo>(
     { id: "", title: "", projectId: "", projectName: "", updatedAt: new Date(0) }
@@ -188,13 +193,11 @@ export const DocumentEditor = (props: DocumentEditorProps) => {
     setAbortCtrl(new AbortController())
   }
 
-  console.log(childrenRef.current)
-
   return (
     status === "loading" ?
       <div className="w-full h-screen flex flex-col justify-center items-center space-y-2">
         <Loader2 className="animate-spin" />
-        <span className="text-gray-400 text-sm">Loading document...</span>
+        <span className="text-gray-400 text-sm">Loading ...</span>
       </div>
       :
       status === "error" ?
@@ -221,7 +224,7 @@ export const DocumentEditor = (props: DocumentEditorProps) => {
                   </div>
                   <div className="flex space-x-4 items-center">
                     {
-                      childrenRef.current && childrenRef.current.autofillHandler ?
+                      isAutoFillInit ?
                         <Button
                           disabled={!permission.dstWritable}
                           onClick={filling ? cancelFilling : startFilling} >
@@ -252,7 +255,13 @@ export const DocumentEditor = (props: DocumentEditorProps) => {
                     {docInfo?.title ? docInfo.title : "Introduction Editor"}
                   </h2>
                 </div>
-                {props.children(srcObj, dstObj, handleChange, childrenRef, permission, docInfo.projectId)}
+                {props.children(
+                  srcObj, dstObj,
+                  handleChange,
+                  childrenRef,
+                  permission,
+                  docInfo.projectId,
+                  setAutoFillInit)}
               </div>
             </main>
           </>

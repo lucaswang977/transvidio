@@ -326,9 +326,11 @@ export const columns: ColumnDef<DocumentColumn>[] = [
       const data = row.original
       const myself = table.options.meta?.user
       const refetch = table.options.meta?.refetchData
-      const isEditable = (data.state !== "OPEN" && data.state !== "CLOSED") &&
+      const isEditable =
+        (data.state !== "OPEN" && data.state !== "CLOSED") &&
         (myself && data.user && data.user.id === myself.id) ||
-        (myself && myself.role === "ADMIN")
+        (myself && myself.role === "ADMIN") ||
+        (data.type === "INTRODUCTION" || data.type === "CURRICULUM")
       let editorUrl = "/"
       if (data.type === "INTRODUCTION") {
         editorUrl = "/editor/introduction/" + data.id
