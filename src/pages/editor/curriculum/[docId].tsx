@@ -32,7 +32,7 @@ import {
 import { clone } from "ramda";
 
 const CurriculumEditor = React.forwardRef<AutofillHandler | null, EditorComponentProps>(
-  ({ srcJson, dstJson, handleChange }, ref) => {
+  ({ srcJson, dstJson, handleChange, permission }, ref) => {
     const defaultValue: Curriculum = {
       sections: []
     }
@@ -141,6 +141,7 @@ const CurriculumEditor = React.forwardRef<AutofillHandler | null, EditorComponen
                 <p className="font-bold">Section</p>
                 <div className="grid grid-rows-2 space-y-1 md:space-y-0 md:grid-rows-1 md:space-x-2 md:grid-cols-2">
                   <Input
+                    disabled={!permission.srcWritable}
                     id={`src.section.${section.index}`}
                     className="w-full"
                     value={section.title} onChange={(event) => {
@@ -151,6 +152,7 @@ const CurriculumEditor = React.forwardRef<AutofillHandler | null, EditorComponen
                       }
                     }} />
                   <Input
+                    disabled={!permission.dstWritable}
                     id={`dst.section.${section.index}`}
                     className="w-full"
                     value={dstSection?.title} onChange={(event) => {
@@ -169,6 +171,7 @@ const CurriculumEditor = React.forwardRef<AutofillHandler | null, EditorComponen
                           <p className="font-bold">{item.item_type}</p>
                           <div className="grid grid-rows-2 space-y-1 md:space-y-0 md:grid-rows-1 md:space-x-2 md:grid-cols-2">
                             <Input
+                              disabled={!permission.srcWritable}
                               id={`src.section.item.${i}.${item.id}`}
                               value={item.title} onChange={(event) => {
                                 const section = srcObj.sections[i]
@@ -179,6 +182,7 @@ const CurriculumEditor = React.forwardRef<AutofillHandler | null, EditorComponen
                                 }
                               }} />
                             <Input
+                              disabled={!permission.dstWritable}
                               id={`dst.section.item.${i}.${item.id}`}
                               value={dstSection?.items[j]?.title} onChange={(event) => {
                                 if (dstSection && dstSection.items) {
@@ -191,6 +195,7 @@ const CurriculumEditor = React.forwardRef<AutofillHandler | null, EditorComponen
                           </div>
                           <div className="grid grid-rows-2 space-y-1 md:space-y-0 md:grid-rows-1 md:space-x-2 md:grid-cols-2">
                             <RichtextEditor
+                              disabled={!permission.srcWritable}
                               height="150px"
                               value={item.description}
                               onChange={(event) => {
@@ -202,6 +207,7 @@ const CurriculumEditor = React.forwardRef<AutofillHandler | null, EditorComponen
                                 }
                               }} />
                             <RichtextEditor
+                              disabled={!permission.dstWritable}
                               height="150px"
                               value={dstSection?.items[j]?.description}
                               onChange={(event) => {
@@ -234,11 +240,12 @@ const CurriculumEditorPage: NextPageWithLayout = () => {
   return (
     <DocumentEditor
       docId={docId} >
-      {(srcJson, dstJson, handleChange, childrenRef) => {
+      {(srcJson, dstJson, handleChange, childrenRef, permission) => {
         return <CurriculumEditor
           srcJson={srcJson}
           dstJson={dstJson}
           handleChange={handleChange}
+          permission={permission}
           ref={childrenRef}
         />
       }}

@@ -389,12 +389,22 @@ export const documentRouter = createTRPCRouter({
           message: "Document not existed."
         })
       }
-      if (ctx.session.user.role !== "ADMIN" && document.userId != ctx.session.user.id) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Document not claimed by this user."
+
+      if (ctx.session.user.role !== "ADMIN") {
+        const projectRelation = await prisma.projectsOfUsers.findFirst({
+          where: {
+            projectId: document.projectId,
+            userId: ctx.session.user.id,
+          }
         })
+        if (!projectRelation) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "No permission."
+          })
+        }
       }
+
       return prisma.document.findUnique({
         where: {
           id: input.documentId

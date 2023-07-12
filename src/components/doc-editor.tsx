@@ -7,7 +7,7 @@ import { Button } from "~/components/ui/button"
 import Link from "next/link";
 import { Bot, Loader2, Save } from "lucide-react";
 import { naturalTime } from "~/utils/helper"
-import type { DocumentInfo, ProjectAiParamters, SrcOrDst } from "~/types";
+import type { DocPermission, DocumentInfo, ProjectAiParamters, SrcOrDst } from "~/types";
 import { Beforeunload } from 'react-beforeunload';
 import { useToast } from "~/components/ui/use-toast"
 import { api } from "~/utils/api";
@@ -18,7 +18,8 @@ import type { Prisma } from "@prisma/client";
 export interface EditorComponentProps {
   srcJson: Prisma.JsonValue | undefined,
   dstJson: Prisma.JsonValue | undefined,
-  handleChange: HandleChangeInterface
+  handleChange: HandleChangeInterface,
+  permission: DocPermission
 }
 
 export interface HandleChangeInterface {
@@ -65,6 +66,7 @@ type DocumentEditorProps = {
     dstObj: Prisma.JsonValue | undefined,
     handleChange: HandleChangeInterface,
     ref: React.Ref<AutofillHandler | null>,
+    docPermission: DocPermission,
     projectId?: string,
   ) => React.ReactNode
   handleAutoFill?: (aiParams?: ProjectAiParamters) => Promise<void>
@@ -81,6 +83,13 @@ export const DocumentEditor = (props: DocumentEditorProps) => {
   const [docInfo, setDocInfo] = React.useState<DocumentInfo>(
     { id: "", title: "", projectId: "", projectName: "", updatedAt: new Date(0) }
   )
+  const defaultPermission = {
+    srcReadable: false,
+    srcWritable: false,
+    dstReadable: false,
+    dstWritable: false,
+  }
+  const [permission, setPermission] = React.useState<DocPermission>(defaultPermission)
 
   const [srcObj, setSrcObj] = React.useState<Prisma.JsonValue | undefined>()
   const [dstObj, setDstObj] = React.useState<Prisma.JsonValue | undefined>()
@@ -100,9 +109,36 @@ export const DocumentEditor = (props: DocumentEditorProps) => {
             projectAiParamters: doc.project.aiParameter as ProjectAiParamters
           })
 
+          const np: DocPermission = defaultPermission
+
+          if (session?.user.role === "ADMIN") {
+            np.srcReadable = true
+            np.srcWritable = true
+            np.dstReadable = true
+            np.dstWritable = true
+          } else {
+            if (doc.userId === session?.user.id) {
+              np.srcReadable = true
+              np.dstReadable = true
+              np.dstWritable = true
+              if (doc.type === "SUBTITLE") {
+                np.srcWritable = true
+              }
+            } else {
+              if (doc.type === "INTRODUCTION" || doc.type === "CURRICULUM") {
+                np.srcReadable = true
+                np.dstReadable = true
+              }
+            }
+          }
+
+          setPermission(np)
           if (doc.srcJson) setSrcObj(doc.srcJson)
           if (doc.dstJson) setDstObj(doc.dstJson)
         }
+      },
+      onError: (err) => {
+        console.log(err)
       }
     }
   )
@@ -118,7 +154,7 @@ export const DocumentEditor = (props: DocumentEditorProps) => {
       setSaveState("saving")
       mutation.mutate({
         documentId: props.docId,
-        src: JSON.stringify(srcObj),
+        src: permission.srcWritable ? JSON.stringify(srcObj) : undefined,
         dst: JSON.stringify(dstObj)
       }, {
         onSuccess: (di) => {
@@ -152,6 +188,8 @@ export const DocumentEditor = (props: DocumentEditorProps) => {
     setAbortCtrl(new AbortController())
   }
 
+  console.log(childrenRef.current)
+
   return (
     status === "loading" ?
       <div className="w-full h-screen flex flex-col justify-center items-center space-y-2">
@@ -159,49 +197,64 @@ export const DocumentEditor = (props: DocumentEditorProps) => {
         <span className="text-gray-400 text-sm">Loading document...</span>
       </div>
       :
-      <>
-        {saveState !== "saved" && (<Beforeunload onBeforeunload={(event) => event.preventDefault()} />)}
-        <main className="flex min-h-screen flex-col">
-          <div className="border-b">
-            <div className="fixed bg-white z-100 w-full border-b flex items-center justify-between h-16 px-4">
-              <Link href="/admin"><Logo /></Link>
-              <div className="flex flex-col items-center">
-                <p className="text">{docInfo.title}</p>
-                <p className="text-xs text-gray-400">
-                  Saved {naturalTime(docInfo.updatedAt)}
-                </p>
-              </div>
-              <div className="flex space-x-4 items-center">
-                {
-                  childrenRef.current && childrenRef.current.autofillHandler ?
-                    <Button onClick={filling ? cancelFilling : startFilling} >
-                      {filling ?
-                        <Loader2 className="w-4 animate-spin mr-1" />
-                        : <Bot className="h-4 w-4 mr-1" />
-                      }
-                      <span>{filling ? "Cancel filling" : "Auto Fill"}</span>
+      status === "error" ?
+        <div className="text-gray-400 h-screen w-full flex justify-center items-center">
+          No permission
+        </div>
+        :
+        (session?.user.role !== "ADMIN" && !permission.srcReadable && !permission.dstReadable) ?
+          <div className="text-gray-400 h-screen w-full flex justify-center items-center">
+            Sorry, you don&apos;t have permission to open the document.
+          </div>
+          :
+          <>
+            {saveState !== "saved" && (<Beforeunload onBeforeunload={(event) => event.preventDefault()} />)}
+            <main className="flex min-h-screen flex-col">
+              <div className="border-b">
+                <div className="fixed bg-white z-100 w-full border-b flex items-center justify-between h-16 px-4">
+                  <Link href="/admin"><Logo /></Link>
+                  <div className="flex flex-col items-center">
+                    <p className="text">{docInfo.title}</p>
+                    <p className="text-xs text-gray-400">
+                      Saved {naturalTime(docInfo.updatedAt)}
+                    </p>
+                  </div>
+                  <div className="flex space-x-4 items-center">
+                    {
+                      childrenRef.current && childrenRef.current.autofillHandler ?
+                        <Button
+                          disabled={!permission.dstWritable}
+                          onClick={filling ? cancelFilling : startFilling} >
+                          {filling ?
+                            <Loader2 className="w-4 animate-spin mr-1" />
+                            : <Bot className="h-4 w-4 mr-1" />
+                          }
+                          <span>{filling ? "Cancel filling" : "Auto Fill"}</span>
+                        </Button>
+                        : <></>
+                    }
+                    <Button
+                      disabled={saveState !== "dirty" ||
+                        (!permission.srcWritable && !permission.dstWritable)}
+                      onClick={async () => {
+                        await saveDoc()
+                      }} >
+                      <Save className="h-4 w-4 mr-1" />
+                      <span>{saveState === "saving" ? "Saving" : "Save"}</span>
                     </Button>
-                    : <></>
-                }
-                <Button disabled={saveState !== "dirty"} onClick={async () => {
-                  await saveDoc()
-                }} >
-                  <Save className="h-4 w-4 mr-1" />
-                  <span>{saveState === "saving" ? "Saving" : "Save"}</span>
-                </Button>
-                <UserNav />
+                    <UserNav />
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-          <div className="flex flex-col items-center space-y-4 p-20">
-            <div className="flex items-center justify-between space-y-2">
-              <h2 className="text-xl font-bold tracking-tight mx-auto">
-                {docInfo?.title ? docInfo.title : "Introduction Editor"}
-              </h2>
-            </div>
-            {props.children(srcObj, dstObj, handleChange, childrenRef, docInfo.projectId)}
-          </div>
-        </main>
-      </>
+              <div className="flex flex-col items-center space-y-4 p-20">
+                <div className="flex items-center justify-between space-y-2">
+                  <h2 className="text-xl font-bold tracking-tight mx-auto">
+                    {docInfo?.title ? docInfo.title : "Introduction Editor"}
+                  </h2>
+                </div>
+                {props.children(srcObj, dstObj, handleChange, childrenRef, permission, docInfo.projectId)}
+              </div>
+            </main>
+          </>
   )
 }

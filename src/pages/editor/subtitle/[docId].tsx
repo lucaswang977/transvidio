@@ -32,16 +32,15 @@ import {
 } from "~/components/doc-editor";
 
 const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentProps>(
-  ({ srcJson, dstJson, handleChange }, ref) => {
+  ({ srcJson, dstJson, handleChange, permission }, ref) => {
     const reactPlayerRef = React.useRef<ReactPlayer>(null);
     const [captions, setCaptions] = React.useState({ src: "", dst: "" })
+    React.useImperativeHandle(ref, () => ({ autofillHandler: handleAutoFill }))
 
     const defaultValue: SubtitleType = {
       videoUrl: "",
       subtitle: []
     }
-
-    React.useImperativeHandle(ref, () => ({ autofillHandler: handleAutoFill }))
 
     let srcObj = defaultValue
     let dstObj = defaultValue
@@ -126,6 +125,7 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
                         <Label className="text-xs">{timeFormat(item.to)}</Label>
                       </div>
                       <Textarea
+                        disabled={!permission.srcWritable}
                         id={`src.items.${index}`}
                         value={item.text}
                         className="overflow-hidden w-72"
@@ -159,6 +159,7 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
                   return (
                     <div key={`dst-${index}`} className="flex space-x-1">
                       <Textarea
+                        disabled={!permission.dstWritable}
                         id={`dst.items.${index}`}
                         value={dstItem?.text}
                         className="overflow-hidden w-72"
@@ -203,11 +204,12 @@ const SubtitleEditorPage: NextPageWithLayout = () => {
   return (
     <DocumentEditor
       docId={docId} >
-      {(srcJson, dstJson, handleChange, childrenRef) => {
+      {(srcJson, dstJson, handleChange, childrenRef, permission) => {
         return <SubtitleEditor
           srcJson={srcJson}
           dstJson={dstJson}
           handleChange={handleChange}
+          permission={permission}
           ref={childrenRef}
         />
       }}

@@ -38,7 +38,7 @@ import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
 
 const QuizEditor = React.forwardRef<AutofillHandler | null, EditorComponentProps>(
-  ({ srcJson, dstJson, handleChange }, ref) => {
+  ({ srcJson, dstJson, handleChange, permission }, ref) => {
     const defaultValue: QuizType = {
       results: []
     }
@@ -242,6 +242,7 @@ const QuizEditor = React.forwardRef<AutofillHandler | null, EditorComponentProps
                 <Label className="bg-blue-100 p-2 font-bold">{`Question ${i + 1}`}</Label>
                 <div className="grid grid-rows-2 space-y-1 md:space-y-0 md:grid-rows-1 md:space-x-2 md:grid-cols-2">
                   <RichtextEditor
+                    disabled={!permission.srcWritable}
                     value={q.prompt.question}
                     onChange={(event) => {
                       const newObj = clone(srcObj)
@@ -251,6 +252,7 @@ const QuizEditor = React.forwardRef<AutofillHandler | null, EditorComponentProps
                     }}
                   />
                   <RichtextEditor
+                    disabled={!permission.dstWritable}
                     value={dstObj.results[i]?.prompt.question}
                     onChange={(event) => {
                       const newObj = clone(dstObj)
@@ -267,12 +269,14 @@ const QuizEditor = React.forwardRef<AutofillHandler | null, EditorComponentProps
                     return (
                       <div key={`a${j}`} className="flex space-x-2">
                         <Checkbox
+                          disabled={!permission.srcWritable}
                           checked={q.correct_response.findIndex(k => k === l) >= 0}
                           onCheckedChange={(value) => { handleSetCorrectAnswer(i, l, value as boolean) }}
                         />
                         <Label>{l})</Label>
                         <div className="w-full grid grid-rows-2 space-y-1 md:space-y-0 md:grid-rows-1 md:space-x-2 md:grid-cols-2">
                           <RichtextEditor
+                            disabled={!permission.srcWritable}
                             value={a}
                             onChange={(event) => {
                               const newObj = clone(srcObj)
@@ -282,6 +286,7 @@ const QuizEditor = React.forwardRef<AutofillHandler | null, EditorComponentProps
                             }}
                           />
                           <RichtextEditor
+                            disabled={!permission.dstWritable}
                             value={dstObj.results[i]?.prompt.answers[j]}
                             onChange={(event) => {
                               const newObj = clone(dstObj)
@@ -296,6 +301,7 @@ const QuizEditor = React.forwardRef<AutofillHandler | null, EditorComponentProps
                   })
                 }
                 <Button
+                  disabled={!permission.srcWritable}
                   className="w-fit"
                   variant="outline"
                   onClick={() => handleAddNewAnswer(i)}>
@@ -309,6 +315,7 @@ const QuizEditor = React.forwardRef<AutofillHandler | null, EditorComponentProps
                         <Label>{String.fromCharCode("a".charCodeAt(0) + j)})</Label>
                         <div className="w-full grid grid-rows-2 space-y-1 md:space-y-0 md:grid-rows-1 md:space-x-2 md:grid-cols-2">
                           <RichtextEditor
+                            disabled={!permission.srcWritable}
                             value={f}
                             onChange={(event) => {
                               const newObj = clone(srcObj)
@@ -318,6 +325,7 @@ const QuizEditor = React.forwardRef<AutofillHandler | null, EditorComponentProps
                             }}
                           />
                           <RichtextEditor
+                            disabled={!permission.dstWritable}
                             value={dstObj.results[i]?.prompt.feedbacks[j]}
                             onChange={(event) => {
                               const newObj = clone(dstObj)
@@ -332,6 +340,7 @@ const QuizEditor = React.forwardRef<AutofillHandler | null, EditorComponentProps
                   })
                 }
                 <Button
+                  disabled={!permission.srcWritable}
                   className="w-fit"
                   variant="outline"
                   onClick={() => handleAddNewFeedback(i)}>
@@ -342,6 +351,7 @@ const QuizEditor = React.forwardRef<AutofillHandler | null, EditorComponentProps
           })
         }
         <Button
+          disabled={!permission.srcWritable}
           className="w-fit"
           variant="outline"
           onClick={handleAddNewQuiz}>Add a new quiz</Button>
@@ -358,11 +368,12 @@ const QuizEditorPage: NextPageWithLayout = () => {
   return (
     <DocumentEditor
       docId={docId} >
-      {(srcJson, dstJson, handleChange, childrenRef) => {
+      {(srcJson, dstJson, handleChange, childrenRef, permission) => {
         return <QuizEditor
           srcJson={srcJson}
           dstJson={dstJson}
           handleChange={handleChange}
+          permission={permission}
           ref={childrenRef}
         />
       }}

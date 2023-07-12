@@ -21,7 +21,7 @@ import {
 
 const AttachmentEditor = React.forwardRef<AutofillHandler | null,
   EditorComponentProps & { projectId?: string }>(
-    ({ srcJson, dstJson, handleChange, projectId }) => {
+    ({ srcJson, dstJson, handleChange, permission, projectId }) => {
       const [uploadProgress, setUploadProgress] = React.useState(0);
       const defaultValue: AttachmentType = {
         filename: "",
@@ -127,7 +127,7 @@ const AttachmentEditor = React.forwardRef<AutofillHandler | null,
               onChange={(event) => {
                 handleChange("src", { ...srcObj, filename: event.target.value })
               }} />
-            <Button disabled={uploading} variant="ghost">
+            <Button disabled={uploading || !permission.srcWritable} variant="ghost">
               {
                 srcObj.fileurl ?
                   <a target="_blank" href={srcObj.fileurl}><Download /></a> :
@@ -135,6 +135,7 @@ const AttachmentEditor = React.forwardRef<AutofillHandler | null,
               }
             </Button>
             <input
+              disabled={!permission.srcWritable}
               type="file"
               className="hidden"
               multiple={false}
@@ -159,7 +160,7 @@ const AttachmentEditor = React.forwardRef<AutofillHandler | null,
               onChange={(event) => {
                 handleChange("dst", { ...dstObj, filename: event.target.value })
               }} />
-            <Button disabled={uploading} variant="ghost">
+            <Button disabled={uploading || !permission.dstWritable} variant="ghost">
               {
                 dstObj.fileurl ?
                   <a target="_blank" href={dstObj.fileurl}><Download /></a>
@@ -171,13 +172,16 @@ const AttachmentEditor = React.forwardRef<AutofillHandler | null,
             </Button>
             {
               dstObj.fileurl ?
-                <Button variant="ghost" onClick={() => {
-                  handleChange("dst", { filename: "", fileurl: "" })
-                }}>
+                <Button
+                  disabled={!permission.dstWritable}
+                  variant="ghost" onClick={() => {
+                    handleChange("dst", { filename: "", fileurl: "" })
+                  }}>
                   <Trash />
                 </Button> : <></>
             }
             <input
+              disabled={!permission.dstWritable}
               type="file"
               className="hidden"
               multiple={false}
@@ -213,11 +217,12 @@ const AttachmentEditorPage: NextPageWithLayout = () => {
   return (
     <DocumentEditor
       docId={docId} >
-      {(srcJson, dstJson, handleChange, childrenRef, projectId) => {
+      {(srcJson, dstJson, handleChange, childrenRef, permission, projectId) => {
         return <AttachmentEditor
           srcJson={srcJson}
           dstJson={dstJson}
           projectId={projectId}
+          permission={permission}
           handleChange={handleChange}
           ref={childrenRef}
         />

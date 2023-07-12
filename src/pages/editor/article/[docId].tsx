@@ -18,7 +18,7 @@ import {
 import { clone } from "ramda";
 
 const ArticleEditor = React.forwardRef<AutofillHandler | null, EditorComponentProps>(
-  ({ srcJson, dstJson, handleChange }, ref) => {
+  ({ srcJson, dstJson, handleChange, permission }, ref) => {
 
     const defaultValue: ArticleType = {
       html: "",
@@ -62,6 +62,7 @@ const ArticleEditor = React.forwardRef<AutofillHandler | null, EditorComponentPr
     return (
       <div className="grid grid-rows-2 space-y-1 md:space-y-0 md:grid-rows-1 md:space-x-2 md:grid-cols-2">
         <RichtextEditor
+          disabled={!permission.srcWritable}
           height={`${height * 0.8}px`}
           value={srcObj.html}
           onChange={(event) => {
@@ -70,6 +71,7 @@ const ArticleEditor = React.forwardRef<AutofillHandler | null, EditorComponentPr
             handleChange("src", obj)
           }} />
         <RichtextEditor
+          disabled={!permission.dstWritable}
           height={`${height * 0.8}px`}
           value={dstObj.html}
           onChange={(event) => {
@@ -90,11 +92,12 @@ const ArticleEditorPage: NextPageWithLayout = () => {
   return (
     <DocumentEditor
       docId={docId} >
-      {(srcJson, dstJson, handleChange, childrenRef) => {
+      {(srcJson, dstJson, handleChange, childrenRef, permission) => {
         return <ArticleEditor
           srcJson={srcJson}
           dstJson={dstJson}
           handleChange={handleChange}
+          permission={permission}
           ref={childrenRef}
         />
       }}

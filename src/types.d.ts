@@ -79,3 +79,10 @@ export type ProjectAiParamters = {
   background: string,
   syllabus: string
 }
+
+export type DocPermission = {
+  srcReadable: boolean,
+  srcWritable: boolean,
+  dstReadable: boolean,
+  dstWritable: boolean,
+}

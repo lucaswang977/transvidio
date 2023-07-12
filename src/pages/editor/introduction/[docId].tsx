@@ -28,7 +28,7 @@ import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 import { clone } from "ramda";
 
 const IntroductionEditor = React.forwardRef<AutofillHandler | null, EditorComponentProps>(
-  ({ srcJson, dstJson, handleChange }, ref) => {
+  ({ srcJson, dstJson, handleChange, permission }, ref) => {
     const defaultValue: Introduction = {
       title: "",
       headline: "",
@@ -158,6 +158,7 @@ const IntroductionEditor = React.forwardRef<AutofillHandler | null, EditorCompon
         <p className="text-sm font-bold">Title</p>
         <div className="grid grid-rows-2 space-y-1 md:space-y-0 md:grid-rows-1 md:space-x-2 md:grid-cols-2">
           <Input
+            disabled={!permission.srcWritable}
             id="src.title"
             type="text"
             value={srcObj.title}
@@ -167,6 +168,7 @@ const IntroductionEditor = React.forwardRef<AutofillHandler | null, EditorCompon
               handleChange("src", obj)
             }} />
           <Input
+            disabled={!permission.dstWritable}
             id="dst.title"
             type="text"
             value={dstObj.title}
@@ -179,6 +181,7 @@ const IntroductionEditor = React.forwardRef<AutofillHandler | null, EditorCompon
         <p className="text-sm font-bold">Headline</p>
         <div className="grid grid-rows-2 space-y-1 md:space-y-0 md:grid-rows-1 md:space-x-2 md:grid-cols-2">
           <Input
+            disabled={!permission.srcWritable}
             id="src.headline"
             type="text"
             value={srcObj.headline}
@@ -188,6 +191,7 @@ const IntroductionEditor = React.forwardRef<AutofillHandler | null, EditorCompon
               handleChange("src", obj)
             }} />
           <Input
+            disabled={!permission.dstWritable}
             id="dst.headline"
             type="text"
             value={dstObj.headline}
@@ -200,6 +204,7 @@ const IntroductionEditor = React.forwardRef<AutofillHandler | null, EditorCompon
         <p className="text-sm font-bold">Description</p>
         <div className="grid grid-rows-2 space-y-1 md:space-y-0 md:grid-rows-1 md:space-x-2 md:grid-cols-2">
           <RichtextEditor
+            disabled={!permission.srcWritable}
             id="src.description"
             height="500px"
             value={srcObj.description}
@@ -209,6 +214,7 @@ const IntroductionEditor = React.forwardRef<AutofillHandler | null, EditorCompon
               handleChange("src", obj)
             }} />
           <RichtextEditor
+            disabled={!permission.dstWritable}
             id="dst.description"
             value={dstObj.description}
             height="500px"
@@ -225,6 +231,7 @@ const IntroductionEditor = React.forwardRef<AutofillHandler | null, EditorCompon
             return (
               <div key={`pre-${index}`} className="grid grid-rows-2 space-y-1 md:space-y-0 md:grid-rows-1 md:space-x-2 md:grid-cols-2">
                 <Input
+                  disabled={!permission.srcWritable}
                   id={`src.prerequisites.${index}`}
                   type="text"
                   value={src ? src : ""}
@@ -235,6 +242,7 @@ const IntroductionEditor = React.forwardRef<AutofillHandler | null, EditorCompon
                     handleChange("src", { ...srcObj })
                   }} />
                 <Input
+                  disabled={!permission.dstWritable}
                   id={`dst.prerequisites.${index}`}
                   type="text"
                   value={dst ? dst : ""}
@@ -254,6 +262,7 @@ const IntroductionEditor = React.forwardRef<AutofillHandler | null, EditorCompon
             return (
               <div key={`ob-${index}`} className="grid grid-rows-2 space-y-1 md:space-y-0 md:grid-rows-1 md:space-x-2 md:grid-cols-2">
                 <Input
+                  disabled={!permission.srcWritable}
                   id={`src.objectives.${index}`}
                   type="text"
                   value={src ? src : ""}
@@ -264,6 +273,7 @@ const IntroductionEditor = React.forwardRef<AutofillHandler | null, EditorCompon
                     handleChange("src", { ...srcObj })
                   }} />
                 <Input
+                  disabled={!permission.dstWritable}
                   id={`dst.objectives.${index}`}
                   type="text"
                   value={dst ? dst : ""}
@@ -283,6 +293,7 @@ const IntroductionEditor = React.forwardRef<AutofillHandler | null, EditorCompon
             return (
               <div key={`ta-${index}`} className="grid grid-rows-2 space-y-1 md:space-y-0 md:grid-rows-1 md:space-x-2 md:grid-cols-2">
                 <Input
+                  disabled={!permission.srcWritable}
                   id={`src.target_audiences.${index}`}
                   type="text"
                   value={src ? src : ""}
@@ -293,6 +304,7 @@ const IntroductionEditor = React.forwardRef<AutofillHandler | null, EditorCompon
                     handleChange("src", { ...srcObj })
                   }} />
                 <Input
+                  disabled={!permission.dstWritable}
                   id={`dst.target_audiences.${index}`}
                   type="text"
                   value={dst ? dst : ""}
@@ -318,11 +330,12 @@ const IntroductionEditorPage: NextPageWithLayout = () => {
   return (
     <DocumentEditor
       docId={docId} >
-      {(srcJson, dstJson, handleChange, childrenRef) => {
+      {(srcJson, dstJson, handleChange, childrenRef, permission) => {
         return <IntroductionEditor
           srcJson={srcJson}
           dstJson={dstJson}
           handleChange={handleChange}
+          permission={permission}
           ref={childrenRef}
         />
       }}
