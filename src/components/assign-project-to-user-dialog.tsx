@@ -26,6 +26,7 @@ type AssignProjectToUserDialogProps = {
 
 export function AssignProjectToUserDialog(props: AssignProjectToUserDialogProps) {
   const [open, setIsOpen] = React.useState(false)
+  const [loading, setLoading] = React.useState(false)
   const [rowSelection, setRowSelection] = React.useState({})
   const mutation = api.project.assignUsers.useMutation()
   const { data: sessionData } = useSession();
@@ -56,8 +57,9 @@ export function AssignProjectToUserDialog(props: AssignProjectToUserDialogProps)
   }
 
   function onSubmit() {
-    console.log(rowSelection)
     const data: string[] = []
+    setLoading(true)
+
     if (allUsers && rowSelection) {
       Object.keys(rowSelection).forEach((index) => {
         const i: number = +index
@@ -73,14 +75,16 @@ export function AssignProjectToUserDialog(props: AssignProjectToUserDialogProps)
       }, {
         onError: (err) => {
           console.log(err.message)
+          setIsOpen(false)
+          setLoading(false)
         },
         onSuccess: () => {
           if (props.refetch) props.refetch()
+          setIsOpen(false)
+          setLoading(false)
         }
       })
     }
-
-    setIsOpen(false)
   }
 
   React.useEffect(() => {
@@ -111,9 +115,10 @@ export function AssignProjectToUserDialog(props: AssignProjectToUserDialogProps)
             data={allUsers ? allUsers : []}
             rowSelection={rowSelection}
             setRowSelection={setRowSelection}
+            manualPagination={false}
           />
           <DialogFooter>
-            <Button onClick={onSubmit}>Save</Button>
+            <Button disabled={loading} onClick={onSubmit}>{loading ? "Saving" : "Save"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

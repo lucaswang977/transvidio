@@ -7,6 +7,7 @@ import {
   type RowSelectionState,
   flexRender,
   getCoreRowModel,
+  getPaginationRowModel,
   useReactTable,
   type OnChangeFn,
   type RowData,
@@ -41,10 +42,13 @@ interface DataTableProps<TData, TValue> {
   setRowSelection: OnChangeFn<RowSelectionState> | undefined,
   handleRefetch?: () => void,
   user?: { id: string, role: UserRole },
-  pagination?: { pageIndex: number, pageSize: number },
-  setPagination?: OnChangeFn<PaginationState>,
-  total?: number,
-  pageCount?: number,
+  manualPagination: boolean,
+  paginationArgs?: {
+    pagination: { pageIndex: number, pageSize: number },
+    setPagination?: OnChangeFn<PaginationState>,
+    total?: number,
+    pageCount?: number,
+  }
   disabled?: boolean,
 }
 
@@ -55,29 +59,50 @@ export function DataTable<TData, TValue>({
   setRowSelection,
   handleRefetch,
   user,
-  pagination,
-  total,
-  setPagination,
+  manualPagination,
+  paginationArgs,
   disabled,
 }: DataTableProps<TData, TValue>) {
 
-  const table = useReactTable({
+  const tableParams = (manualPagination && paginationArgs) ? {
     data,
     columns,
-    pageCount: (total !== undefined && pagination !== undefined) ? Math.ceil(total / pagination.pageSize) : 0,
     getCoreRowModel: getCoreRowModel(),
     onRowSelectionChange: setRowSelection,
+
     manualPagination: true,
-    onPaginationChange: setPagination,
-    state: {
-      rowSelection,
-      pagination
-    },
+    pageCount: ((paginationArgs.total !== undefined && paginationArgs.pagination !== undefined) ?
+      Math.ceil(paginationArgs.total / paginationArgs.pagination.pageSize) : 0),
+    onPaginationChange: paginationArgs.setPagination,
+    autoResetPageIndex: false,
+
+    state: { pagination: paginationArgs.pagination, rowSelection, },
     meta: {
       refetchData: handleRefetch,
       user: user
     }
-  })
+  } : {
+    data,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    onRowSelectionChange: setRowSelection,
+    enableRowSelection: true,
+
+    getPaginationRowModel: getPaginationRowModel(),
+    autoResetPageIndex: false,
+    state: { rowSelection },
+    meta: {
+      refetchData: handleRefetch,
+      user: user
+    }
+  }
+  const table = useReactTable(tableParams)
+
+  const total = (manualPagination && paginationArgs) ?
+    paginationArgs.total
+    : table.getFilteredRowModel().rows.length
+
+  console.log(table.getState())
 
   return (
     <div className="w-full rounded-md border relative">
@@ -144,7 +169,7 @@ export function DataTable<TData, TValue>({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => table.previousPage()}
+                onClick={() => { table.previousPage() }}
                 disabled={!table.getCanPreviousPage()}
               >
                 <ChevronLeft className="h-4 w-4" />
@@ -155,7 +180,7 @@ export function DataTable<TData, TValue>({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => table.nextPage()}
+                onClick={() => { table.nextPage() }}
                 disabled={!table.getCanNextPage()}
               >
                 <ChevronRight className="h-4 w-4" />

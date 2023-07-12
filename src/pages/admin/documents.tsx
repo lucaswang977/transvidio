@@ -194,9 +194,12 @@ const DocumentManagement: NextPageWithLayout = () => {
         setRowSelection={setRowSelection}
         user={session?.user}
         handleRefetch={() => refetch()}
-        pagination={pagination}
-        setPagination={setPagination}
-        total={total}
+        manualPagination={true}
+        paginationArgs={{
+          pagination: pagination,
+          setPagination: setPagination,
+          total: total
+        }}
       />
     </div>
   )

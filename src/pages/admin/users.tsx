@@ -63,7 +63,7 @@ const UserManagement: NextPageWithLayout = () => {
             data={usersData}
             rowSelection={rowSelection}
             setRowSelection={setRowSelection}
-            total={usersData.length}
+            manualPagination={false}
           />
         }
       </div>
