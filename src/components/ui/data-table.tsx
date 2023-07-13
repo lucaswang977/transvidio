@@ -102,8 +102,6 @@ export function DataTable<TData, TValue>({
     paginationArgs.total
     : table.getFilteredRowModel().rows.length
 
-  console.log(table.getState())
-
   return (
     <div className="w-full rounded-md border relative">
       {disabled ?

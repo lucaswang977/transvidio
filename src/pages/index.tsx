@@ -56,7 +56,7 @@ const Home: NextPageWithLayout = () => {
         }
       </div>
       <footer className="flex space-x-2 items-center">
-        <Label className="text-xs text-gray-500 italic">v0.1.4</Label>
+        <Label className="text-xs text-gray-500 italic">v0.1.6</Label>
         <Separator orientation="vertical" />
         <Label className="text-xs text-gray-500">&copy;&nbsp;Transvid.io 2023-2024</Label>
       </footer>
