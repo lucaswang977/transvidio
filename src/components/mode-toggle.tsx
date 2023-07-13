@@ -13,7 +13,11 @@ import {
 } from "~/components/ui/dropdown-menu"
 
 export function ModeToggle() {
+  const [loaded, setLoaded] = React.useState(false);
+  React.useEffect(() => setLoaded(true), []);
   const { setTheme } = useTheme()
+
+  if (!loaded) return null
 
   return (
     <DropdownMenu>
