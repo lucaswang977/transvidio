@@ -8,6 +8,7 @@ import Head from "next/head";
 import * as React from "react";
 import { type NextPage } from "next";
 import { Toaster } from "~/components/ui/toaster"
+import { ThemeProvider } from "~/components/theme-provider"
 
 const lato = Lato({
   subsets: ["latin"],
@@ -43,12 +44,14 @@ function MyApp(
         <meta name="description" content="Transvidio: Online translation collaborative platform." />
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      {getLayout(
-        <main className={lato.className}>
-          <Component {...pageProps} />
-          <Toaster />
-        </main>
-      )}
+      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+        {getLayout(
+          <main className={lato.className}>
+            <Component {...pageProps} />
+            <Toaster />
+          </main>
+        )}
+      </ThemeProvider>
     </SessionProvider>
   );
 }

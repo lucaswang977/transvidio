@@ -107,7 +107,7 @@ export function DataTable<TData, TValue>({
   return (
     <div className="w-full rounded-md border relative">
       {disabled ?
-        <div className="absolute inset-0 bg-white opacity-70 z-10"></div>
+        <div className="absolute inset-0 bg-white dark:bg-black opacity-70 z-10"></div>
         : <></>
       }
       <Table className="relative">

@@ -23,10 +23,10 @@ import { useRouter } from "next/router"
 import { useSession } from "next-auth/react";
 import { Button } from "~/components/ui/button"
 import { Label } from "~/components/ui/label"
-import Image from "next/image"
 import type { NextPageWithLayout } from './_app'
 import { Logo } from "~/components/logo-with-name";
 import { Separator } from "~/components/ui/separator";
+import CoverImage from "~/components/CoverImage";
 
 const Home: NextPageWithLayout = () => {
   const router = useRouter();
@@ -35,7 +35,7 @@ const Home: NextPageWithLayout = () => {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center space-y-12">
       <div className="flex flex-col items-center">
-        <Image src="/img/cover.png" width={400} height={400} alt="Cover image" />
+        <CoverImage />
         <Label className="text-gray-400">We get translation job done.</Label>
       </div>
       <div className="flex flex-col items-center space-y-4">

@@ -14,6 +14,7 @@ import { api } from "~/utils/api";
 import { useSession } from "next-auth/react"
 import { fetchEventSource } from '@microsoft/fetch-event-source';
 import type { Prisma } from "@prisma/client";
+import { ModeToggle } from "~/components/mode-toggle";
 
 export interface EditorComponentProps {
   srcJson: Prisma.JsonValue | undefined,
@@ -214,7 +215,7 @@ export const DocumentEditor = (props: DocumentEditorProps) => {
             {saveState !== "saved" && (<Beforeunload onBeforeunload={(event) => event.preventDefault()} />)}
             <main className="flex min-h-screen flex-col">
               <div className="border-b">
-                <div className="fixed bg-white z-100 w-full border-b flex items-center justify-between h-16 px-4">
+                <div className="fixed bg-white dark:bg-black z-100 w-full border-b flex items-center justify-between h-16 px-4">
                   <Link href="/admin"><Logo /></Link>
                   <div className="flex flex-col items-center">
                     <p className="text">{docInfo.title}</p>
@@ -245,6 +246,7 @@ export const DocumentEditor = (props: DocumentEditorProps) => {
                       <Save className="h-4 w-4 mr-1" />
                       <span>{saveState === "saving" ? "Saving" : "Save"}</span>
                     </Button>
+                    <ModeToggle />
                     <UserNav />
                   </div>
                 </div>

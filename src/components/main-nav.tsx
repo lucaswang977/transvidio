@@ -31,7 +31,7 @@ export function MainNav({
       }
       <div
         onClick={() => setMenuOpen(false)}
-        className={`${menuOpen ? "flex flex-col" : "hidden"} border rounded px-6 py-2 bg-white space-y-2 z-10 md:space-y-0 md:flex md:flex-row md:border-0 md:space-x-8`}>
+        className={`${menuOpen ? "flex flex-col" : "hidden"} border rounded px-6 py-2 bg-white dark:bg-black space-y-2 z-10 md:space-y-0 md:flex md:flex-row md:border-0 md:space-x-8`}>
         <Link
           href="/admin/"
           className={`text-sm ${pathname === "/admin" ? "font-bold" : "text-muted-foreground"} transition-colors hover:text-primary md:block`}
