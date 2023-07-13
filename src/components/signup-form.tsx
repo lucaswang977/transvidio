@@ -229,8 +229,8 @@ export function SignupForm() {
         </Form>
       </CardContent>
       <CardFooter className="flex justify-center">
-        <p className="text-sm text-gray-500">Already have an account?
-          <Link className="ml-3 text-gray-800" href="/signin">Sign in</Link>
+        <p className="text-sm">Already have an account?
+          <Link className="ml-3 font-bold" href="/signin">Sign in</Link>
         </p>
       </CardFooter>
     </Card >

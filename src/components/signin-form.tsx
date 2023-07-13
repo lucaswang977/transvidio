@@ -138,8 +138,8 @@ export function SigninForm() {
         </Form>
       </CardContent>
       <CardFooter className="flex justify-center">
-        <p className="text-sm text-gray-500">Don&apos;t have an account yet?
-          <Link className="ml-3 text-gray-800" href="/signup">Sign up</Link>
+        <p className="text-sm text-primary">Not have an account yet?
+          <Link className="ml-3 font-bold" href="/signup">Sign up</Link>
         </p>
       </CardFooter>
 

@@ -46,7 +46,6 @@ export function AiParamsDialog(props: AiParamsDialogProps) {
 
     setIsOpen(false)
   }
-  console.log(props)
 
   return (
     <div>

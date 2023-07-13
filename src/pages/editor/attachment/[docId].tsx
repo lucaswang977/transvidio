@@ -127,13 +127,16 @@ const AttachmentEditor = React.forwardRef<AutofillHandler | null,
               onChange={(event) => {
                 handleChange("src", { ...srcObj, filename: event.target.value })
               }} />
-            <Button disabled={uploading || !permission.srcWritable} variant="ghost">
-              {
-                srcObj.fileurl ?
-                  <a target="_blank" href={srcObj.fileurl}><Download /></a> :
+            {
+              srcObj.fileurl ?
+                <Button variant="ghost">
+                  <a target="_blank" href={srcObj.fileurl}><Download /></a>
+                </Button>
+                :
+                <Button disabled={uploading || !permission.srcWritable} variant="ghost">
                   <Upload />
-              }
-            </Button>
+                </Button>
+            }
             <input
               disabled={!permission.srcWritable}
               type="file"

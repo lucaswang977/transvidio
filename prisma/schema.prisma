@@ -141,28 +141,39 @@ model Document {
     user          User?            @relation(fields: [userId], references: [id], onDelete: NoAction)
 }
 
-enum ActivityType {
+enum ActivityTarget {
     USER
     PROJECT
     DOCUMENT
+}
+
+enum ActivityActionType {
+    UserRegister
+    UserProfileModify
+    ProjectCreate
+    ProjectAssign
+    ProjectUnassign
+    DocumentClaim
+    DocumentReset
+    DocumentSubmit
+    DocumentClose
 }
 
 model Activity {
     id            String           @id @default(cuid())
     createdAt     DateTime         @default(now())
     seq           Int              @default(autoincrement())
-    text          String
-    type          ActivityType
+    memo          String
+    target        ActivityTarget
+    action        ActivityActionType
 
     userId        String?
     projectId     String?
     documentId    String?
 }
 
-model Announcement {
+model AppConfig {
     id            String           @id @default(cuid())
-    createdAt     DateTime         @default(now())
-    updatedAt     DateTime         @updatedAt
-    text          String
-    userId        String
+    key           String
+    value         String
 }
