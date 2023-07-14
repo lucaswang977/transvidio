@@ -302,10 +302,20 @@ export const columns: ColumnDef<DocumentColumn>[] = [
       let avatarUI = <></>
       if (user) {
         avatarUI = (<div className="flex">
-          <Avatar key={user.id} className="h-8 w-8">
-            <AvatarImage src={user.image} alt={user.name} />
-            <AvatarFallback>{extractLetters(user.name)}</AvatarFallback>
-          </Avatar>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Avatar key={user.id} className="h-8 w-8">
+                  <AvatarImage src={user.image} alt={user.name} />
+                  <AvatarFallback>{extractLetters(user.name)}</AvatarFallback>
+                </Avatar>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{user.name}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+
         </div>)
       }
       return <>
