@@ -251,12 +251,7 @@ export const DocumentEditor = (props: DocumentEditorProps) => {
                   </div>
                 </div>
               </div>
-              <div className="flex flex-col items-center space-y-4 p-20">
-                <div className="flex items-center justify-between space-y-2">
-                  <h2 className="text-xl font-bold tracking-tight mx-auto">
-                    {docInfo?.title ? docInfo.title : "Introduction Editor"}
-                  </h2>
-                </div>
+              <div className="flex flex-col items-center space-y-4 pt-16">
                 {props.children(
                   srcObj, dstObj,
                   handleChange,

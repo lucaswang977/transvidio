@@ -157,7 +157,7 @@ const IntroductionEditor = React.forwardRef<AutofillHandler | null, EditorCompon
 
 
     return (
-      <div className="space-y-2 w-full">
+      <div className="p-8 space-y-2 w-full">
         <p className="text-sm font-bold">Title</p>
         <div className="grid grid-rows-2 space-y-1 md:space-y-0 md:grid-rows-1 md:space-x-2 md:grid-cols-2">
           <Input
