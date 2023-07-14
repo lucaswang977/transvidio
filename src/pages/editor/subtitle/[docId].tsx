@@ -40,7 +40,7 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
     }, [srcJson, dstJson])
 
     React.useEffect(() => {
-      setAutoFillInit(true)
+      if (setAutoFillInit) setAutoFillInit(true)
     }, [])
 
     const defaultValue: SubtitleType = {

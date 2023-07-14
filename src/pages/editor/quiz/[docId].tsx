@@ -48,7 +48,7 @@ const QuizEditor = React.forwardRef<AutofillHandler | null, EditorComponentProps
     }, [srcJson, dstJson])
 
     React.useEffect(() => {
-      setAutoFillInit(true)
+      if (setAutoFillInit) setAutoFillInit(true)
     }, [])
 
     let srcObj = defaultValue
