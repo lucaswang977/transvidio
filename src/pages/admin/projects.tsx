@@ -9,13 +9,12 @@ import { type ProjectRelatedUser } from "~/server/api/routers/project"
 import { RefreshCcw } from "lucide-react"
 import { Button } from "~/components/ui/button"
 import { type NextPageWithLayout } from "../_app"
-import { TableLoading } from "~/components/ui/table-loading"
 import { type ProjectAiParamters } from "~/types"
 
 const ProjectManagement: NextPageWithLayout = () => {
   const { data: session } = useSession()
   const [rowSelection, setRowSelection] = React.useState({})
-  const { data: projects, status, isRefetching, refetch } = api.project.getAll.useQuery(
+  const { data: projects, isFetching, isLoading, isPreviousData, refetch } = api.project.getAll.useQuery(
     undefined, // no input
     {
       enabled: session?.user !== undefined,
@@ -56,9 +55,9 @@ const ProjectManagement: NextPageWithLayout = () => {
       <div className="flex items-center justify-between space-y-2">
         <h2 className="text-xl md:text-3xl font-bold tracking-tight">All projects</h2>
         <div className="flex space-x-2">
-          <Button size="sm" disabled={isRefetching} variant="outline" onClick={handleRefetch}>
-            <RefreshCcw className={`mr-2 h-4 w-4 ${isRefetching ? "animate-spin" : ""}`} />
-            Refresh
+          <Button size="sm" disabled={isFetching} variant="outline" onClick={handleRefetch}>
+            <RefreshCcw className={`mr-2 h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
+            {(isFetching) ? "Loading" : "Refresh"}
           </Button>
           {
             session?.user.role === "ADMIN" ?
@@ -68,19 +67,16 @@ const ProjectManagement: NextPageWithLayout = () => {
         </div>
       </div>
 
-      {status === "loading" ?
-        <TableLoading className="mt-6" />
-        :
-        <DataTable
-          columns={columns}
-          data={data}
-          rowSelection={rowSelection}
-          setRowSelection={setRowSelection}
-          handleRefetch={handleRefetch}
-          user={session?.user}
-          manualPagination={true}
-        />
-      }
+      <DataTable
+        disabled={isLoading || isPreviousData}
+        columns={columns}
+        data={data}
+        rowSelection={rowSelection}
+        setRowSelection={setRowSelection}
+        handleRefetch={handleRefetch}
+        user={session?.user}
+        manualPagination={true}
+      />
     </div>
 
   )

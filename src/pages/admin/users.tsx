@@ -8,12 +8,11 @@ import { type NextPageWithLayout } from "../_app"
 import { naturalTime } from "~/utils/helper"
 import { Button } from "~/components/ui/button"
 import { RefreshCcw } from "lucide-react"
-import { TableLoading } from "~/components/ui/table-loading"
 
 const UserManagement: NextPageWithLayout = () => {
   const [rowSelection, setRowSelection] = React.useState({})
   const { data: session } = useSession();
-  const { data: users, status, isRefetching, refetch } = api.user.getAll.useQuery(
+  const { data: users, isFetching, isLoading, isPreviousData, refetch } = api.user.getAll.useQuery(
     undefined, // no input
     {
       enabled: session?.user !== undefined,
@@ -47,25 +46,22 @@ const UserManagement: NextPageWithLayout = () => {
       <div className="flex items-center justify-between space-y-2">
         <h2 className="text-3xl font-bold tracking-tight">All users</h2>
         <div className="flex space-x-2">
-          <Button disabled={isRefetching} size="sm" variant="outline" onClick={handleRefetch}>
-            <RefreshCcw className={`mr-2 h-4 w-4 ${isRefetching ? "animate-spin" : ""}`} />
-            Refresh
+          <Button disabled={isFetching} size="sm" variant="outline" onClick={handleRefetch}>
+            <RefreshCcw className={`mr-2 h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
+            {(isFetching) ? "Loading" : "Refresh"}
           </Button>
         </div>
 
       </div>
       <div>
-        {status === "loading" ?
-          <TableLoading className="mt-6" />
-          :
-          <DataTable
-            columns={columns}
-            data={usersData}
-            rowSelection={rowSelection}
-            setRowSelection={setRowSelection}
-            manualPagination={false}
-          />
-        }
+        <DataTable
+          disabled={isLoading || isPreviousData}
+          columns={columns}
+          data={usersData}
+          rowSelection={rowSelection}
+          setRowSelection={setRowSelection}
+          manualPagination={false}
+        />
       </div>
     </div>
   )

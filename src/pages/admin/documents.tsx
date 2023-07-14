@@ -56,7 +56,7 @@ const DocumentManagement: NextPageWithLayout = () => {
     }
   }, [p])
 
-  const { data: result, isFetching, refetch, isPreviousData } = api.document.getAll.useQuery(
+  const { data: result, isFetching, isLoading, isPreviousData, refetch } = api.document.getAll.useQuery(
     {
       pageSize: pageSize,
       pageIndex: pageIndex,
@@ -187,7 +187,7 @@ const DocumentManagement: NextPageWithLayout = () => {
       </div>
 
       <DataTable
-        disabled={isPreviousData}
+        disabled={isLoading || isPreviousData}
         columns={columns}
         data={data}
         rowSelection={rowSelection}
