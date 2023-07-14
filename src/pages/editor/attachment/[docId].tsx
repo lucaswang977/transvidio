@@ -117,7 +117,7 @@ const AttachmentEditor = React.forwardRef<AutofillHandler | null,
       }
 
       return (
-        <div className="flex-col space-y-2">
+        <div className="p-8 flex flex-col space-y-2">
           <Label>Filename</Label>
           <div className="flex">
             <Input

@@ -36,8 +36,11 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
     const reactPlayerRef = React.useRef<ReactPlayer>(null);
     const [captions, setCaptions] = React.useState({ src: "", dst: "" })
     React.useImperativeHandle(ref, () => {
-      if (setAutoFillInit) setAutoFillInit(true)
       return { autofillHandler: handleAutoFill }
+    }, [srcJson, dstJson])
+
+    React.useEffect(() => {
+      if (setAutoFillInit) setAutoFillInit(true)
     }, [])
 
     const defaultValue: SubtitleType = {
@@ -68,7 +71,6 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
           sentences.push(s.text)
           const sentence = sentences.join(" ")
           if (regex.test(sentence.trim())) {
-            console.log(sentence)
             if (!dst || dst.text.length === 0) {
               await handleTranslate(aip, sentence, (output) => {
                 const _i = i
@@ -90,13 +92,12 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
     }
 
     return (
-      <div className="flex flex-col items-center lg:items-start lg:flex-row lg:space-x-2 lg:py-6">
+      <div className="pt-8 flex flex-col items-center lg:items-start lg:flex-row lg:space-x-2">
         <div className="flex flex-col items-center space-y-2 mb-4 lg:order-last lg:mx-4">
           <VideoPlayer
             url={srcObj.videoUrl}
             ref={reactPlayerRef}
             handleProgress={(playedSeconds: number) => {
-              console.log("played: ", playedSeconds)
               const index = srcObj.subtitle.findIndex(
                 (item) =>
                   (playedSeconds * 1000 >= item.from) &&
@@ -116,7 +117,7 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
           <p className="text-sm w-[500px] text-center">{captions.src}</p>
         </div>
 
-        <ScrollArea className="h-[50vh] lg:h-[80vh]">
+        <ScrollArea className="h-[60vh] lg:h-[90vh]">
           <div className="flex">
             <div className="flex flex-col space-y-2">
               {

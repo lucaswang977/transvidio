@@ -19,15 +19,16 @@ import { clone } from "ramda";
 
 const ArticleEditor = React.forwardRef<AutofillHandler | null, EditorComponentProps>(
   ({ srcJson, dstJson, handleChange, permission, setAutoFillInit }, ref) => {
-
     const defaultValue: ArticleType = {
       html: "",
     }
     React.useImperativeHandle(ref, () => {
-      if (setAutoFillInit) setAutoFillInit(true)
       return { autofillHandler: handleAutoFill }
-    }, [])
+    }, [srcJson, dstJson])
 
+    React.useEffect(() => {
+      if (setAutoFillInit) setAutoFillInit(true)
+    }, [])
 
     let srcObj = defaultValue
     let dstObj = defaultValue
@@ -64,7 +65,7 @@ const ArticleEditor = React.forwardRef<AutofillHandler | null, EditorComponentPr
 
     const { innerHeight: height } = window
     return (
-      <div className="grid grid-rows-2 space-y-1 md:space-y-0 md:grid-rows-1 md:space-x-2 md:grid-cols-2">
+      <div className="p-8 grid grid-rows-2 space-y-1 md:space-y-0 md:grid-rows-1 md:space-x-2 md:grid-cols-2">
         <RichtextEditor
           disabled={!permission.srcWritable}
           height={`${height * 0.8}px`}

@@ -37,8 +37,11 @@ const CurriculumEditor = React.forwardRef<AutofillHandler | null, EditorComponen
       sections: []
     }
     React.useImperativeHandle(ref, () => {
-      if (setAutoFillInit) setAutoFillInit(true)
       return { autofillHandler: handleAutoFill }
+    }, [srcJson, dstJson])
+
+    React.useEffect(() => {
+      if (setAutoFillInit) setAutoFillInit(true)
     }, [])
 
     let srcObj = defaultValue
@@ -125,7 +128,7 @@ const CurriculumEditor = React.forwardRef<AutofillHandler | null, EditorComponen
       })
     }
     return (
-      <div className="w-full space-y-2">
+      <div className="p-8 w-full space-y-2">
         <div className="flex flex-col space-y-2">
           {srcObj.sections.map((section, i) => {
             if (!dstObj.sections[i]) {

@@ -44,10 +44,12 @@ const QuizEditor = React.forwardRef<AutofillHandler | null, EditorComponentProps
     }
 
     React.useImperativeHandle(ref, () => {
-      if (setAutoFillInit) setAutoFillInit(true)
       return { autofillHandler: handleAutoFill }
-    }, [])
+    }, [srcJson, dstJson])
 
+    React.useEffect(() => {
+      if (setAutoFillInit) setAutoFillInit(true)
+    }, [])
 
     let srcObj = defaultValue
     let dstObj = defaultValue
@@ -238,7 +240,7 @@ const QuizEditor = React.forwardRef<AutofillHandler | null, EditorComponentProps
     }
 
     return (
-      <div className="w-full flex flex-col space-y-2">
+      <div className="p-8 w-full flex flex-col space-y-2">
         {
           srcObj.results.map((q, i) => {
             return (
