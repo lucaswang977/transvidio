@@ -97,8 +97,8 @@ export const DocumentEditor = (props: DocumentEditorProps) => {
   }
   const [permission, setPermission] = React.useState<DocPermission>(defaultPermission)
 
-  const [srcObj, setSrcObj] = React.useState<Prisma.JsonValue | undefined>()
-  const [dstObj, setDstObj] = React.useState<Prisma.JsonValue | undefined>()
+  const [srcJson, setSrcJson] = React.useState<Prisma.JsonValue | undefined>()
+  const [dstJson, setDstJson] = React.useState<Prisma.JsonValue | undefined>()
 
   const { status } = api.document.load.useQuery(
     { documentId: props.docId },
@@ -139,8 +139,8 @@ export const DocumentEditor = (props: DocumentEditorProps) => {
           }
 
           setPermission(np)
-          if (doc.srcJson) setSrcObj(doc.srcJson)
-          if (doc.dstJson) setDstObj(doc.dstJson)
+          if (doc.srcJson) setSrcJson(doc.srcJson)
+          if (doc.dstJson) setDstJson(doc.dstJson)
         }
       },
       onError: (err) => {
@@ -150,8 +150,8 @@ export const DocumentEditor = (props: DocumentEditorProps) => {
   )
 
   const handleChange: HandleChangeInterface = (t, updater) => {
-    if (t === "src") setSrcObj(updater)
-    else setDstObj(updater)
+    if (t === "src") setSrcJson(updater)
+    else setDstJson(updater)
     setSaveState("dirty")
   }
 
@@ -160,8 +160,8 @@ export const DocumentEditor = (props: DocumentEditorProps) => {
       setSaveState("saving")
       mutation.mutate({
         documentId: props.docId,
-        src: permission.srcWritable ? JSON.stringify(srcObj) : undefined,
-        dst: JSON.stringify(dstObj)
+        src: permission.srcWritable ? JSON.stringify(srcJson) : undefined,
+        dst: JSON.stringify(dstJson)
       }, {
         onSuccess: (di) => {
           setDocInfo(di)
@@ -252,8 +252,8 @@ export const DocumentEditor = (props: DocumentEditorProps) => {
                 </div>
               </div>
               <div className="flex flex-col items-center space-y-4 pt-16">
-                {props.children(
-                  srcObj, dstObj,
+                { props.children(
+                  srcJson, dstJson,
                   handleChange,
                   childrenRef,
                   permission,

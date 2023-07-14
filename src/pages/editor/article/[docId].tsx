@@ -19,15 +19,16 @@ import { clone } from "ramda";
 
 const ArticleEditor = React.forwardRef<AutofillHandler | null, EditorComponentProps>(
   ({ srcJson, dstJson, handleChange, permission, setAutoFillInit }, ref) => {
-
     const defaultValue: ArticleType = {
       html: "",
     }
     React.useImperativeHandle(ref, () => {
-      if (setAutoFillInit) setAutoFillInit(true)
       return { autofillHandler: handleAutoFill }
-    }, [])
+    }, [srcJson, dstJson])
 
+    React.useEffect(() => {
+      setAutoFillInit(true)
+    }, [])
 
     let srcObj = defaultValue
     let dstObj = defaultValue

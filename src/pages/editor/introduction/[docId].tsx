@@ -38,8 +38,11 @@ const IntroductionEditor = React.forwardRef<AutofillHandler | null, EditorCompon
       target_audiences: []
     }
     React.useImperativeHandle(ref, () => {
-      if (setAutoFillInit) setAutoFillInit(true)
       return { autofillHandler: handleAutoFill }
+    }, [srcJson, dstJson])
+
+    React.useEffect(() => {
+      setAutoFillInit(true)
     }, [])
 
     let srcObj = defaultValue

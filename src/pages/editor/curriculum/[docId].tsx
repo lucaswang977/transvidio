@@ -37,8 +37,11 @@ const CurriculumEditor = React.forwardRef<AutofillHandler | null, EditorComponen
       sections: []
     }
     React.useImperativeHandle(ref, () => {
-      if (setAutoFillInit) setAutoFillInit(true)
       return { autofillHandler: handleAutoFill }
+    }, [srcJson, dstJson])
+
+    React.useEffect(() => {
+      setAutoFillInit(true)
     }, [])
 
     let srcObj = defaultValue
