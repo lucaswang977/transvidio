@@ -233,7 +233,7 @@ export const DocumentEditor = (props: DocumentEditorProps) => {
                             <Loader2 className="w-4 animate-spin mr-1" />
                             : <Bot className="h-4 w-4 mr-1" />
                           }
-                          <span>{filling ? "Cancel filling" : "Auto Fill"}</span>
+                          <span>{filling ? "Cancel" : "Auto Fill"}</span>
                         </Button>
                         : <></>
                     }
@@ -252,7 +252,7 @@ export const DocumentEditor = (props: DocumentEditorProps) => {
                 </div>
               </div>
               <div className="flex flex-col items-center space-y-4 pt-16">
-                { props.children(
+                {props.children(
                   srcJson, dstJson,
                   handleChange,
                   childrenRef,

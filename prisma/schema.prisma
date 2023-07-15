@@ -3,7 +3,6 @@
 
 generator client {
     provider = "prisma-client-js"
-    previewFeatures = ["jsonProtocol"]
 }
 
 datasource db {
@@ -60,11 +59,11 @@ model User {
     lastLogin     DateTime  @default(now())
     blocked       Boolean   @default(false)
 
-    accounts      Account[]
-    sessions      Session[]
+    accounts Account[]
+    sessions Session[]
 
-    projects      ProjectsOfUsers[]
-    documents     Document[]
+    projects  ProjectsOfUsers[]
+    documents Document[]
 }
 
 model VerificationToken {
@@ -82,25 +81,25 @@ enum Language {
 }
 
 model Project {
-    id            String    @id @default(cuid())
-    name          String
-    srcLang       Language
-    dstLang       Language
-    memo          String?
-    aiParameter   Json?
-    createdAt     DateTime  @default(now())
-    updatedAt     DateTime  @updatedAt
+    id          String   @id @default(cuid())
+    name        String
+    srcLang     Language
+    dstLang     Language
+    memo        String?
+    aiParameter Json?
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
 
-    documents     Document[]
-    users         ProjectsOfUsers[]
+    documents Document[]
+    users     ProjectsOfUsers[]
 }
 
 model ProjectsOfUsers {
-    project       Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-    projectId     String
-    user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-    userId        String
-    assignedAt    DateTime @default(now())
+    project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+    projectId  String
+    user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+    userId     String
+    assignedAt DateTime @default(now())
 
     @@id([projectId, userId])
 }
@@ -122,23 +121,29 @@ enum DocumentState {
 }
 
 model Document {
-    id            String           @id @default(cuid())
-    seq           Int              @default(9999)
-    title         String
-    type          DocumentType
-    srcJson       Json?
-    dstJson       Json?
-    state         DocumentState    @default(OPEN)
-    memo          String?
+    id      String        @id @default(cuid())
+    seq     Int           @default(9999)
+    title   String
+    type    DocumentType
+    srcJson Json?
+    dstJson Json?
+    state   DocumentState @default(OPEN)
+    memo    String?
 
-    createdAt     DateTime         @default(now())
-    updatedAt     DateTime         @updatedAt
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
 
-    projectId     String
-    project       Project          @relation(fields: [projectId], references: [id], onDelete: NoAction)
+    projectId String
+    project   Project @relation(fields: [projectId], references: [id], onDelete: NoAction)
 
-    userId        String?
-    user          User?            @relation(fields: [userId], references: [id], onDelete: NoAction)
+    userId String?
+    user   User?   @relation(fields: [userId], references: [id], onDelete: NoAction)
+}
+
+model AppConfig {
+    id    String @id @default(cuid())
+    key   String @unique
+    value String
 }
 
 enum ActivityTarget {
@@ -160,20 +165,14 @@ enum ActivityActionType {
 }
 
 model Activity {
-    id            String           @id @default(cuid())
-    createdAt     DateTime         @default(now())
-    seq           Int              @default(autoincrement())
-    memo          String
-    target        ActivityTarget
-    action        ActivityActionType
+    id        String             @id @default(cuid())
+    createdAt DateTime           @default(now())
+    seq       Int                @default(autoincrement())
+    memo      String
+    target    ActivityTarget
+    action    ActivityActionType
 
-    userId        String?
-    projectId     String?
-    documentId    String?
-}
-
-model AppConfig {
-    id            String           @id @default(cuid())
-    key           String
-    value         String
+    userId     String?
+    projectId  String?
+    documentId String?
 }

@@ -6,7 +6,7 @@ import { ProjectCreateDialog } from "~/components/create-project-dialog"
 import Layout from "./layout"
 import { api } from "~/utils/api";
 import { type ProjectRelatedUser } from "~/server/api/routers/project"
-import { RefreshCcw } from "lucide-react"
+import { RefreshCw } from "lucide-react"
 import { Button } from "~/components/ui/button"
 import { type NextPageWithLayout } from "../_app"
 import { type ProjectAiParamters } from "~/types"
@@ -56,7 +56,7 @@ const ProjectManagement: NextPageWithLayout = () => {
         <h2 className="text-xl md:text-3xl font-bold tracking-tight">All projects</h2>
         <div className="flex space-x-2">
           <Button size="sm" disabled={isFetching} variant="outline" onClick={handleRefetch}>
-            <RefreshCcw className={`mr-2 h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
+            <RefreshCw className={`mr-2 h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
             {(isFetching) ? "Loading" : "Refresh"}
           </Button>
           {

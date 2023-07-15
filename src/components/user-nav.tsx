@@ -1,5 +1,5 @@
-import { CreditCard, LogOut, User } from "lucide-react"
-
+import * as React from "react"
+import { CreditCard, LogOut, Settings2, User } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar"
 import { Button } from "~/components/ui/button"
 import {
@@ -9,15 +9,16 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu"
 
 import { signOut, useSession } from "next-auth/react"
 import { extractLetters } from "~/utils/helper"
+import AppConfigDialog from "~/components/app-config-dialog"
 
 export function UserNav() {
   const { data: sessionData } = useSession()
+  const [configOpen, setConfigOpen] = React.useState(false)
   const user = {
     name: "",
     image: "",
@@ -50,23 +51,38 @@ export function UserNav() {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
+        {
+          sessionData?.user.role === "ADMIN" &&
+          <>
+            <DropdownMenuGroup>
+              <AppConfigDialog
+                open={configOpen}
+                setOpen={setConfigOpen}
+                trigger={
+                  <>
+                    <Settings2 className="mr-2 h-4 w-4" />
+                    <span>Config</span>
+                  </>
+                }
+              />
+            </DropdownMenuGroup>
+            <DropdownMenuSeparator />
+          </>
+        }
         <DropdownMenuGroup>
           <DropdownMenuItem disabled={true}>
             <User className="mr-2 h-4 w-4" />
             <span>Profile</span>
-            <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut>
           </DropdownMenuItem>
           <DropdownMenuItem disabled={true}>
             <CreditCard className="mr-2 h-4 w-4" />
             <span>Billing</span>
-            <DropdownMenuShortcut>⌘B</DropdownMenuShortcut>
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => signOut({ callbackUrl: "/" })}>
           <LogOut className="mr-2 h-4 w-4" />
           <span>Log out</span>
-          <DropdownMenuShortcut>⇧⌘Q</DropdownMenuShortcut>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

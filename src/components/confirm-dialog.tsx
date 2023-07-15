@@ -52,11 +52,10 @@ const ConfirmDialog = (props: ConfirmDialogProps) => {
 
 // https://codesandbox.io/embed/r9sq1q
 const ConfirmDialogInDropdown = (props: ConfirmDialogProps) => {
-  const [open, setOpen] = React.useState(false)
   return (
     <DropdownMenuDialogItem
-      onOpenChange={setOpen}
-      open={open}
+      onOpenChange={props.setOpen}
+      open={props.open}
       disabled={props.disabled}
       triggerChildren={props.trigger}>
       <DialogHeader>
@@ -68,9 +67,9 @@ const ConfirmDialogInDropdown = (props: ConfirmDialogProps) => {
       <DialogFooter>
         <Button onClick={() => {
           props.handleConfirm()
-          setOpen(false)
+          props.setOpen(false)
         }}>OK</Button>
-        <Button variant="secondary" onClick={() => setOpen(false)}>Cancel</Button>
+        <Button variant="secondary" onClick={() => props.setOpen(false)}>Cancel</Button>
       </DialogFooter>
     </DropdownMenuDialogItem>
   )

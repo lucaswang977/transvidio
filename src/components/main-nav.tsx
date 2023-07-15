@@ -1,11 +1,34 @@
 import Link from "next/link"
 import { useSession } from "next-auth/react"
-import { useRouter } from "next/router"
+import { usePathname } from "next/navigation"
 
 import { cn } from "~/utils/helper"
 import { Button } from "~/components/ui/button"
 import { Menu, X } from "lucide-react"
 import * as React from "react"
+
+const navLinks = [
+  {
+    title: "Overview",
+    href: "/admin",
+    adminOnly: false
+  },
+  {
+    title: "Users",
+    href: "/admin/users",
+    adminOnly: true
+  },
+  {
+    title: "Projects",
+    href: "/admin/projects",
+    adminOnly: false
+  },
+  {
+    title: "Documents",
+    href: "/admin/documents",
+    adminOnly: false
+  },
+]
 
 export function MainNav({
   className,
@@ -13,8 +36,7 @@ export function MainNav({
 }: React.HTMLAttributes<HTMLElement>) {
   const [menuOpen, setMenuOpen] = React.useState(false)
   const { data: sessionData } = useSession()
-  const router = useRouter()
-  const { pathname } = router
+  const pathname = usePathname()
 
   return (
     <nav
@@ -32,33 +54,10 @@ export function MainNav({
       <div
         onClick={() => setMenuOpen(false)}
         className={`${menuOpen ? "flex flex-col" : "hidden"} border rounded px-6 py-2 bg-white dark:bg-black space-y-2 z-10 md:space-y-0 md:flex md:flex-row md:border-0 md:space-x-8`}>
-        <Link
-          href="/admin/"
-          className={`text-sm ${pathname === "/admin" ? "font-bold" : "text-muted-foreground"} transition-colors hover:text-primary md:block`}
-        >
-          Overview
-        </Link>
-        {
-          sessionData?.user?.role === "ADMIN" ?
-            <Link
-              href="/admin/users"
-              className={`text-sm ${pathname === "/admin/users" ? "font-bold" : "text-muted-foreground"} transition-colors hover:text-primary md:block`}
-            >
-              Users
-            </Link> : <></>
-        }
-        <Link
-          href="/admin/projects"
-          className={`text-sm ${pathname === "/admin/projects" ? "font-bold" : "text-muted-foreground"} transition-colors hover:text-primary md:block`}
-        >
-          Projects
-        </Link>
-        <Link
-          href="/admin/documents"
-          className={`text-sm ${pathname === "/admin/documents" ? "font-bold" : "text-muted-foreground"} transition-colors hover:text-primary md:block`}
-        >
-          Documents
-        </Link>
+        {navLinks.map((item) => {
+          const result = (<Link key={item.href} href={item.href} className={`text-sm ${pathname === item.href ? "font-bold" : "text-muted-foreground"} transition-colors hover:text-primary md:block`} > {item.title} </Link>)
+          if (!item.adminOnly || sessionData?.user?.role === "ADMIN") return result
+        })}
       </div>
     </nav >
   )

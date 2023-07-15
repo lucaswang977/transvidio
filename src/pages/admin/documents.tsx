@@ -1,19 +1,20 @@
 import * as React from "react"
 import { useSession } from "next-auth/react"
-import {
-  type DocumentColumn,
-  columns,
-  getDocStateBadges,
-  getDocTypeBadges
-} from "~/components/columns/documents"
 import { DataTable } from "~/components/ui/data-table"
 import Layout from "./layout"
 import { useRouter } from 'next/router';
 import { api } from "~/utils/api";
-import { RefreshCcw } from "lucide-react"
+import { RefreshCw } from "lucide-react"
 import { Button } from "~/components/ui/button"
 import { DocumentCreateDialog } from "~/components/create-document-dialog"
-import { type NextPageWithLayout } from "../_app"
+import type { NextPageWithLayout } from "../_app"
+import type { DocumentColumn } from "~/components/columns/documents"
+import {
+  columns,
+  getDocStateBadges,
+  getDocTypeBadges
+} from "~/components/columns/documents"
+
 import {
   Select,
   SelectContent,
@@ -23,6 +24,7 @@ import {
   SelectTrigger,
   SelectValue
 } from "~/components/ui/select"
+
 import { truncateString } from "~/utils/helper"
 import type { DocumentState, DocumentType } from "@prisma/client"
 import type { PaginationState } from "@tanstack/react-table"
@@ -175,7 +177,7 @@ const DocumentManagement: NextPageWithLayout = () => {
 
         <div className="flex flex-col space-y-2 md:flex-row md:space-y-0 md:space-x-2">
           <Button className="w-28" disabled={isFetching} variant="outline" onClick={() => refetch()}>
-            <RefreshCcw className={`mr-2 h-4 w-4 ${(isFetching) ? "animate-spin" : ""}`} />
+            <RefreshCw className={`mr-2 h-4 w-4 ${(isFetching) ? "animate-spin" : ""}`} />
             {(isFetching) ? "Loading" : "Refresh"}
           </Button>
           {
