@@ -7,7 +7,7 @@ import {
 import { env } from "~/env.mjs";
 import { delay } from "~/utils/helper";
 import { getAll } from '@vercel/edge-config';
-import type { AppConfig } from "@prisma/client";
+import type { AppConfig } from "~/types";
 import { TRPCError } from "@trpc/server";
 
 type EdgeConfigResponse = { status: string } |

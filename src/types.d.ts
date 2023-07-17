@@ -86,3 +86,10 @@ export type DocPermission = {
   dstReadable: boolean,
   dstWritable: boolean,
 }
+
+export type AppConfig = {
+  key: string,
+  value: string
+}
+
+

@@ -4,7 +4,6 @@ import { DropdownMenuDialogItem } from "~/components/ui/dropdown-dialog-item"
 import { DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "~/components/ui/dialog"
 import { useSession } from "next-auth/react"
 import { Button } from "~/components/ui/button"
-import type { AppConfig } from "@prisma/client";
 import { DocumentType } from "@prisma/client";
 import { Separator } from "~/components/ui/separator";
 import { Input } from "~/components/ui/input";
@@ -17,6 +16,7 @@ import {
   SelectValue,
 } from "~/components/ui/select"
 import { clone } from "ramda";
+import type { AppConfig } from "~/types";
 
 export type AppConfigDialogProps = {
   trigger: JSX.Element,
