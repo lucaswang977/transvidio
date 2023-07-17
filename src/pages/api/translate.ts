@@ -7,6 +7,7 @@ import {
 } from 'langchain/prompts';
 import type { NextRequest } from 'next/server';
 import type { ProjectAiParamters } from '~/types';
+import { get } from '@vercel/edge-config';
 
 export const runtime = 'edge';
 
@@ -26,6 +27,8 @@ export default async function handler(req: NextRequest) {
         background: background,
         syllabus: syllabus
       }
+      const model = await get("general_openaiGptModel")
+      const modelName = model ? model.toString() : "gpt-3.5-turbo"
 
       // Check if the request is for a streaming response.
       const streaming = req.headers.get('accept') === 'text/event-stream';
@@ -36,10 +39,7 @@ export default async function handler(req: NextRequest) {
         const stream = new TransformStream();
         const writer = stream.writable.getWriter();
         const chat = new ChatOpenAI({
-          // modelName: "gpt-4-0613",
-          // modelName: "gpt-3.5-turbo-0301",
-          modelName: "gpt-3.5-turbo",
-          // modelName: "gpt-3.5-turbo-16k-0613",
+          modelName: modelName,
           streaming,
           temperature: 0.95,
           callbackManager: CallbackManager.fromHandlers({

@@ -16,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select"
+import { clone } from "ramda";
 
 export type AppConfigDialogProps = {
   trigger: JSX.Element,
@@ -25,26 +26,44 @@ export type AppConfigDialogProps = {
 }
 
 const AppConfigDialog = (props: AppConfigDialogProps) => {
+  const [appConfig, setAppConfig] = React.useState<AppConfig[]>([])
+  const [origConfig, setOrigConfig] = React.useState<AppConfig[]>([])
   const { data: session } = useSession();
   const [working, setWorking] = React.useState(false)
   const mutation = api.config.update.useMutation()
-  const { data: result } = api.config.getAll.useQuery(
+  api.config.getAll.useQuery(
     undefined,
     {
       enabled: (session !== null && session.user !== undefined && session.user.role === "ADMIN"),
       refetchOnWindowFocus: false,
+      onSuccess: (result) => {
+        const obj = clone(result)
+        setAppConfig(result)
+        setOrigConfig(obj)
+      }
     },
   )
 
-  const configData = result as AppConfig[]
-  // gpt model
-  // basic cost
-
-  const handleConfirm = () => {
+  const handleConfirm = (setOpen: (t: boolean) => void) => {
     setWorking(true)
-    setWorking(false)
+    for (const c of appConfig) {
+      const orig = origConfig.find(i => i.key === c.key)
+      if (!orig || orig.value !== c.value) {
+        mutation.mutate({
+          value: c.value,
+          key: c.key
+        },
+          {
+            onSuccess: () => {
+              setWorking(false)
+              setOpen(false)
+            }
+          })
+      }
+    }
   }
 
+  const general_openaiGptModel = appConfig.find(i => i.key === "general_openaiGptModel")
   return (
     <DropdownMenuDialogItem
       onOpenChange={props.setOpen}
@@ -61,12 +80,23 @@ const AppConfigDialog = (props: AppConfigDialogProps) => {
       <Tabs defaultValue="general" className="w-full">
         <TabsList>
           <TabsTrigger value="general">General</TabsTrigger>
-          <TabsTrigger value="cost">Cost</TabsTrigger>
+          <TabsTrigger value="cost">Basic Cost</TabsTrigger>
         </TabsList>
         <TabsContent className="p-4" value="general">
           <div className="flex space-x-2 items-center">
             <p className="text-sm">OpenAI GPT model:</p>
-            <Select onValueChange={(e) => { console.log(e) }} defaultValue="gpt-3.5-turbo">
+            <Select
+              onValueChange={(e) => {
+                setAppConfig(c => {
+                  const obj = clone(c)
+                  const t = obj.find(i => i.key === "general_openaiGptModel")
+                  if (t) t.value = e
+                  else obj.push({ key: "general_openaiGptModel", value: e })
+
+                  return obj
+                })
+              }}
+              defaultValue={general_openaiGptModel ? general_openaiGptModel.value : "gpt-3.5-turbo"}>
               <SelectTrigger className="w-[200px] h-8 text-xs">
                 <SelectValue placeholder="GPT Model" />
               </SelectTrigger>
@@ -84,30 +114,41 @@ const AppConfigDialog = (props: AppConfigDialogProps) => {
           <div className="grid grid-cols-3 space-y-1 w-3/4 items-center">
             {
               Object.keys(DocumentType).map((name) => {
-                return (
-                  <>
-                    <p className="text-sm col-span-1">{name}</p>
+                const o = appConfig.find(i => i.key === `basicCost_${name}`)
+                const v = o ? o.value : "0"
+                return ([
+                  <p key={`p-${name}`} className="text-sm col-span-1">{name}</p>,
+                  <div key={`d-${name}`} className="items-center col-span-2 flex space-x-1 text-gray-400">
+                    <span >$</span>
                     <Input
-                      className="col-span-2"
-                      placeholder="0.0"
-                      onChange={(e) => { console.log(e.currentTarget.value) }} />
-                  </>
-                )
+                      placeholder="0"
+                      value={v}
+                      onChange={(e) => {
+                        setAppConfig(v => {
+                          const c = v.find(i => i.key === `basicCost_${name}`)
+                          if (c) c.value = e.currentTarget.value
+                          else v.push({ key: `basicCost_${name}`, value: e.currentTarget.value })
+
+                          return [...v]
+                        })
+                      }} />
+                  </div>
+                ])
               })
             }
           </div>
-          <p className="text-xs mt-4">* the currency is in US dollar.</p>
+          <p className="text-xs mt-4 text-gray-500">* the currency is in US dollar.</p>
+          <p className="text-xs text-gray-500">* modification will only affect newly created payment records.</p>
         </TabsContent>
       </Tabs>
       <DialogFooter>
         <Button
           disabled={working}
           onClick={() => {
-            handleConfirm()
-            props.setOpen(false)
+            handleConfirm(props.setOpen)
           }}>{working ? "Saving" : "Save"}</Button>
       </DialogFooter>
-    </DropdownMenuDialogItem>
+    </DropdownMenuDialogItem >
   )
 }
 

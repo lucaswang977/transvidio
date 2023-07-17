@@ -140,12 +140,6 @@ model Document {
     user   User?   @relation(fields: [userId], references: [id], onDelete: NoAction)
 }
 
-model AppConfig {
-    id    String @id @default(cuid())
-    key   String @unique
-    value String
-}
-
 enum ActivityTarget {
     USER
     PROJECT

@@ -86,6 +86,9 @@ dependencies:
   '@trpc/server':
     specifier: ^10.34.0
     version: 10.34.0
+  '@vercel/edge-config':
+    specifier: ^0.2.1
+    version: 0.2.1
   bcryptjs:
     specifier: ^2.4.3
     version: 2.4.3
@@ -2870,6 +2873,17 @@ packages:
       '@typescript-eslint/types': 5.62.0
       eslint-visitor-keys: 3.4.1
     dev: true
+
+  /@vercel/edge-config-fs@0.1.0:
+    resolution: {integrity: sha512-NRIBwfcS0bUoUbRWlNGetqjvLSwgYH/BqKqDN7vK1g32p7dN96k0712COgaz6VFizAm9b0g6IG6hR6+hc0KCPg==}
+    dev: false
+
+  /@vercel/edge-config@0.2.1:
+    resolution: {integrity: sha512-847kYqJEbga4PGgNrctQ9XsD+2Kw/S+UjzZnIFpebQ9VbdtB0MX4anq33WetcYZYPfhZd2L0uXVnY/BcjI5dOw==}
+    engines: {node: '>=14.6'}
+    dependencies:
+      '@vercel/edge-config-fs': 0.1.0
+    dev: false
 
   /acorn-jsx@5.3.2(acorn@8.10.0):
     resolution: {integrity: sha512-rq9s+JNhf0IChjtDXxllJ7g41oZk5SlXtp0LHwyA5cejwn7vKmKp4pPri6YEePv2PU65sAsegbXtIinmDFDXgQ==}

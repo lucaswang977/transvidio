@@ -4,9 +4,14 @@ import {
   protectedProcedure,
 } from "~/server/api/trpc";
 
-import { prisma } from "~/server/db";
 import { env } from "~/env.mjs";
 import { delay } from "~/utils/helper";
+import { getAll } from '@vercel/edge-config';
+import type { AppConfig } from "@prisma/client";
+import { TRPCError } from "@trpc/server";
+
+type EdgeConfigResponse = { status: string } |
+{ error: { code: string, message: string, missingToken: boolean } }
 
 export const configRouter = createTRPCRouter({
   update: protectedProcedure
@@ -16,37 +21,43 @@ export const configRouter = createTRPCRouter({
     }))
     .mutation(async ({ input }) => {
       if (env.DELAY_ALL_API) await delay(3000)
-
-      const value = await prisma.appConfig.findUnique({
-        where: {
-          key: input.key
-        }
+      const headers = new Headers({
+        Authorization: `Bearer ${env.VERCEL_API_TOKEN}`,
+        'Content-Type': 'application/json',
       })
-
-      if (value) {
-        const result = await prisma.appConfig.update({
-          data: {
-            value: input.value,
-          },
-          where: {
-            key: input.key
-          }
+      const update = await fetch(
+        `https://api.vercel.com/v1/edge-config/${env.VERCEL_EDGE_CONFIG_ID}/items`,
+        {
+          method: "PATCH",
+          headers: headers,
+          body: JSON.stringify({
+            items: [
+              {
+                operation: "upsert",
+                key: input.key,
+                value: input.value
+              }
+            ]
+          })
+        }
+      )
+      const result = await update.json() as EdgeConfigResponse
+      if ("error" in result) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: result.error.message
         })
-        return result
-      } else {
-        const result = await prisma.appConfig.create({
-          data: {
-            key: input.key,
-            value: input.value,
-          }
-        })
-        return result
       }
+      return result
     }),
-  getAll: protectedProcedure.query(async ({ ctx }) => {
+  getAll: protectedProcedure.query(async () => {
     if (env.DELAY_ALL_API) await delay(3000)
 
-    const result = await ctx.prisma.appConfig.findMany()
-    return result
+    const result = await getAll()
+    const allConfigs: AppConfig[] = []
+    for (const k of Object.keys(result)) {
+      allConfigs.push({ key: k, value: result[k] as string })
+    }
+    return allConfigs
   }),
 });

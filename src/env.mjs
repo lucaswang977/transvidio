@@ -32,6 +32,9 @@ export const env = createEnv({
     S3_BUCKET_NAME: z.string().min(1),
     S3_UPLOAD_FOLDER_NAME: z.string().min(1),
     OPENAI_API_KEY: z.string().min(1),
+    EDGE_CONFIG: z.string().min(1),
+    VERCEL_EDGE_CONFIG_ID: z.string().min(1),
+    VERCEL_API_TOKEN: z.string().min(1),
     DELAY_ALL_API: z.preprocess(
       (str) => str === "true" ? true : false,
       z.boolean().optional())
@@ -66,6 +69,9 @@ export const env = createEnv({
     S3_BUCKET_NAME: process.env.S3_BUCKET_NAME,
     S3_UPLOAD_FOLDER_NAME: process.env.S3_UPLOAD_FOLDER_NAME,
     OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+    EDGE_CONFIG: process.env.EDGE_CONFIG,
+    VERCEL_EDGE_CONFIG_ID: process.env.VERCEL_EDGE_CONFIG_ID,
+    VERCEL_API_TOKEN: process.env.VERCEL_API_TOKEN,
     DELAY_ALL_API: process.env.DELAY_ALL_API,
   },
   /**
