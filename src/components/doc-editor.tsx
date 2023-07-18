@@ -104,8 +104,9 @@ export const DocumentEditor = (props: DocumentEditorProps) => {
     { documentId: props.docId },
     {
       enabled: (session?.user !== undefined && props.docId !== undefined && docInfo.id === ""),
-      onSuccess: (doc) => {
-        if (doc) {
+      onSuccess: (result) => {
+        if (result) {
+          const doc = result.doc
           setDocInfo({
             id: doc.id,
             title: doc.title,
@@ -115,30 +116,7 @@ export const DocumentEditor = (props: DocumentEditorProps) => {
             projectAiParamters: doc.project.aiParameter as ProjectAiParamters
           })
 
-          const np: DocPermission = defaultPermission
-
-          if (session?.user.role === "ADMIN") {
-            np.srcReadable = true
-            np.srcWritable = true
-            np.dstReadable = true
-            np.dstWritable = true
-          } else {
-            if (doc.userId === session?.user.id) {
-              np.srcReadable = true
-              np.dstReadable = true
-              np.dstWritable = true
-              if (doc.type === "SUBTITLE") {
-                np.srcWritable = true
-              }
-            } else {
-              if (doc.type === "INTRODUCTION" || doc.type === "CURRICULUM") {
-                np.srcReadable = true
-                np.dstReadable = true
-              }
-            }
-          }
-
-          setPermission(np)
+          setPermission(result.permission)
           if (doc.srcJson) setSrcJson(doc.srcJson)
           if (doc.dstJson) setDstJson(doc.dstJson)
         }

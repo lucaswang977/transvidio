@@ -65,10 +65,11 @@ const ConfirmDialogInDropdown = (props: ConfirmDialogProps) => {
         </DialogDescription>
       </DialogHeader>
       <DialogFooter>
-        <Button onClick={() => {
-          props.handleConfirm()
-          props.setOpen(false)
-        }}>OK</Button>
+        <Button
+          disabled={props.working}
+          onClick={() => { props.handleConfirm() }}>
+          {props.working ? "Waiting" : "OK"}
+        </Button>
         <Button variant="secondary" onClick={() => props.setOpen(false)}>Cancel</Button>
       </DialogFooter>
     </DropdownMenuDialogItem>

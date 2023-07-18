@@ -336,11 +336,10 @@ export const columns: ColumnDef<DocumentColumn>[] = [
       const data = row.original
       const myself = table.options.meta?.user
       const refetch = table.options.meta?.refetchData
-      const isEditable =
-        (data.state !== "OPEN" && data.state !== "CLOSED") &&
-        (myself && data.user && data.user.id === myself.id) ||
-        (myself && myself.role === "ADMIN") ||
-        (data.type === "INTRODUCTION" || data.type === "CURRICULUM")
+      const isOpenable =
+        (myself && myself.role === "ADMIN") ||  // I am the admin
+        (data.state === "REVIEW" || data.state === "CLOSED") ||  // Doc has been submitted
+        ((data.state === "WORKING") && (myself && data.user && data.user.id === myself.id))  // I am working on it
       let editorUrl = "/"
       if (data.type === "INTRODUCTION") {
         editorUrl = "/editor/introduction/" + data.id
@@ -362,7 +361,7 @@ export const columns: ColumnDef<DocumentColumn>[] = [
             <Tooltip>
               <TooltipTrigger>
                 {
-                  isEditable ?
+                  isOpenable ?
                     <Link href={editorUrl} target="_blank">
                       <ChevronRight className="mr-2 h-4 w-4" />
                     </Link> :
@@ -371,7 +370,7 @@ export const columns: ColumnDef<DocumentColumn>[] = [
               </TooltipTrigger>
               <TooltipContent>
                 <p>{
-                  isEditable ? "Open the document" : "Document is not claimed by you"
+                  isOpenable ? "Open the document" : "Document is not claimed by you"
                 }</p>
               </TooltipContent>
             </Tooltip>

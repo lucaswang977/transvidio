@@ -7,9 +7,104 @@ import { prisma } from "~/server/db";
 import { z } from "zod";
 import { DocumentState, DocumentType, Prisma } from "@prisma/client"
 import { TRPCError } from "@trpc/server";
-import type { DocumentInfo } from "~/types";
+import type { DocPermission, DocumentInfo } from "~/types";
 import { env } from "~/env.mjs";
 import { delay } from "~/utils/helper";
+
+const getDocumentAndPermission = async (userId: string, docId: string) => {
+  const user = await prisma.user.findUnique({
+    where: {
+      id: userId,
+    }
+  })
+
+  if (!user || user.blocked) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "User invalid."
+    })
+  }
+
+  const document = await prisma.document.findUnique({
+    where: {
+      id: docId,
+    },
+    include: {
+      project: true
+    }
+  })
+
+  if (!document) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "Document not existed."
+    })
+  }
+
+  const projectRelation = await prisma.projectsOfUsers.findFirst({
+    where: {
+      projectId: document.projectId,
+      userId: userId,
+    }
+  })
+
+  const permission = getDocPermission({
+    isAdmin: user.role === "ADMIN",
+    isInProject: projectRelation !== null,
+    isClaimer: document.userId === user.id,
+    docType: document.type,
+    docState: document.state,
+  })
+
+  return { doc: document, permission: permission }
+}
+
+const getDocPermission = (cond: {
+  isAdmin: boolean,
+  isInProject: boolean,
+  isClaimer: boolean,
+  docType: DocumentType,
+  docState: DocumentState,
+}) => {
+  const defaultPermission = {
+    srcReadable: false,
+    srcWritable: false,
+    dstReadable: false,
+    dstWritable: false,
+  }
+
+  const np: DocPermission = defaultPermission
+  if (cond.isAdmin) {
+    np.srcReadable = true
+    np.srcWritable = true
+    np.dstReadable = true
+    np.dstWritable = true
+  } else {
+    // The doc is only able to be opened when I am in this project.
+    if (cond.isInProject) {
+      // If I have claimed the doc, I can translate it, but I cannot modify
+      // the source content
+      if (cond.isClaimer) {
+        np.srcReadable = true
+        np.dstReadable = true
+        np.dstWritable = true
+        // Except it is a subtitle type
+        if (cond.docType === "SUBTITLE") {
+          np.srcWritable = true
+        }
+      } else {
+        // Im in this project but this document is not claimed by me,
+        // I can read it if it has been submitted
+        if (cond.docState === "REVIEW") {
+          np.srcReadable = true
+          np.dstReadable = true
+        }
+      }
+    }
+  }
+
+  return np
+}
 
 export const documentRouter = createTRPCRouter({
   getAll: protectedProcedure
@@ -314,27 +409,12 @@ export const documentRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       if (env.DELAY_ALL_API) await delay(3000)
 
-      const document = await prisma.document.findFirst({
-        where: {
-          id: input.documentId,
-        },
-        include: {
-          project: true
-        }
-      })
+      const result = await getDocumentAndPermission(
+        ctx.session.user.id,
+        input.documentId)
 
-      if (!document) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Document not existed."
-        })
-      }
-      if (ctx.session.user.role !== "ADMIN" && document.userId != ctx.session.user.id) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Document not claimed by this user."
-        })
-      }
+      const document = result.doc
+      const permission = result.permission
 
       const docInfo: DocumentInfo = {
         title: document.title,
@@ -345,17 +425,26 @@ export const documentRouter = createTRPCRouter({
       }
 
       if (input.src) {
-        const { updatedAt } = await prisma.document.update({
-          where: {
-            id: input.documentId
-          },
-          data: {
-            dstJson: JSON.parse(input.dst) as Prisma.JsonObject,
-            srcJson: JSON.parse(input.src) as Prisma.JsonObject
-          }
-        })
-        docInfo.updatedAt = updatedAt
-      } else {
+        if (permission.srcWritable) {
+          const { updatedAt } = await prisma.document.update({
+            where: {
+              id: input.documentId
+            },
+            data: {
+              dstJson: JSON.parse(input.dst) as Prisma.JsonObject,
+              srcJson: JSON.parse(input.src) as Prisma.JsonObject
+            }
+          })
+          docInfo.updatedAt = updatedAt
+        } else {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "No permission on writing document."
+          })
+        }
+      }
+
+      if (permission.dstWritable) {
         const { updatedAt } = await prisma.document.update({
           where: {
             id: input.documentId
@@ -365,6 +454,11 @@ export const documentRouter = createTRPCRouter({
           }
         })
         docInfo.updatedAt = updatedAt
+      } else {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "No permission."
+        })
       }
 
       return docInfo
@@ -377,41 +471,8 @@ export const documentRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       if (env.DELAY_ALL_API) await delay(3000)
 
-      const document = await prisma.document.findFirst({
-        where: {
-          id: input.documentId,
-        }
-      })
-
-      if (!document) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Document not existed."
-        })
-      }
-
-      if (ctx.session.user.role !== "ADMIN") {
-        const projectRelation = await prisma.projectsOfUsers.findFirst({
-          where: {
-            projectId: document.projectId,
-            userId: ctx.session.user.id,
-          }
-        })
-        if (!projectRelation) {
-          throw new TRPCError({
-            code: "FORBIDDEN",
-            message: "No permission."
-          })
-        }
-      }
-
-      return prisma.document.findUnique({
-        where: {
-          id: input.documentId
-        },
-        include: {
-          project: true
-        }
-      })
+      return await getDocumentAndPermission(
+        ctx.session.user.id,
+        input.documentId)
     }),
 });

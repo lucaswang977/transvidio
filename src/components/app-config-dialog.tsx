@@ -31,7 +31,7 @@ const AppConfigDialog = (props: AppConfigDialogProps) => {
   const { data: session } = useSession();
   const [working, setWorking] = React.useState(false)
   const mutation = api.config.update.useMutation()
-  api.config.getAll.useQuery(
+  const { isFetching } = api.config.getAll.useQuery(
     undefined,
     {
       enabled: (session !== null && session.user !== undefined && session.user.role === "ADMIN"),
@@ -143,10 +143,12 @@ const AppConfigDialog = (props: AppConfigDialogProps) => {
       </Tabs>
       <DialogFooter>
         <Button
-          disabled={working}
+          disabled={working || isFetching}
           onClick={() => {
             handleConfirm(props.setOpen)
-          }}>{working ? "Saving" : "Save"}</Button>
+          }}>
+          {working ? "Saving" : isFetching ? "Loading" : "Save"}
+        </Button>
       </DialogFooter>
     </DropdownMenuDialogItem >
   )
