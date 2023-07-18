@@ -370,7 +370,7 @@ export const columns: ColumnDef<DocumentColumn>[] = [
               </TooltipTrigger>
               <TooltipContent>
                 <p>{
-                  isOpenable ? "Open the document" : "Document is not claimed by you"
+                  isOpenable ? "Open the document" : "Not claimed"
                 }</p>
               </TooltipContent>
             </Tooltip>
@@ -390,9 +390,8 @@ export const columns: ColumnDef<DocumentColumn>[] = [
                   <ClaimDialog refetch={() => { if (refetch) refetch() }} documentId={data.id} /> :
                   (data.state === "WORKING") ?
                     <SubmitDialog refetch={() => { if (refetch) refetch() }} documentId={data.id} /> :
-                    (data.state === "REVIEW" && myself && myself.role === "ADMIN") ?
-                      <CloseDialog refetch={() => { if (refetch) refetch() }} documentId={data.id} /> :
-                      <></>
+                    (data.state === "REVIEW" && myself && myself.role === "ADMIN") &&
+                    <CloseDialog refetch={() => { if (refetch) refetch() }} documentId={data.id} />
               }
               {
                 (myself && myself.role === "ADMIN") ?

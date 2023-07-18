@@ -129,7 +129,7 @@ const AttachmentEditor = React.forwardRef<AutofillHandler | null,
               }} />
             {
               srcObj.fileurl ?
-                <Button variant="ghost">
+                <Button disabled={!permission.srcReadable} variant="ghost">
                   <a target="_blank" href={srcObj.fileurl}><Download /></a>
                 </Button>
                 :
@@ -163,16 +163,18 @@ const AttachmentEditor = React.forwardRef<AutofillHandler | null,
               onChange={(event) => {
                 handleChange("dst", { ...dstObj, filename: event.target.value })
               }} />
-            <Button disabled={uploading || !permission.dstWritable} variant="ghost">
-              {
-                dstObj.fileurl ?
+            {
+              dstObj.fileurl ?
+                <Button disabled={!permission.dstReadable} variant="ghost">
                   <a target="_blank" href={dstObj.fileurl}><Download /></a>
-                  :
+                </Button>
+                :
+                <Button disabled={!permission.dstWritable || uploading} variant="ghost">
                   <Folder onClick={() => {
                     if (fileDstInputRef.current) fileDstInputRef.current.click()
                   }} />
-              }
-            </Button>
+                </Button>
+            }
             {
               dstObj.fileurl ?
                 <Button
