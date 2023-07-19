@@ -64,6 +64,7 @@ const AppConfigDialog = (props: AppConfigDialogProps) => {
   }
 
   const general_openaiGptModel = appConfig.find(i => i.key === "general_openaiGptModel")
+
   return (
     <DropdownMenuDialogItem
       onOpenChange={props.setOpen}

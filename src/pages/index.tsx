@@ -26,7 +26,7 @@ import { Label } from "~/components/ui/label"
 import type { NextPageWithLayout } from './_app'
 import { Logo } from "~/components/logo-with-name";
 import { Separator } from "~/components/ui/separator";
-import CoverImage from "~/components/CoverImage";
+import CoverImage from "~/components/cover-image";
 
 const Home: NextPageWithLayout = () => {
   const router = useRouter();

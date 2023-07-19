@@ -420,6 +420,7 @@ export const documentRouter = createTRPCRouter({
         title: document.title,
         updatedAt: document.updatedAt,
         id: document.id,
+        type: document.type,
         projectId: document.projectId,
         projectName: document.project.name
       }

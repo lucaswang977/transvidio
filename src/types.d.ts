@@ -1,7 +1,10 @@
+import type { DocumentType } from "@prisma/client"
+
 export type DocumentInfo = {
   id: string,
   title: string,
   updatedAt: Date,
+  type: DocumentType,
   projectId: string,
   projectName: string,
   projectAiParamters?: ProjectAiParamters

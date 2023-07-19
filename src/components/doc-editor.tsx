@@ -5,9 +5,9 @@ import { UserNav } from "~/components/user-nav";
 import { Logo } from "~/components/logo-with-name"
 import { Button } from "~/components/ui/button"
 import Link from "next/link";
-import { Bot, Loader2, Save } from "lucide-react";
+import { Bot, Download, Loader2, MoreVertical, Save } from "lucide-react";
 import { naturalTime } from "~/utils/helper"
-import type { DocPermission, DocumentInfo, ProjectAiParamters, SrcOrDst } from "~/types";
+import type { DocPermission, DocumentInfo, ProjectAiParamters, SrcOrDst, SubtitleType } from "~/types";
 import { Beforeunload } from 'react-beforeunload';
 import { useToast } from "~/components/ui/use-toast"
 import { api } from "~/utils/api";
@@ -15,6 +15,13 @@ import { useSession } from "next-auth/react"
 import { fetchEventSource } from '@microsoft/fetch-event-source';
 import type { Prisma } from "@prisma/client";
 import { ModeToggle } from "~/components/mode-toggle";
+import { SubtitleExportDialog } from "~/components/subtitle-export-dialog"
+
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "~/components/ui/dropdown-menu"
 
 export interface EditorComponentProps {
   srcJson: Prisma.JsonValue | undefined,
@@ -79,6 +86,7 @@ export const DocumentEditor = (props: DocumentEditorProps) => {
   const [filling, setFilling] = React.useState(false)
   const [saveState, setSaveState] = React.useState<"dirty" | "saving" | "saved">("saved")
   const [abortCtrl, setAbortCtrl] = React.useState(new AbortController())
+  const [subtitleExportOpen, setSubtitleExportOpen] = React.useState(false)
   const { toast } = useToast()
   const { data: session } = useSession()
 
@@ -87,7 +95,7 @@ export const DocumentEditor = (props: DocumentEditorProps) => {
 
   const mutation = api.document.save.useMutation()
   const [docInfo, setDocInfo] = React.useState<DocumentInfo>(
-    { id: "", title: "", projectId: "", projectName: "", updatedAt: new Date(0) }
+    { id: "", title: "", type: "ARTICLE", projectId: "", projectName: "", updatedAt: new Date(0) }
   )
   const defaultPermission = {
     srcReadable: false,
@@ -110,6 +118,7 @@ export const DocumentEditor = (props: DocumentEditorProps) => {
           setDocInfo({
             id: doc.id,
             title: doc.title,
+            type: doc.type,
             updatedAt: doc.updatedAt,
             projectId: doc.projectId,
             projectName: doc.project.name,
@@ -195,25 +204,26 @@ export const DocumentEditor = (props: DocumentEditorProps) => {
               <div className="border-b">
                 <div className="fixed bg-white dark:bg-black z-100 w-full border-b flex items-center justify-between h-16 px-4">
                   <Link href="/admin"><Logo /></Link>
+
                   <div className="flex flex-col items-center">
                     <p className="text">{docInfo.title}</p>
                     <p className="text-xs text-gray-400">
                       Saved {naturalTime(docInfo.updatedAt)}
                     </p>
                   </div>
+
                   <div className="flex space-x-4 items-center">
                     {
-                      isAutoFillInit ?
-                        <Button
-                          disabled={!permission.dstWritable}
-                          onClick={filling ? cancelFilling : startFilling} >
-                          {filling ?
-                            <Loader2 className="w-4 animate-spin mr-1" />
-                            : <Bot className="h-4 w-4 mr-1" />
-                          }
-                          <span>{filling ? "Cancel" : "Auto Fill"}</span>
-                        </Button>
-                        : <></>
+                      isAutoFillInit &&
+                      <Button
+                        disabled={!permission.dstWritable}
+                        onClick={filling ? cancelFilling : startFilling} >
+                        {filling ?
+                          <Loader2 className="w-4 animate-spin mr-1" />
+                          : <Bot className="h-4 w-4 mr-1" />
+                        }
+                        <span>{filling ? "Cancel" : "Auto Fill"}</span>
+                      </Button>
                     }
                     <Button
                       disabled={saveState !== "dirty" ||
@@ -226,6 +236,32 @@ export const DocumentEditor = (props: DocumentEditorProps) => {
                     </Button>
                     <ModeToggle />
                     <UserNav />
+                    {
+                      (docInfo.type === "SUBTITLE") &&
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0">
+                            <span className="sr-only">Open menu</span>
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <SubtitleExportDialog
+                            srcObj={srcJson as SubtitleType}
+                            dstObj={dstJson as SubtitleType}
+                            title={docInfo.title}
+                            open={subtitleExportOpen}
+                            setOpen={setSubtitleExportOpen}
+                            trigger={
+                              <>
+                                <Download className="mr-2 h-4 w-4" />
+                                <span>Export</span>
+                              </>
+                            }
+                          />
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    }
                   </div>
                 </div>
               </div>
