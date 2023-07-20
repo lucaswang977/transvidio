@@ -41,6 +41,8 @@ const AttachmentEditor = React.forwardRef<AutofillHandler | null,
       const fileSrcInputRef = React.useRef<HTMLInputElement>(null)
       const fileDstInputRef = React.useRef<HTMLInputElement>(null)
 
+      console.log(srcObj, dstObj)
+
       const handleUpload = () => {
         if (!uploadingSrcFile && !uploadingDstFile) {
           console.log("No uploading file selected.")
@@ -169,10 +171,11 @@ const AttachmentEditor = React.forwardRef<AutofillHandler | null,
                   <a target="_blank" href={dstObj.fileurl}><Download /></a>
                 </Button>
                 :
-                <Button disabled={!permission.dstWritable || uploading} variant="ghost">
-                  <Folder onClick={() => {
-                    if (fileDstInputRef.current) fileDstInputRef.current.click()
-                  }} />
+                <Button disabled={!permission.dstWritable || uploading} variant="ghost" onClick={() => {
+                  console.log("clicked,", fileDstInputRef)
+                  if (fileDstInputRef.current) fileDstInputRef.current.click()
+                }}>
+                  <Folder />
                 </Button>
             }
             {
@@ -180,6 +183,7 @@ const AttachmentEditor = React.forwardRef<AutofillHandler | null,
                 <Button
                   disabled={!permission.dstWritable}
                   variant="ghost" onClick={() => {
+                    if (fileDstInputRef.current) fileDstInputRef.current.value = ""
                     handleChange("dst", { filename: "", fileurl: "" })
                   }}>
                   <Trash />
@@ -192,7 +196,9 @@ const AttachmentEditor = React.forwardRef<AutofillHandler | null,
               multiple={false}
               ref={fileDstInputRef}
               onChange={({ target }) => {
+                console.log("target")
                 if (target.files) {
+                  console.log(target)
                   const file = target.files[0];
                   if (file) {
                     setUploadingDstFile(file)

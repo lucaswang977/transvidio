@@ -299,7 +299,7 @@ packages:
     resolution: {integrity: sha512-PnNN7os0+yd1XvXAy23CFOmTbMaDxgxXtTKHybrJ39Y8kGzBATgBFibWJKH6BhytLI/Zyszs87xCOBNyBig6vQ==}
     dependencies:
       '@aws-crypto/util': 3.0.0
-      '@aws-sdk/types': 3.369.0
+      '@aws-sdk/types': 3.370.0
       tslib: 1.14.1
 
   /@aws-crypto/supports-web-crypto@3.0.0:
@@ -797,6 +797,13 @@ packages:
     engines: {node: '>=14.0.0'}
     dependencies:
       '@smithy/types': 1.1.0
+      tslib: 2.6.0
+
+  /@aws-sdk/types@3.370.0:
+    resolution: {integrity: sha512-8PGMKklSkRKjunFhzM2y5Jm0H2TBu7YRNISdYzXLUHKSP9zlMEYagseKVdmox0zKHf1LXVNuSlUV2b6SRrieCQ==}
+    engines: {node: '>=14.0.0'}
+    dependencies:
+      '@smithy/types': 1.1.1
       tslib: 2.6.0
 
   /@aws-sdk/util-arn-parser@3.310.0:

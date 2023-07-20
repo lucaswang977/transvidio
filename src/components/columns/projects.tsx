@@ -1,8 +1,8 @@
 "use client"
 
-import { type ColumnDef } from "@tanstack/react-table"
+import type { ColumnDef } from "@tanstack/react-table"
 import { Avatar, AvatarImage, AvatarFallback } from "~/components/ui/avatar"
-import { type ProjectRelatedUser } from "~/server/api/routers/project"
+import type { ProjectRelatedUser } from "~/server/api/routers/project"
 import { AssignProjectToUserDialog } from "~/components/assign-project-to-user-dialog"
 import { AiParamsDialog } from "~/components/ai-params-dialog"
 import { MoreHorizontal } from "lucide-react"
@@ -147,7 +147,8 @@ export const columns: ColumnDef<ProjectColumn>[] = [
       const data = row.original
       return (
         <div className="flex px-2 place-items-center space-x-2">
-          <span>{data.documentCount.OPEN} / {data.documentCount.ALL}</span>
+          <span>{data.documentCount.OPEN ? data.documentCount.OPEN : 0}/
+            {data.documentCount.ALL ? data.documentCount.ALL : 0}</span>
           <Link href={`/admin/documents?p=${data.id}`}>
             <ArrowRightCircle className="h-4 w-4" />
           </Link>

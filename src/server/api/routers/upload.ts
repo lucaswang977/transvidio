@@ -1,10 +1,12 @@
-import { z } from "zod";
+import { z } from "zod"
+import path from "path"
 import {
   createTRPCRouter,
   protectedProcedure,
 } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server"
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, HeadObjectCommand } from "@aws-sdk/client-s3"
+import type { S3ServiceException } from "@aws-sdk/client-s3"
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner"
 import { env } from "~/env.mjs"
 import { delay } from "~/utils/helper";
@@ -25,9 +27,32 @@ export const uploadRouter = createTRPCRouter({
           secretAccessKey: env.S3_SECRET_KEY,
         },
       })
+      const pathname = `${input.projectId}/${env.S3_UPLOAD_FOLDER_NAME}`
+      let filename = input.filename
+
+      try {
+        const headResult = await s3.send(new HeadObjectCommand({
+          Bucket: env.S3_BUCKET_NAME,
+          Key: `${pathname}/${filename}`
+        }))
+        const randomStr = Date.now().toString()
+        const extname = path.extname(filename)
+        const basename = path.basename(filename, extname)
+        if (headResult) {
+          filename = `${basename}.${randomStr}${extname}`
+          console.log(filename)
+        }
+      } catch (err) {
+        if ((err as S3ServiceException).name !== "NotFound") {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: (err as S3ServiceException).message
+          })
+        }
+      }
       const command = new PutObjectCommand({
         Bucket: env.S3_BUCKET_NAME,
-        Key: `${input.projectId}/${env.S3_UPLOAD_FOLDER_NAME}/${input.filename}`
+        Key: `${pathname}/${filename}`
       })
 
       const url = await getSignedUrl(s3, command, { expiresIn: 900 }).catch(err => {
@@ -38,7 +63,7 @@ export const uploadRouter = createTRPCRouter({
       })
       return {
         presigned: url,
-        finalUrl: `${env.CDN_BASE_URL}/${input.projectId}/${env.S3_UPLOAD_FOLDER_NAME}/${input.filename}`
+        finalUrl: `${env.CDN_BASE_URL}/${input.projectId}/${env.S3_UPLOAD_FOLDER_NAME}/${filename}`
       }
     }),
 });
