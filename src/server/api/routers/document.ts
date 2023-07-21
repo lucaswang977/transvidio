@@ -435,7 +435,7 @@ export const documentRouter = createTRPCRouter({
           },
           data: {
             srcJson: JSON.parse(input.src) as Prisma.JsonObject,
-            wordCount: wordCount
+            wordCount: (wordCount === 0) ? undefined : wordCount
           }
         })
         docInfo.updatedAt = updatedAt

@@ -3,7 +3,7 @@
 import * as React from "react"
 import type { ColumnDef } from "@tanstack/react-table"
 import { Avatar, AvatarImage, AvatarFallback } from "~/components/ui/avatar"
-import { CheckCircle, ChevronRight, MoreHorizontal } from "lucide-react"
+import { CheckCircle, ChevronRight, CircleOff, MoreHorizontal } from "lucide-react"
 
 import { Button } from "~/components/ui/button"
 import { Checkbox } from "~/components/ui/checkbox"
@@ -145,6 +145,44 @@ const ClaimDialog = (props: { documentId: string, refetch: () => void }) => {
   )
 }
 
+const UnclaimDialog = (props: { documentId: string, refetch: () => void }) => {
+  const mutation = api.document.unclaimByUser.useMutation()
+  const [open, setOpen] = React.useState(false)
+  const [working, setWorking] = React.useState(false)
+  const { toast } = useToast()
+
+  return (
+    <ConfirmDialogInDropdown
+      trigger={
+        <>
+          <CircleOff className="mr-2 h-4 w-4" />
+          <span>Unclaim</span>
+        </>
+      }
+      open={open}
+      setOpen={setOpen}
+      working={working}
+      title="Are you sure to UNCLAIM the document?"
+      description="Unclaiming the document will not affect the content of the document, but others can claim it later on."
+      handleConfirm={() => {
+        setWorking(true)
+        mutation.mutate({ documentId: props.documentId }, {
+          onSuccess: () => {
+            props.refetch()
+            toast({ title: "Document unclaimed." })
+            setWorking(false)
+            setOpen(false)
+          },
+          onError: (err) => {
+            toast({ title: "Unclaim failed.", description: err.message })
+            setWorking(false)
+            setOpen(false)
+          }
+        })
+      }}
+    />
+  )
+}
 const ResetDocumentDialog = (
   { disabled,
     documentId,
@@ -389,8 +427,12 @@ export const columns: ColumnDef<DocumentColumn>[] = [
               {
                 (data.state === "OPEN") ?
                   <ClaimDialog refetch={() => { if (refetch) refetch() }} documentId={data.id} /> :
-                  (data.state === "WORKING") ?
-                    <SubmitDialog refetch={() => { if (refetch) refetch() }} documentId={data.id} /> :
+                  (data.state === "WORKING" && myself && myself.id === data.user?.id) ?
+                    <>
+                      <SubmitDialog refetch={() => { if (refetch) refetch() }} documentId={data.id} />
+                      <UnclaimDialog refetch={() => { if (refetch) refetch() }} documentId={data.id} />
+                    </>
+                    :
                     (data.state === "REVIEW" && myself && myself.role === "ADMIN") &&
                     <CloseDialog refetch={() => { if (refetch) refetch() }} documentId={data.id} />
               }
