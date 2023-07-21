@@ -85,7 +85,7 @@ export function ProjectCreateDialog(props: { refetch: () => void }) {
     <div>
       <Dialog open={open} onOpenChange={setIsOpen}>
         <DialogTrigger asChild>
-          <Button size="sm" variant="outline">
+          <Button size="sm" variant="outline" onClick={() => { form.reset() }}>
             <PlusCircle className="mr-2 h-4 w-4" />
             New
           </Button>

@@ -28,12 +28,8 @@ import { Label } from "~/components/ui/label";
 import { RichtextEditor } from "~/components/ui/richtext-editor";
 import type { NextPageWithLayout } from "~/pages/_app";
 import { clone } from "ramda"
-import {
-  type AutofillHandler,
-  DocumentEditor,
-  handleTranslate,
-  type EditorComponentProps
-} from "~/components/doc-editor";
+import type { AutofillHandler, EditorComponentProps } from "~/components/doc-editor"
+import { DocumentEditor, handleTranslate } from "~/components/doc-editor";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
 

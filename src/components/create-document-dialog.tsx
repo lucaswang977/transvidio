@@ -43,7 +43,8 @@ const formSchema = z.object({
   project: z.string().nonempty(),
   title: z.string().nonempty(),
   type: z.nativeEnum(DocumentType),
-  memo: z.string().optional()
+  srcJson: z.string().optional(),
+  seq: z.number().optional(),
 })
 
 type ProjectInfo = {
@@ -51,14 +52,15 @@ type ProjectInfo = {
   name: string
 }
 
-export function DocumentCreateDialog() {
+export function DocumentCreateDialog(props: { refetch: () => void }) {
   const [open, setIsOpen] = React.useState(false)
+  const [loading, setLoading] = React.useState(false)
   const { data: sessionData } = useSession();
   const mutation = api.document.create.useMutation()
   const { data: projectData } = api.project.getAll.useQuery(
     undefined, // no input
     {
-      enabled: sessionData?.user !== undefined,
+      enabled: sessionData?.user !== undefined && sessionData.user.role === "ADMIN",
       refetchOnWindowFocus: false
     },
   );
@@ -80,27 +82,38 @@ export function DocumentCreateDialog() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: "",
+      seq: 9999
     },
+    mode: "onChange"
   })
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values)
-
+    setLoading(true)
     mutation.mutate({
       projectId: values.project,
       title: values.title,
       type: values.type,
-      memo: values.memo
+      srcJson: values.srcJson,
+      seq: values.seq
+    }, {
+      onError: (err) => {
+        console.log(err)
+        setIsOpen(false)
+        setLoading(false)
+      },
+      onSuccess: () => {
+        props.refetch()
+        setIsOpen(false)
+        setLoading(false)
+      }
     })
-
-    setIsOpen(false)
   }
 
   return (
     <div>
       <Dialog open={open} onOpenChange={setIsOpen}>
         <DialogTrigger asChild>
-          <Button className="w-28" variant="outline">
+          <Button className="w-28" variant="outline" onClick={() => { form.reset() }}>
             <PlusCircle className="mr-2 h-4 w-4" />
             New
           </Button>
@@ -143,45 +156,66 @@ export function DocumentCreateDialog() {
                   <FormItem>
                     <FormLabel>Title</FormLabel>
                     <FormControl>
-                      <Input {...field} />
+                      <Input className="h-10" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+              <div className="flex justify-between">
+                <FormField
+                  control={form.control}
+                  name="type"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Type</FormLabel>
+                      <FormControl>
+                        <Select
+                          onValueChange={(v) => {
+                            field.onChange(v as DocumentType)
+                          }}
+                          defaultValue="enUS">
+                          <SelectTrigger className="w-[200px]">
+                            <SelectValue placeholder="Select a language" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectGroup>
+                              <SelectLabel>Types</SelectLabel>
+                              {Object.values(DocumentType).map((lang) =>
+                                <SelectItem key={lang} value={lang}>{lang}</SelectItem>)}
+                            </SelectGroup>
+                          </SelectContent>
+                        </Select >
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="seq"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Seq #</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          type="number"
+                          className="h-10"
+                          onChange={(e) => field.onChange(parseInt(e.target.value))}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
               <FormField
                 control={form.control}
-                name="type"
+                name="srcJson"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Type</FormLabel>
-                    <FormControl>
-                      <Select
-                        onValueChange={(v) => {
-                          field.onChange(v as DocumentType)
-                        }}
-                        defaultValue="enUS">
-                        <SelectTrigger className="w-[200px]">
-                          <SelectValue placeholder="Select a language" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectGroup>
-                            <SelectLabel>Types</SelectLabel>
-                            {Object.values(DocumentType).map((lang) => <SelectItem key={lang} value={lang}>{lang}</SelectItem>)}
-                          </SelectGroup>
-                        </SelectContent>
-                      </Select >
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="memo"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Memo</FormLabel>
+                    <FormLabel>Source JSON</FormLabel>
                     <FormControl>
                       <Textarea {...field} />
                     </FormControl>
@@ -191,7 +225,7 @@ export function DocumentCreateDialog() {
               />
 
               <DialogFooter>
-                <Button type="submit">Create</Button>
+                <Button disabled={loading} type="submit">{loading ? "Creating" : "Create"}</Button>
               </DialogFooter>
             </form>
           </Form>

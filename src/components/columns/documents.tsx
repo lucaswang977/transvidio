@@ -7,11 +7,10 @@ import { CheckCircle, ChevronRight, CircleOff, MoreHorizontal } from "lucide-rea
 
 import { Button } from "~/components/ui/button"
 import { Checkbox } from "~/components/ui/checkbox"
-import { Edit, Trash, Eraser } from "lucide-react"
+import { Trash, Eraser } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
@@ -211,6 +210,7 @@ const ResetDocumentDialog = (
         mutation.mutate({ documentId: documentId }, {
           onSuccess: () => {
             refetch()
+            toast({ title: "Document reset." })
             setWorking(false)
             setOpen(false)
           },
@@ -226,6 +226,49 @@ const ResetDocumentDialog = (
   )
 }
 
+const DeleteDocumentDialog = (
+  { disabled,
+    documentId,
+    refetch }:
+    {
+      disabled?: boolean,
+      documentId: string,
+      refetch: () => void
+    }) => {
+  const mutation = api.document.delete.useMutation()
+  const { toast } = useToast()
+  const [open, setOpen] = React.useState(false)
+  const [working, setWorking] = React.useState(false)
+
+  return (
+    <ConfirmDialogInDropdown
+      disabled={disabled}
+      open={open}
+      setOpen={setOpen}
+      working={working}
+      trigger={<><Trash className="mr-2 h-4 w-4" /><span>Delete</span></>}
+      title="Delete the document"
+      description="This operation is dangerous! Confirm?"
+      handleConfirm={() => {
+        setWorking(true)
+        mutation.mutate({ documentId: documentId }, {
+          onSuccess: () => {
+            refetch()
+            toast({ title: "Document deleted." })
+            setWorking(false)
+            setOpen(false)
+          },
+          onError: (err) => {
+            toast({ title: "Delete failed.", description: err.message })
+            setWorking(false)
+            setOpen(false)
+          }
+        })
+      }
+      }
+    />
+  )
+}
 export type DocumentColumn = {
   id: string
   title: string
@@ -292,6 +335,10 @@ export const columns: ColumnDef<DocumentColumn>[] = [
     enableHiding: false,
   },
   {
+    accessorKey: "seq",
+    header: "#",
+  },
+  {
     accessorKey: "project",
     header: "Project",
     cell: ({ row }) => {
@@ -304,10 +351,6 @@ export const columns: ColumnDef<DocumentColumn>[] = [
         </div>
       )
     },
-  },
-  {
-    accessorKey: "seq",
-    header: "#",
   },
   {
     accessorKey: "title",
@@ -437,23 +480,17 @@ export const columns: ColumnDef<DocumentColumn>[] = [
                     <CloseDialog refetch={() => { if (refetch) refetch() }} documentId={data.id} />
               }
               {
-                (myself && myself.role === "ADMIN") ?
-                  <>
-                    <DropdownMenuItem>
-                      <Edit className="mr-2 h-4 w-4" />
-                      <span>Edit</span>
-                    </DropdownMenuItem>
-
-                    <DropdownMenuItem>
-                      <Trash className="mr-2 h-4 w-4" />
-                      <span>Delete</span>
-                    </DropdownMenuItem>
-
-                    <ResetDocumentDialog
-                      documentId={data.id}
-                      refetch={() => { if (refetch) refetch() }}
-                    /></>
-                  : <></>
+                (myself && myself.role === "ADMIN") &&
+                <>
+                  <ResetDocumentDialog
+                    documentId={data.id}
+                    refetch={() => { if (refetch) refetch() }}
+                  />
+                  <DeleteDocumentDialog
+                    documentId={data.id}
+                    refetch={() => { if (refetch) refetch() }}
+                  />
+                </>
               }
             </DropdownMenuContent>
           </DropdownMenu>

@@ -20,16 +20,20 @@
 import { useRouter } from "next/router"
 import * as React from "react"
 import { Input } from "~/components/ui/input"
-import type { Curriculum, ProjectAiParamters } from "~/types"
+import type {
+  Curriculum,
+  CurriculumSection,
+  CurriculumItem,
+  CurriculumItemEnum,
+  ProjectAiParamters
+} from "~/types"
 import { RichtextEditor } from "~/components/ui/richtext-editor";
 import type { NextPageWithLayout } from "~/pages/_app";
-import {
-  type AutofillHandler,
-  DocumentEditor,
-  type EditorComponentProps,
-  handleTranslate,
-} from "~/components/doc-editor";
+import type { AutofillHandler, EditorComponentProps } from "~/components/doc-editor"
+import { DocumentEditor, handleTranslate } from "~/components/doc-editor";
 import { clone } from "ramda";
+import { Button } from "~/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "~/components/ui/dropdown-menu";
 
 const CurriculumEditor = React.forwardRef<AutofillHandler | null, EditorComponentProps>(
   ({ srcJson, dstJson, handleChange, permission, setAutoFillInit }, ref) => {
@@ -127,111 +131,200 @@ const CurriculumEditor = React.forwardRef<AutofillHandler | null, EditorComponen
         resolve()
       })
     }
+
+    const handleAddNewSection = () => {
+      const newSection: CurriculumSection = {
+        index: 0,
+        title: "",
+        items: []
+      }
+      handleChange("src", o => {
+        const d = clone(o ? (o as Curriculum) : defaultValue)
+        if (d.sections) d.sections.push({
+          index: d.sections.length,
+          title: "",
+          items: []
+        })
+        else d.sections = [newSection]
+
+        return d
+      })
+      handleChange("dst", o => {
+        const d = clone(o ? (o as Curriculum) : defaultValue)
+        if (d.sections) d.sections.push({
+          index: d.sections.length,
+          title: "",
+          items: []
+        })
+        else d.sections = [newSection]
+
+        return d
+      })
+    }
+
+    const handleAddNewLecture = (sectionIndex: number, itemType: CurriculumItemEnum) => {
+      const newLecture: CurriculumItem = {
+        id: 0,
+        item_type: itemType,
+        title: "",
+        description: ""
+      }
+      handleChange("src", o => {
+        const d = clone(o ? (o as Curriculum) : defaultValue)
+        const s = d.sections[sectionIndex]
+        if (s) s.items.push({
+          ...newLecture,
+          id: s.items.length
+        })
+
+        return d
+      })
+      handleChange("dst", o => {
+        const d = clone(o ? (o as Curriculum) : defaultValue)
+        const s = d.sections[sectionIndex]
+        if (s) s.items.push({
+          ...newLecture,
+          id: s.items.length
+        })
+
+        return d
+      })
+    }
+
+
     return (
       <div className="p-8 w-full space-y-2">
         <div className="flex flex-col space-y-2">
-          {srcObj.sections.map((section, i) => {
-            if (!dstObj.sections[i]) {
-              dstObj.sections[i] = {
-                index: section.index,
-                title: "",
-                items: section.items.map(item => {
-                  return { ...item, title: "", description: "" }
-                })
+          {
+            srcObj.sections.map((section, i) => {
+              if (!dstObj.sections[i]) {
+                dstObj.sections[i] = {
+                  index: section.index,
+                  title: "",
+                  items: section.items.map(item => {
+                    return { ...item, title: "", description: "" }
+                  })
+                }
               }
-            }
-            const dstSection = dstObj.sections[i]
+              const dstSection = dstObj.sections[i]
 
-            return (
-              <div key={`section${section.index}`} className="flex-col space-y-2">
-                <p className="font-bold">Section</p>
-                <div className="grid grid-rows-2 space-y-1 md:space-y-0 md:grid-rows-1 md:space-x-2 md:grid-cols-2">
-                  <Input
-                    disabled={!permission.srcWritable}
-                    id={`src.section.${section.index}`}
-                    className="w-full"
-                    value={section.title} onChange={(event) => {
-                      const section = srcObj.sections[i]
-                      if (section) {
-                        section.title = event.target.value
-                        handleChange("src", { ...srcObj })
-                      }
-                    }} />
-                  <Input
-                    disabled={!permission.dstWritable}
-                    id={`dst.section.${section.index}`}
-                    className="w-full"
-                    value={dstSection?.title} onChange={(event) => {
-                      const section = dstSection
-                      if (section) {
-                        section.title = event.target.value
-                        handleChange("dst", { ...dstObj })
-                      }
-                    }} />
-                </div>
-                <div className="ml-10 flex-col space-y-1" >
-                  {
-                    section.items.map((item, j) => {
-                      return (
-                        <div key={`section.item.${i}.${j}`} className="flex flex-col space-y-1">
-                          <p className="font-bold">{item.item_type}</p>
-                          <div className="grid grid-rows-2 space-y-1 md:space-y-0 md:grid-rows-1 md:space-x-2 md:grid-cols-2">
-                            <Input
-                              disabled={!permission.srcWritable}
-                              id={`src.section.item.${i}.${item.id}`}
-                              value={item.title} onChange={(event) => {
-                                const section = srcObj.sections[i]
-                                if (section && section.items && section.items[j]) {
-                                  const item = section.items[j]
-                                  if (item) item.title = event.target.value
-                                  handleChange("src", { ...srcObj })
-                                }
-                              }} />
-                            <Input
-                              disabled={!permission.dstWritable}
-                              id={`dst.section.item.${i}.${item.id}`}
-                              value={dstSection?.items[j]?.title} onChange={(event) => {
-                                if (dstSection && dstSection.items) {
-                                  const item = dstSection.items[j]
-                                  if (item) item.title = event.target.value
-                                  handleChange("dst", { ...dstObj })
-                                }
-                              }} />
+              return (
+                <div key={`section${section.index}`} className="flex-col space-y-2">
+                  <p className="font-bold">Section {section.index}</p>
+                  <div className="grid grid-rows-2 space-y-1 md:space-y-0 md:grid-rows-1 md:space-x-2 md:grid-cols-2">
+                    <Input
+                      disabled={!permission.srcWritable}
+                      id={`src.section.${section.index}`}
+                      className="w-full"
+                      value={section.title} onChange={(event) => {
+                        const section = srcObj.sections[i]
+                        if (section) {
+                          section.title = event.target.value
+                          handleChange("src", { ...srcObj })
+                        }
+                      }} />
+                    <Input
+                      disabled={!permission.dstWritable}
+                      id={`dst.section.${section.index}`}
+                      className="w-full"
+                      value={dstSection?.title} onChange={(event) => {
+                        const section = dstSection
+                        if (section) {
+                          section.title = event.target.value
+                          handleChange("dst", { ...dstObj })
+                        }
+                      }} />
+                  </div>
+                  <div className="ml-10 flex-col space-y-1" >
+                    {
+                      section.items.map((item, j) => {
+                        return (
+                          <div key={`section.item.${i}.${j}`} className="flex flex-col space-y-1">
+                            <p className="font-bold">{item.item_type}</p>
+                            <div className="grid grid-rows-2 space-y-1 md:space-y-0 md:grid-rows-1 md:space-x-2 md:grid-cols-2">
+                              <Input
+                                disabled={!permission.srcWritable}
+                                id={`src.section.item.${i}.${item.id}`}
+                                value={item.title} onChange={(event) => {
+                                  const section = srcObj.sections[i]
+                                  if (section && section.items && section.items[j]) {
+                                    const item = section.items[j]
+                                    if (item) item.title = event.target.value
+                                    handleChange("src", { ...srcObj })
+                                  }
+                                }} />
+                              <Input
+                                disabled={!permission.dstWritable}
+                                id={`dst.section.item.${i}.${item.id}`}
+                                value={dstSection?.items[j]?.title} onChange={(event) => {
+                                  if (dstSection && dstSection.items) {
+                                    const item = dstSection.items[j]
+                                    if (item) item.title = event.target.value
+                                    handleChange("dst", { ...dstObj })
+                                  }
+                                }} />
 
+                            </div>
+                            <div className="grid grid-rows-2 space-y-1 md:space-y-0 md:grid-rows-1 md:space-x-2 md:grid-cols-2">
+                              <RichtextEditor
+                                disabled={!permission.srcWritable}
+                                height="150px"
+                                value={item.description}
+                                onChange={(event) => {
+                                  const section = srcObj.sections[i]
+                                  if (section && section.items && section.items[j]) {
+                                    const item = section.items[j]
+                                    if (item) item.description = event.target.value
+                                    handleChange("src", { ...srcObj })
+                                  }
+                                }} />
+                              <RichtextEditor
+                                disabled={!permission.dstWritable}
+                                height="150px"
+                                value={dstSection?.items[j]?.description}
+                                onChange={(event) => {
+                                  if (dstSection && dstSection.items) {
+                                    const item = dstSection.items[j]
+                                    if (item) item.description = event.target.value
+                                    handleChange("src", { ...srcObj })
+                                  }
+                                }} />
+                            </div>
                           </div>
-                          <div className="grid grid-rows-2 space-y-1 md:space-y-0 md:grid-rows-1 md:space-x-2 md:grid-cols-2">
-                            <RichtextEditor
-                              disabled={!permission.srcWritable}
-                              height="150px"
-                              value={item.description}
-                              onChange={(event) => {
-                                const section = srcObj.sections[i]
-                                if (section && section.items && section.items[j]) {
-                                  const item = section.items[j]
-                                  if (item) item.description = event.target.value
-                                  handleChange("src", { ...srcObj })
-                                }
-                              }} />
-                            <RichtextEditor
-                              disabled={!permission.dstWritable}
-                              height="150px"
-                              value={dstSection?.items[j]?.description}
-                              onChange={(event) => {
-                                if (dstSection && dstSection.items) {
-                                  const item = dstSection.items[j]
-                                  if (item) item.description = event.target.value
-                                  handleChange("src", { ...srcObj })
-                                }
-                              }} />
-                          </div>
-                        </div>
-                      )
-                    })
-                  }
+                        )
+                      })
+                    }
+                    <DropdownMenu>
+                      <DropdownMenuTrigger>
+                        <Button
+                          disabled={!permission.srcWritable}
+                          className="w-fit"
+                          variant="outline">
+                          Add a new lecture
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        <DropdownMenuItem
+                          onClick={() => handleAddNewLecture(i, "lecture")}>lecture</DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => handleAddNewLecture(i, "quiz")}>quiz</DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => handleAddNewLecture(i, "article")}>article</DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => handleAddNewLecture(i, "resource")}>resource</DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                 </div>
-              </div>
-            )
-          })}
+              )
+            })}
+          <Button
+            disabled={!permission.srcWritable}
+            className="w-fit"
+            variant="outline"
+            onClick={() => handleAddNewSection()}>
+            Add a new section
+          </Button>
         </div >
       </div>
     )

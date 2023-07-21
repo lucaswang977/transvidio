@@ -11,21 +11,17 @@
 // "target_audiences": [text, text]
 // }
 
-import { type NextPageWithLayout } from "~/pages/_app"
+import type { NextPageWithLayout } from "~/pages/_app"
 import { useRouter } from "next/router"
 import * as React from "react"
-
 import type { Introduction, ProjectAiParamters } from "~/types"
-import {
-  DocumentEditor,
-  handleTranslate,
-  type AutofillHandler,
-  type EditorComponentProps,
-} from "~/components/doc-editor";
+import type { AutofillHandler, EditorComponentProps } from "~/components/doc-editor"
+import { DocumentEditor, handleTranslate } from "~/components/doc-editor";
 import { Input } from "~/components/ui/input";
 import { RichtextEditor } from "~/components/ui/richtext-editor";
 import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 import { clone } from "ramda";
+import { Button } from "~/components/ui/button"
 
 const IntroductionEditor = React.forwardRef<AutofillHandler | null, EditorComponentProps>(
   ({ srcJson, dstJson, handleChange, permission, setAutoFillInit }, ref) => {
@@ -158,6 +154,56 @@ const IntroductionEditor = React.forwardRef<AutofillHandler | null, EditorCompon
       })
     }
 
+    const handleAddNewPrerequisite = () => {
+      handleChange("src", o => {
+        const d = clone(o ? (o as Introduction) : defaultValue)
+        if (d.prerequisites) d.prerequisites.push("")
+        else d.prerequisites = [""]
+
+        return d
+      })
+      handleChange("dst", o => {
+        const d = clone(o ? (o as Introduction) : defaultValue)
+        if (d.prerequisites) d.prerequisites.push("")
+        else d.prerequisites = [""]
+
+        return d
+      })
+    }
+
+    const handleAddNewObjectives = () => {
+      handleChange("src", o => {
+        const d = clone(o ? (o as Introduction) : defaultValue)
+        if (d.objectives) d.objectives.push("")
+        else d.objectives = [""]
+
+        return d
+      })
+      handleChange("dst", o => {
+        const d = clone(o ? (o as Introduction) : defaultValue)
+        if (d.objectives) d.objectives.push("")
+        else d.objectives = [""]
+
+        return d
+      })
+    }
+
+    const handleAddNewTargetAudiences = () => {
+      handleChange("src", o => {
+        const d = clone(o ? (o as Introduction) : defaultValue)
+        if (d.target_audiences) d.target_audiences.push("")
+        else d.target_audiences = [""]
+
+        return d
+      })
+      handleChange("dst", o => {
+        const d = clone(o ? (o as Introduction) : defaultValue)
+        if (d.target_audiences) d.target_audiences.push("")
+        else d.target_audiences = [""]
+
+        return d
+      })
+    }
 
     return (
       <div className="p-8 space-y-2 w-full">
@@ -260,6 +306,13 @@ const IntroductionEditor = React.forwardRef<AutofillHandler | null, EditorCompon
                   }} />
               </div>)
           })}
+          <Button
+            disabled={!permission.srcWritable}
+            className="w-fit"
+            variant="outline"
+            onClick={() => handleAddNewPrerequisite()}>
+            Add a new prerequisite
+          </Button>
         </div>
         <p className="text-sm font-bold">Objectives</p>
         <div className="flex flex-col space-y-2">
@@ -291,6 +344,13 @@ const IntroductionEditor = React.forwardRef<AutofillHandler | null, EditorCompon
                   }} />
               </div>)
           })}
+          <Button
+            disabled={!permission.srcWritable}
+            className="w-fit"
+            variant="outline"
+            onClick={() => handleAddNewObjectives()}>
+            Add a new objective
+          </Button>
         </div>
         <p className="text-sm font-bold">Target Audiences</p>
         <div className="flex flex-col space-y-2">
@@ -322,6 +382,13 @@ const IntroductionEditor = React.forwardRef<AutofillHandler | null, EditorCompon
                   }} />
               </div>)
           })}
+          <Button
+            disabled={!permission.srcWritable}
+            className="w-fit"
+            variant="outline"
+            onClick={() => handleAddNewTargetAudiences()}>
+            Add a new target audience
+          </Button>
         </div>
       </div>
     )

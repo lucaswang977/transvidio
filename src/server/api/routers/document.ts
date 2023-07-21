@@ -177,8 +177,9 @@ export const documentRouter = createTRPCRouter({
     .input(z.object({
       title: z.string().nonempty(),
       type: z.nativeEnum(DocumentType),
-      memo: z.string().optional(),
-      projectId: z.string().nonempty()
+      projectId: z.string().nonempty(),
+      seq: z.number().optional(),
+      srcJson: z.string().optional(),
     }))
     .mutation(async ({ input }) => {
       if (env.DELAY_ALL_API) await delay(3000)
@@ -187,12 +188,29 @@ export const documentRouter = createTRPCRouter({
         data: {
           title: input.title,
           type: input.type,
-          memo: input.memo,
+          seq: input.seq,
+          srcJson: input.srcJson ? (JSON.parse(input.srcJson) as Prisma.JsonObject) : undefined,
           project: {
             connect: {
               id: input.projectId
             }
           },
+        }
+      })
+
+      return result
+    }),
+
+  delete: protectedProcedure
+    .input(z.object({
+      documentId: z.string().nonempty(),
+    }))
+    .mutation(async ({ input }) => {
+      if (env.DELAY_ALL_API) await delay(3000)
+
+      const result = await prisma.document.delete({
+        where: {
+          id: input.documentId,
         }
       })
 
@@ -364,6 +382,7 @@ export const documentRouter = createTRPCRouter({
         }
       })
     }),
+
   resetByAdmin: protectedProcedure
     .input(z.object({
       documentId: z.string().nonempty(),

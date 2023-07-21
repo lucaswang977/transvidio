@@ -183,7 +183,7 @@ const DocumentManagement: NextPageWithLayout = () => {
           </Button>
           {
             session?.user.role === "ADMIN" ?
-              <DocumentCreateDialog />
+              <DocumentCreateDialog refetch={() => refetch()} />
               : <></>
           }
         </div>
