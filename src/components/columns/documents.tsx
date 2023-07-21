@@ -195,6 +195,7 @@ export type DocumentColumn = {
   type: DocumentType
   state: DocumentState
   memo: string | null
+  wordCount: number
   project: { id: string, name: string }
   user: { id: string, name: string, image: string } | null
   updated: Date
@@ -291,10 +292,6 @@ export const columns: ColumnDef<DocumentColumn>[] = [
     }
   },
   {
-    accessorKey: "memo",
-    header: "Memo"
-  },
-  {
     accessorKey: "user",
     header: "Claimed",
     cell: ({ row }) => {
@@ -322,6 +319,10 @@ export const columns: ColumnDef<DocumentColumn>[] = [
         {avatarUI}
       </>
     },
+  },
+  {
+    accessorKey: "wordCount",
+    header: "Word Count"
   },
   {
     accessorKey: "updated",

@@ -91,6 +91,7 @@ const DocumentManagement: NextPageWithLayout = () => {
         type: document.type,
         state: document.state,
         seq: document.seq,
+        wordCount: document.wordCount,
         memo: document.memo,
         project: { id: document.project.id, name: document.project.name },
         user: (document.user !== null) ? {

@@ -54,3 +54,27 @@ export function truncateString(str: string, maxLength: number): string {
 export function delay(milliseconds: number) {
   return new Promise<void>(resolve => setTimeout(() => { resolve() }, milliseconds))
 }
+
+// eslint-disable-next-line 
+export function countWordsInJSONValues(obj: any): number {
+  const jsonString = JSON.stringify(obj);
+
+  const noURLString = jsonString.replace(/https?:\/\/[^\s]+/g, '')
+
+  const valueStrings =
+    noURLString
+      .replace(/"[^"]*":/g, '')
+      .split(',')
+      .map(s => s.replace(/[\{\}\[\]\"\:\s]+/g, ' '));
+
+  const noHTMLStrings = valueStrings.map(s => s.replace(/<[^>]+>/g, ''));
+
+  const noSpecialCodeStrings = noHTMLStrings.map(s => s.replace(/&nbsp;|\\n|\\r|\\t|\\b|\\f|\\v/g, ' '));
+
+  const noNumberStrings = noSpecialCodeStrings.map(s => s.replace(/\b\d+\b/g, ''));
+
+  const matches = noNumberStrings.join(' ').match(/\b\w+\b/g);
+  console.log(JSON.stringify(matches))
+
+  return matches ? matches.length : 0;
+}

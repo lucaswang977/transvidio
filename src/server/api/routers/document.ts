@@ -9,7 +9,7 @@ import { DocumentState, DocumentType, Prisma } from "@prisma/client"
 import { TRPCError } from "@trpc/server";
 import type { DocPermission, DocumentInfo } from "~/types";
 import { env } from "~/env.mjs";
-import { delay } from "~/utils/helper";
+import { countWordsInJSONValues, delay } from "~/utils/helper";
 
 const getDocumentAndPermission = async (userId: string, docId: string) => {
   const user = await prisma.user.findUnique({
@@ -159,6 +159,7 @@ export const documentRouter = createTRPCRouter({
               type: true,
               title: true,
               state: true,
+              wordCount: true,
               memo: true,
               createdAt: true,
               updatedAt: true,
@@ -404,7 +405,7 @@ export const documentRouter = createTRPCRouter({
     .input(z.object({
       documentId: z.string().nonempty(),
       src: z.string().optional(),
-      dst: z.string()
+      dst: z.string().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       if (env.DELAY_ALL_API) await delay(3000)
@@ -425,27 +426,27 @@ export const documentRouter = createTRPCRouter({
         projectName: document.project.name
       }
 
-      if (input.src) {
-        if (permission.srcWritable) {
-          const { updatedAt } = await prisma.document.update({
-            where: {
-              id: input.documentId
-            },
-            data: {
-              dstJson: JSON.parse(input.dst) as Prisma.JsonObject,
-              srcJson: JSON.parse(input.src) as Prisma.JsonObject
-            }
-          })
-          docInfo.updatedAt = updatedAt
-        } else {
-          throw new TRPCError({
-            code: "FORBIDDEN",
-            message: "No permission on writing document."
-          })
-        }
+      if (input.src !== undefined && permission.srcWritable) {
+        const wordCount = countWordsInJSONValues(JSON.parse(input.src))
+
+        const { updatedAt } = await prisma.document.update({
+          where: {
+            id: input.documentId
+          },
+          data: {
+            srcJson: JSON.parse(input.src) as Prisma.JsonObject,
+            wordCount: wordCount
+          }
+        })
+        docInfo.updatedAt = updatedAt
+      } else if (input.src !== undefined) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "No permission on writing document."
+        })
       }
 
-      if (permission.dstWritable) {
+      if (input.dst !== undefined && permission.dstWritable) {
         const { updatedAt } = await prisma.document.update({
           where: {
             id: input.documentId
@@ -455,7 +456,7 @@ export const documentRouter = createTRPCRouter({
           }
         })
         docInfo.updatedAt = updatedAt
-      } else {
+      } else if (input.dst !== undefined) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "No permission."

@@ -19,6 +19,7 @@ import type {
   SubtitleType
 } from "../src/types"
 import { parse } from '@plussub/srt-vtt-parser'
+import { countWordsInJSONValues } from "../src/utils/helper"
 
 type IntroType = {
   id: number,
@@ -65,6 +66,7 @@ async function createIntroDoc(projectId: string, intro: IntroType) {
       type: "INTRODUCTION",
       srcJson: data,
       projectId: projectId,
+      wordCount: countWordsInJSONValues(data)
     }
   })
 
@@ -130,6 +132,7 @@ async function createCurriculum(
               srcJson: srcData,
               dstJson: dstData,
               projectId: projectId,
+              wordCount: countWordsInJSONValues(srcData)
             }
           })
 
@@ -141,14 +144,16 @@ async function createCurriculum(
         seq = seq + 1
         dataType = "article"
         const docResp = await fetch(`${env.CDN_BASE_URL}/${projectId}/${item.assetId}.html`)
+        const srcJson = { html: await docResp.text() }
         if (docResp.ok) {
           await prisma.document.create({
             data: {
               seq: seq,
               title: item.title,
               type: "ARTICLE",
-              srcJson: { html: await docResp.text() },
+              srcJson: srcJson,
               projectId: projectId,
+              wordCount: countWordsInJSONValues(srcJson)
             }
           })
 
@@ -212,6 +217,7 @@ async function createCurriculum(
             type: "QUIZ",
             srcJson: quizJson,
             projectId: projectId,
+            wordCount: countWordsInJSONValues(quizJson)
           }
         })
         console.log("Create a quiz doc for: ", item.title, item.id)
@@ -231,6 +237,7 @@ async function createCurriculum(
       type: "CURRICULUM",
       srcJson: curriculumDoc,
       projectId: projectId,
+      wordCount: countWordsInJSONValues(curriculumDoc)
     }
   })
 

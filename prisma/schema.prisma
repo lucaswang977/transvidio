@@ -121,14 +121,15 @@ enum DocumentState {
 }
 
 model Document {
-  id      String        @id @default(cuid())
-  seq     Int           @default(9999)
-  title   String
-  type    DocumentType
-  srcJson Json?
-  dstJson Json?
-  state   DocumentState @default(OPEN)
-  memo    String?
+  id        String        @id @default(cuid())
+  seq       Int           @default(9999)
+  title     String
+  type      DocumentType
+  srcJson   Json?
+  dstJson   Json?
+  state     DocumentState @default(OPEN)
+  memo      String?
+  wordCount Int           @default(0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
