@@ -44,7 +44,10 @@ export const projectRouter = createTRPCRouter({
           }
         },
         documents: {
-          select: { state: true }
+          select: {
+            state: true,
+            wordCount: true,
+          }
         }
       },
       where: whereCondition
@@ -53,6 +56,7 @@ export const projectRouter = createTRPCRouter({
       documents: project.documents.reduce((acc: Record<string, number>, document) => {
         acc[document.state] = (acc[document.state] || 0) + 1
         acc["ALL"] = (acc["ALL"] || 0) + 1
+        acc["WORD_COUNT"] = (acc["WORD_COUNT"] || 0) + document.wordCount
         return acc
       }, {}),
     })))

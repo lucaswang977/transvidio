@@ -3,7 +3,7 @@
 import * as React from "react"
 import type { ColumnDef } from "@tanstack/react-table"
 import { Avatar, AvatarImage, AvatarFallback } from "~/components/ui/avatar"
-import { CheckCircle, ChevronRight, CircleOff, MoreHorizontal } from "lucide-react"
+import { CheckCircle, ChevronRight, CircleOff, Info, MoreHorizontal } from "lucide-react"
 
 import { Button } from "~/components/ui/button"
 import { Checkbox } from "~/components/ui/checkbox"
@@ -412,16 +412,33 @@ export const columns: ColumnDef<DocumentColumn>[] = [
       const value: number = row.getValue("wordCount")
 
       return (
-        (myself && myself.role === "ADMIN") ?
-          <WordCountModifyDialog
-            refetch={() => { if (refetch) refetch() }}
-            documentId={data.id}
-            currentValue={value}
-            triggerChild={
-              <Button variant="link">{value}</Button>
-            }
-          />
-          : <p>{row.getValue("wordCount")}</p>
+        <div className="flex items-center space-x-1">
+          {
+            (myself && myself.role === "ADMIN") ?
+              <WordCountModifyDialog
+                refetch={() => { if (refetch) refetch() }}
+                documentId={data.id}
+                currentValue={value}
+                triggerChild={
+                  <Button className="p-0" variant="link">{value}</Button>
+                }
+              />
+              : <p>{row.getValue("wordCount")}</p>
+          }
+          {
+            data.type === "ATTACHMENT" &&
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger>
+                  <Info className="text-gray-400 h-3 w-3" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>The word count of attachment type document is not accurate.</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          }
+        </div>
       )
     }
   },

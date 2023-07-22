@@ -141,6 +141,16 @@ export const columns: ColumnDef<ProjectColumn>[] = [
     },
   },
   {
+    header: "Word Count",
+    cell: ({ row }) => {
+      const data = row.original
+      return (
+        <span>{data.documentCount.WORD_COUNT ? data.documentCount.WORD_COUNT : 0}</span>
+      )
+    },
+  },
+
+  {
     accessorKey: "documents",
     header: "Documents",
     cell: ({ row }) => {
