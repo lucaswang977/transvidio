@@ -13,213 +13,208 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import type { NextPageWithLayout } from "~/pages/_app";
 import type { AttachmentType, SrcOrDst } from "~/types";
-import {
-  type AutofillHandler,
-  DocumentEditor,
-  type EditorComponentProps
-} from "~/components/doc-editor";
+import type { EditorComponentProps } from "~/components/doc-editor";
+import { DocumentEditor, } from "~/components/doc-editor";
 
-const AttachmentEditor = React.forwardRef<AutofillHandler | null,
-  EditorComponentProps & { projectId?: string }>(
-    ({ srcJson, dstJson, handleChange, permission, projectId }) => {
-      const [uploadProgress, setUploadProgress] = React.useState(0);
-      const defaultValue: AttachmentType = {
-        filename: "",
-        fileurl: "",
+const AttachmentEditor =
+  (({ srcJson, dstJson, handleChange, permission, projectId }:
+    EditorComponentProps & { projectId?: string }) => {
+    const [uploadProgress, setUploadProgress] = React.useState(0);
+    const defaultValue: AttachmentType = {
+      filename: "",
+      fileurl: "",
+    }
+
+    let srcObj = defaultValue
+    let dstObj = defaultValue
+    if (srcJson) srcObj = srcJson as AttachmentType
+    if (dstJson) dstObj = dstJson as AttachmentType
+
+    const [uploadingSrcFile, setUploadingSrcFile] = React.useState<File | null>(null)
+    const [uploadingDstFile, setUploadingDstFile] = React.useState<File | null>(null)
+    const [uploading, setUploading] = React.useState(false)
+    const mutation = api.upload.signUrl.useMutation()
+
+    const fileSrcInputRef = React.useRef<HTMLInputElement>(null)
+    const fileDstInputRef = React.useRef<HTMLInputElement>(null)
+
+    console.log(srcObj, dstObj)
+
+    const handleUpload = () => {
+      if (!uploadingSrcFile && !uploadingDstFile) {
+        console.log("No uploading file selected.")
+        return
       }
 
-      let srcObj = defaultValue
-      let dstObj = defaultValue
-      if (srcJson) srcObj = srcJson as AttachmentType
-      if (dstJson) dstObj = dstJson as AttachmentType
+      let uploadingFile = uploadingDstFile
+      let uploadingFilename = dstObj.filename
+      let where: SrcOrDst = "dst"
 
-      const [uploadingSrcFile, setUploadingSrcFile] = React.useState<File | null>(null)
-      const [uploadingDstFile, setUploadingDstFile] = React.useState<File | null>(null)
-      const [uploading, setUploading] = React.useState(false)
-      const mutation = api.upload.signUrl.useMutation()
+      setUploading(true)
 
-      const fileSrcInputRef = React.useRef<HTMLInputElement>(null)
-      const fileDstInputRef = React.useRef<HTMLInputElement>(null)
+      if (uploadingSrcFile) {
+        uploadingFile = uploadingSrcFile
+        uploadingFilename = srcObj.filename
+        where = "src"
+      }
 
-      console.log(srcObj, dstObj)
+      if (uploadingFile && projectId) {
+        mutation.mutate({
+          projectId: projectId,
+          filename: uploadingFilename
+        }, {
+          onSuccess: (async ({ presigned, finalUrl }) => {
+            if (uploadingFile) {
+              const buffer = await uploadingFile.arrayBuffer();
+              const result = await new Promise<boolean>((resolve,) => {
+                const xhr = new XMLHttpRequest();
 
-      const handleUpload = () => {
-        if (!uploadingSrcFile && !uploadingDstFile) {
-          console.log("No uploading file selected.")
-          return
-        }
+                xhr.upload.onprogress = (event: ProgressEvent) => {
+                  setUploadProgress(Math.floor(event.loaded / event.total * 100));
+                };
 
-        let uploadingFile = uploadingDstFile
-        let uploadingFilename = dstObj.filename
-        let where: SrcOrDst = "dst"
+                xhr.open('PUT', presigned, true);
+                xhr.setRequestHeader('Content-Type',
+                  uploadingFile ? uploadingFile.type : "application/octet-stream");
+                xhr.setRequestHeader('Cache-Control', 'max-age=630720000');
 
-        setUploading(true)
-
-        if (uploadingSrcFile) {
-          uploadingFile = uploadingSrcFile
-          uploadingFilename = srcObj.filename
-          where = "src"
-        }
-
-        if (uploadingFile && projectId) {
-          mutation.mutate({
-            projectId: projectId,
-            filename: uploadingFilename
-          }, {
-            onSuccess: (async ({ presigned, finalUrl }) => {
-              if (uploadingFile) {
-                const buffer = await uploadingFile.arrayBuffer();
-                const result = await new Promise<boolean>((resolve,) => {
-                  const xhr = new XMLHttpRequest();
-
-                  xhr.upload.onprogress = (event: ProgressEvent) => {
-                    setUploadProgress(Math.floor(event.loaded / event.total * 100));
-                  };
-
-                  xhr.open('PUT', presigned, true);
-                  xhr.setRequestHeader('Content-Type',
-                    uploadingFile ? uploadingFile.type : "application/octet-stream");
-                  xhr.setRequestHeader('Cache-Control', 'max-age=630720000');
-
-                  xhr.onreadystatechange = function() {
-                    if (xhr.readyState === 4) {
-                      if (xhr.status >= 200 && xhr.status < 300) {
-                        resolve(true)
-                      } else {
-                        resolve(false)
-                      }
+                xhr.onreadystatechange = function() {
+                  if (xhr.readyState === 4) {
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                      resolve(true)
+                    } else {
+                      resolve(false)
                     }
-                  };
+                  }
+                };
 
-                  xhr.send(buffer);
-                }).catch(err => {
-                  console.log("File upload failed: ", err)
-                });
-                if (result) {
-                  handleChange(where, {
-                    ...(where === "src" ? srcObj : dstObj),
-                    fileurl: finalUrl
-                  })
-                } else {
-                  console.log("File upload failed: ")
-                }
-                setUploading(false)
-                setUploadingSrcFile(null)
-                setUploadingDstFile(null)
+                xhr.send(buffer);
+              }).catch(err => {
+                console.log("File upload failed: ", err)
+              });
+              if (result) {
+                handleChange(where, {
+                  ...(where === "src" ? srcObj : dstObj),
+                  fileurl: finalUrl
+                })
+              } else {
+                console.log("File upload failed: ")
               }
-            }),
-            onError: (err => {
-              console.log(err)
               setUploading(false)
               setUploadingSrcFile(null)
               setUploadingDstFile(null)
-            })
+            }
+          }),
+          onError: (err => {
+            console.log(err)
+            setUploading(false)
+            setUploadingSrcFile(null)
+            setUploadingDstFile(null)
           })
-        }
+        })
       }
+    }
 
-      return (
-        <div className="p-8 flex flex-col space-y-2">
-          <Label>Filename</Label>
-          <div className="flex">
-            <Input
-              type="text"
-              disabled={true}
-              value={srcObj.filename}
-              onChange={(event) => {
-                handleChange("src", { ...srcObj, filename: event.target.value })
-              }} />
-            {
-              srcObj.fileurl ?
-                <Button disabled={!permission.srcReadable} variant="ghost">
-                  <a target="_blank" href={srcObj.fileurl}><Download /></a>
-                </Button>
-                :
-                <Button disabled={uploading || !permission.srcWritable} variant="ghost">
-                  <Upload />
-                </Button>
-            }
-            <input
-              disabled={!permission.srcWritable}
-              type="file"
-              className="hidden"
-              multiple={false}
-              ref={fileSrcInputRef}
-              onChange={({ target }) => {
-                if (target.files) {
-                  const file = target.files[0];
-                  if (file) {
-                    setUploadingSrcFile(file)
-                    handleChange("src", { ...srcObj, filename: file.name })
-                  }
-                }
-              }} />
-
-          </div>
-
-          <div className="flex">
-            <Input
-              type="text"
-              disabled={true}
-              value={dstObj.filename}
-              onChange={(event) => {
-                handleChange("dst", { ...dstObj, filename: event.target.value })
-              }} />
-            {
-              dstObj.fileurl ?
-                <Button disabled={!permission.dstReadable} variant="ghost">
-                  <a target="_blank" href={dstObj.fileurl}><Download /></a>
-                </Button>
-                :
-                <Button disabled={!permission.dstWritable || uploading} variant="ghost" onClick={() => {
-                  console.log("clicked,", fileDstInputRef)
-                  if (fileDstInputRef.current) fileDstInputRef.current.click()
-                }}>
-                  <Folder />
-                </Button>
-            }
-            {
-              dstObj.fileurl ?
-                <Button
-                  disabled={!permission.dstWritable}
-                  variant="ghost" onClick={() => {
-                    if (fileDstInputRef.current) fileDstInputRef.current.value = ""
-                    handleChange("dst", { filename: "", fileurl: "" })
-                  }}>
-                  <Trash />
-                </Button> : <></>
-            }
-            <input
-              disabled={!permission.dstWritable}
-              type="file"
-              className="hidden"
-              multiple={false}
-              ref={fileDstInputRef}
-              onChange={({ target }) => {
-                console.log("target")
-                if (target.files) {
-                  console.log(target)
-                  const file = target.files[0];
-                  if (file) {
-                    setUploadingDstFile(file)
-                    handleChange("dst", { ...dstObj, filename: file.name })
-                  }
-                }
-              }} />
-          </div>
-          {(uploadingSrcFile || uploadingDstFile) ?
-            <div className="flex flex-col space-y-1">
-              <Button disabled={uploading} className="w-full" onClick={handleUpload}>
-                {uploading ? ((uploadProgress < 100) ? `${uploadProgress}%` : "Waiting") : "Upload"}
+    return (
+      <div className="p-8 flex flex-col space-y-2">
+        <Label>Filename</Label>
+        <div className="flex">
+          <Input
+            type="text"
+            disabled={true}
+            value={srcObj.filename}
+            onChange={(event) => {
+              handleChange("src", { ...srcObj, filename: event.target.value })
+            }} />
+          {
+            srcObj.fileurl ?
+              <Button disabled={!permission.srcReadable} variant="ghost">
+                <a target="_blank" href={srcObj.fileurl}><Download /></a>
               </Button>
-              <p className="text-xs text-gray-400">Once uploaded, click the Save button before leaving.</p>
-            </div>
-            : <></>}
-        </div>
-      )
-    })
+              :
+              <Button disabled={uploading || !permission.srcWritable} variant="ghost">
+                <Upload />
+              </Button>
+          }
+          <input
+            disabled={!permission.srcWritable}
+            type="file"
+            className="hidden"
+            multiple={false}
+            ref={fileSrcInputRef}
+            onChange={({ target }) => {
+              if (target.files) {
+                const file = target.files[0];
+                if (file) {
+                  setUploadingSrcFile(file)
+                  handleChange("src", { ...srcObj, filename: file.name })
+                }
+              }
+            }} />
 
-AttachmentEditor.displayName = "AttachmentEditor"
+        </div>
+
+        <div className="flex">
+          <Input
+            type="text"
+            disabled={true}
+            value={dstObj.filename}
+            onChange={(event) => {
+              handleChange("dst", { ...dstObj, filename: event.target.value })
+            }} />
+          {
+            dstObj.fileurl ?
+              <Button disabled={!permission.dstReadable} variant="ghost">
+                <a target="_blank" href={dstObj.fileurl}><Download /></a>
+              </Button>
+              :
+              <Button disabled={!permission.dstWritable || uploading} variant="ghost" onClick={() => {
+                console.log("clicked,", fileDstInputRef)
+                if (fileDstInputRef.current) fileDstInputRef.current.click()
+              }}>
+                <Folder />
+              </Button>
+          }
+          {
+            dstObj.fileurl ?
+              <Button
+                disabled={!permission.dstWritable}
+                variant="ghost" onClick={() => {
+                  if (fileDstInputRef.current) fileDstInputRef.current.value = ""
+                  handleChange("dst", { filename: "", fileurl: "" })
+                }}>
+                <Trash />
+              </Button> : <></>
+          }
+          <input
+            disabled={!permission.dstWritable}
+            type="file"
+            className="hidden"
+            multiple={false}
+            ref={fileDstInputRef}
+            onChange={({ target }) => {
+              console.log("target")
+              if (target.files) {
+                console.log(target)
+                const file = target.files[0];
+                if (file) {
+                  setUploadingDstFile(file)
+                  handleChange("dst", { ...dstObj, filename: file.name })
+                }
+              }
+            }} />
+        </div>
+        {(uploadingSrcFile || uploadingDstFile) ?
+          <div className="flex flex-col space-y-1">
+            <Button disabled={uploading} className="w-full" onClick={handleUpload}>
+              {uploading ? ((uploadProgress < 100) ? `${uploadProgress}%` : "Waiting") : "Upload"}
+            </Button>
+            <p className="text-xs text-gray-400">Once uploaded, click the Save button before leaving.</p>
+          </div>
+          : <></>}
+      </div>
+    )
+  })
 
 const AttachmentEditorPage: NextPageWithLayout = () => {
   const router = useRouter()
@@ -228,14 +223,13 @@ const AttachmentEditorPage: NextPageWithLayout = () => {
   return (
     <DocumentEditor
       docId={docId} >
-      {(srcJson, dstJson, handleChange, childrenRef, permission, projectId) => {
+      {(srcJson, dstJson, handleChange, _childrenRef, permission, projectId) => {
         return <AttachmentEditor
           srcJson={srcJson}
           dstJson={dstJson}
           projectId={projectId}
           permission={permission}
           handleChange={handleChange}
-          ref={childrenRef}
         />
       }}
     </DocumentEditor >

@@ -1,15 +1,16 @@
 import * as React from "react"
 import { useSession } from "next-auth/react"
-import { type ProjectColumn, columns } from "~/components/columns/projects"
+import type { ProjectColumn } from "~/components/columns/projects"
+import { columns } from "~/components/columns/projects"
 import { DataTable } from "~/components/ui/data-table"
-import { ProjectCreateDialog } from "~/components/create-project-dialog"
+import { ProjectCreateDialog } from "~/components/dialogs/create-project-dialog"
 import Layout from "./layout"
 import { api } from "~/utils/api";
-import { type ProjectRelatedUser } from "~/server/api/routers/project"
+import type { ProjectRelatedUser } from "~/server/api/routers/project"
 import { RefreshCw } from "lucide-react"
 import { Button } from "~/components/ui/button"
-import { type NextPageWithLayout } from "../_app"
-import { type ProjectAiParamters } from "~/types"
+import type { NextPageWithLayout } from "../_app"
+import type { ProjectAiParamters } from "~/types"
 
 const ProjectManagement: NextPageWithLayout = () => {
   const { data: session } = useSession()

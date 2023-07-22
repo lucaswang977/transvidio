@@ -13,7 +13,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "~/components/ui/dialog"
-import { type UserColumn, columns } from "./columns/users"
+import type { UserColumn } from "~/components/columns/users"
+import { columns } from "~/components/columns/users"
 import { useSession } from "next-auth/react"
 import { api } from "~/utils/api";
 import { naturalTime } from "~/utils/helper"

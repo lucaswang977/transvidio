@@ -20,7 +20,7 @@ import type { DocumentState, DocumentType } from "@prisma/client"
 import { Badge } from "~/components/ui/badge"
 import { api } from "~/utils/api"
 import { useToast } from "~/components/ui/use-toast"
-import { ConfirmDialogInDropdown } from "~/components/confirm-dialog"
+import { ConfirmDialogInDropdown } from "~/components/dialogs/confirm-dialog"
 import Link from "next/link"
 
 import {
@@ -29,6 +29,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "~/components/ui/tooltip"
+import { WordCountModifyDialog } from "~/components/dialogs/wordcount-modify-dialog"
 
 const CloseDialog = (props: { documentId: string, refetch: () => void }) => {
   const mutation = api.document.closeByAdmin.useMutation()
@@ -403,7 +404,26 @@ export const columns: ColumnDef<DocumentColumn>[] = [
   },
   {
     accessorKey: "wordCount",
-    header: "Word Count"
+    header: "Word Count",
+    cell: ({ row, table }) => {
+      const data = row.original
+      const myself = table.options.meta?.user
+      const refetch = table.options.meta?.refetchData
+      const value: number = row.getValue("wordCount")
+
+      return (
+        (myself && myself.role === "ADMIN") ?
+          <WordCountModifyDialog
+            refetch={() => { if (refetch) refetch() }}
+            documentId={data.id}
+            currentValue={value}
+            triggerChild={
+              <Button variant="link">{value}</Button>
+            }
+          />
+          : <p>{row.getValue("wordCount")}</p>
+      )
+    }
   },
   {
     accessorKey: "updated",

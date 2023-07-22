@@ -6,7 +6,7 @@ import { useRouter } from 'next/router';
 import { api } from "~/utils/api";
 import { RefreshCw } from "lucide-react"
 import { Button } from "~/components/ui/button"
-import { DocumentCreateDialog } from "~/components/create-document-dialog"
+import { DocumentCreateDialog } from "~/components/dialogs/create-document-dialog"
 import type { NextPageWithLayout } from "../_app"
 import type { DocumentColumn } from "~/components/columns/documents"
 import {

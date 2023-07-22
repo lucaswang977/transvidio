@@ -3,8 +3,8 @@
 import type { ColumnDef } from "@tanstack/react-table"
 import { Avatar, AvatarImage, AvatarFallback } from "~/components/ui/avatar"
 import type { ProjectRelatedUser } from "~/server/api/routers/project"
-import { AssignProjectToUserDialog } from "~/components/assign-project-to-user-dialog"
-import { AiParamsDialog } from "~/components/ai-params-dialog"
+import { AssignProjectToUserDialog } from "~/components/dialogs/assign-project-to-user-dialog"
+import { AiParamsDialog } from "~/components/dialogs/ai-params-dialog"
 import { MoreHorizontal } from "lucide-react"
 
 import { Button } from "~/components/ui/button"

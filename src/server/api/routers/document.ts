@@ -496,4 +496,35 @@ export const documentRouter = createTRPCRouter({
         ctx.session.user.id,
         input.documentId)
     }),
+
+  modifyWordCount: protectedProcedure
+    .input(z.object({
+      documentId: z.string().nonempty(),
+      wordCount: z.number().nonnegative()
+    }))
+    .mutation(async ({ ctx, input }) => {
+      if (env.DELAY_ALL_API) await delay(3000)
+
+      const result = await getDocumentAndPermission(
+        ctx.session.user.id,
+        input.documentId)
+
+      const permission = result.permission
+
+      if (permission.srcWritable) {
+        await prisma.document.update({
+          where: {
+            id: input.documentId
+          },
+          data: {
+            wordCount: input.wordCount
+          }
+        })
+      } else {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "No permission on writing document."
+        })
+      }
+    }),
 });

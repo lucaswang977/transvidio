@@ -14,7 +14,7 @@ import {
 
 import { signOut, useSession } from "next-auth/react"
 import { extractLetters } from "~/utils/helper"
-import AppConfigDialog from "~/components/app-config-dialog"
+import AppConfigDialog from "~/components/dialogs/app-config-dialog"
 
 export function UserNav() {
   const { data: sessionData } = useSession()

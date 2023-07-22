@@ -15,7 +15,7 @@ import { useSession } from "next-auth/react"
 import { fetchEventSource } from '@microsoft/fetch-event-source';
 import type { Prisma } from "@prisma/client";
 import { ModeToggle } from "~/components/mode-toggle";
-import { SubtitleExportDialog } from "~/components/subtitle-export-dialog"
+import { SubtitleExportDialog } from "~/components/dialogs/subtitle-export-dialog"
 
 import {
   DropdownMenu,
