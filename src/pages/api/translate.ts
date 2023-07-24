@@ -8,10 +8,8 @@ import {
 import type { NextRequest } from 'next/server';
 import type { ProjectAiParamters } from '~/types';
 import { get } from '@vercel/edge-config';
-import { decode } from "next-auth/jwt"
 
 import { cLog, LogLevels } from "~/utils/helper"
-import { env } from '~/env.mjs';
 const LOG_RANGE = "TRANSLATE"
 
 export const runtime = 'edge';
@@ -26,16 +24,8 @@ type RequestDataType = {
 export default async function handler(req: NextRequest) {
   if (req.method === "POST") {
     try {
-      const sessionCookie = req.cookies.get("next-auth.session-token")
-      await cLog(LogLevels.INFO, LOG_RANGE, "unknwon", `translate() called: ${sessionCookie?.value as string}, ${env.NEXTAUTH_SECRET as string}.`)
-      if (!(sessionCookie && env.NEXTAUTH_SECRET)) {
-        throw new Error("Authentication failed.")
-      }
-
-      const result = await decode({ token: sessionCookie.value, secret: env.NEXTAUTH_SECRET })
-      const userId = (result as { id: string }).id
       const { translate, character, background, syllabus } = await req.json() as RequestDataType
-      await cLog(LogLevels.INFO, LOG_RANGE, userId, `translate() called: ${translate.length}.`)
+      await cLog(LogLevels.INFO, LOG_RANGE, "unknown", `translate() called: ${translate.length}.`)
 
       const aiParams: ProjectAiParamters = {
         character: character,
@@ -95,7 +85,7 @@ export default async function handler(req: NextRequest) {
         });
 
         chat.call(prompt).then(async (m) => {
-          await cLog(LogLevels.INFO, LOG_RANGE, userId, `translate() success: ${m.text.length}.`)
+          await cLog(LogLevels.INFO, LOG_RANGE, "unknown", `translate() success: ${m.text.length}.`)
         }).catch(e => console.error(e))
 
         // We don't need to await the result of the chain.run() call because
