@@ -69,7 +69,7 @@ export function ProjectCreateDialog(props: { refetch: () => void }) {
       memo: values.memo
     }, {
       onError: (err) => {
-        console.log(err)
+        console.error(err)
         setIsOpen(false)
         setLoading(false)
       },

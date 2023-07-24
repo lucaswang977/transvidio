@@ -38,11 +38,9 @@ const AttachmentEditor =
     const fileSrcInputRef = React.useRef<HTMLInputElement>(null)
     const fileDstInputRef = React.useRef<HTMLInputElement>(null)
 
-    console.log(srcObj, dstObj)
-
     const handleUpload = () => {
       if (!uploadingSrcFile && !uploadingDstFile) {
-        console.log("No uploading file selected.")
+        console.error("No uploading file selected.")
         return
       }
 
@@ -90,7 +88,7 @@ const AttachmentEditor =
 
                 xhr.send(buffer);
               }).catch(err => {
-                console.log("File upload failed: ", err)
+                console.error("File upload failed: ", err)
               });
               if (result) {
                 handleChange(where, {
@@ -98,7 +96,7 @@ const AttachmentEditor =
                   fileurl: finalUrl
                 })
               } else {
-                console.log("File upload failed: ")
+                console.error("File upload failed: ")
               }
               setUploading(false)
               setUploadingSrcFile(null)
@@ -106,7 +104,7 @@ const AttachmentEditor =
             }
           }),
           onError: (err => {
-            console.log(err)
+            console.error(err)
             setUploading(false)
             setUploadingSrcFile(null)
             setUploadingDstFile(null)
@@ -169,7 +167,6 @@ const AttachmentEditor =
               </Button>
               :
               <Button disabled={!permission.dstWritable || uploading} variant="ghost" onClick={() => {
-                console.log("clicked,", fileDstInputRef)
                 if (fileDstInputRef.current) fileDstInputRef.current.click()
               }}>
                 <Folder />
@@ -193,9 +190,7 @@ const AttachmentEditor =
             multiple={false}
             ref={fileDstInputRef}
             onChange={({ target }) => {
-              console.log("target")
               if (target.files) {
-                console.log(target)
                 const file = target.files[0];
                 if (file) {
                   setUploadingDstFile(file)

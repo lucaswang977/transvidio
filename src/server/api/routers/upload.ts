@@ -5,11 +5,18 @@ import {
   protectedProcedure,
 } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server"
-import { S3Client, PutObjectCommand, HeadObjectCommand } from "@aws-sdk/client-s3"
+import {
+  S3Client,
+  PutObjectCommand,
+  HeadObjectCommand
+} from "@aws-sdk/client-s3"
 import type { S3ServiceException } from "@aws-sdk/client-s3"
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner"
 import { env } from "~/env.mjs"
 import { delay } from "~/utils/helper";
+
+import { cLog, LogLevels } from "~/utils/helper"
+const LOG_RANGE = "UPLOAD"
 
 export const uploadRouter = createTRPCRouter({
   signUrl: protectedProcedure
@@ -17,8 +24,9 @@ export const uploadRouter = createTRPCRouter({
       projectId: z.string(),
       filename: z.string()
     }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       if (env.DELAY_ALL_API) await delay(3000)
+      await cLog(LogLevels.INFO, LOG_RANGE, `${ctx.session.user.id}`, "signUrl() called")
 
       const s3 = new S3Client({
         region: env.S3_REGION,
@@ -40,7 +48,6 @@ export const uploadRouter = createTRPCRouter({
         const basename = path.basename(filename, extname)
         if (headResult) {
           filename = `${basename}.${randomStr}${extname}`
-          console.log(filename)
         }
       } catch (err) {
         if ((err as S3ServiceException).name !== "NotFound") {
@@ -61,9 +68,13 @@ export const uploadRouter = createTRPCRouter({
           message: err as string
         })
       })
+
+      const finalUrl = `${env.CDN_BASE_URL}/${input.projectId}/${env.S3_UPLOAD_FOLDER_NAME}/${filename}`
+      await cLog(LogLevels.INFO, LOG_RANGE, `${ctx.session.user.id}`, `signUrl() success: ${input.projectId}, ${input.filename}, ${url}, ${finalUrl}.`)
+
       return {
         presigned: url,
-        finalUrl: `${env.CDN_BASE_URL}/${input.projectId}/${env.S3_UPLOAD_FOLDER_NAME}/${filename}`
+        finalUrl: finalUrl
       }
     }),
 });

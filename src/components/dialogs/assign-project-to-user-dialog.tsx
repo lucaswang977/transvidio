@@ -75,7 +75,7 @@ export function AssignProjectToUserDialog(props: AssignProjectToUserDialogProps)
         users: data as [string, ...string[]]
       }, {
         onError: (err) => {
-          console.log(err.message)
+          console.error(err.message)
           setIsOpen(false)
           setLoading(false)
         },

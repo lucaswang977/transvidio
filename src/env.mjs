@@ -35,6 +35,10 @@ export const env = createEnv({
     EDGE_CONFIG: z.string().min(1),
     VERCEL_EDGE_CONFIG_ID: z.string().min(1),
     VERCEL_API_TOKEN: z.string().min(1),
+    KV_URL: z.string().min(1),
+    KV_REST_API_URL: z.string().min(1),
+    KV_REST_API_TOKEN: z.string().min(1),
+    KV_REST_API_READ_ONLY_TOKEN: z.string().min(1),
     DELAY_ALL_API: z.preprocess(
       (str) => str === "true" ? true : false,
       z.boolean().optional())
@@ -72,6 +76,10 @@ export const env = createEnv({
     EDGE_CONFIG: process.env.EDGE_CONFIG,
     VERCEL_EDGE_CONFIG_ID: process.env.VERCEL_EDGE_CONFIG_ID,
     VERCEL_API_TOKEN: process.env.VERCEL_API_TOKEN,
+    KV_URL: process.env.KV_URL,
+    KV_REST_API_URL: process.env.KV_REST_API_URL,
+    KV_REST_API_TOKEN: process.env.KV_REST_API_TOKEN,
+    KV_REST_API_READ_ONLY_TOKEN: process.env.KV_REST_API_READ_ONLY_TOKEN,
     DELAY_ALL_API: process.env.DELAY_ALL_API,
   },
   /**

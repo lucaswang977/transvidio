@@ -49,7 +49,12 @@ export const columns: ColumnDef<UserColumn>[] = [
   },
   {
     accessorKey: "name",
-    header: "Name"
+    header: "Name",
+    cell: ({ row }) => {
+      const name: string = row.getValue("name")
+      const id: string = row.original.id
+      return (<div className="space-y-1"><p>{name}</p><p className="text-gray-400 text-xs">{id}</p></div>)
+    }
   },
   {
     accessorKey: "email",

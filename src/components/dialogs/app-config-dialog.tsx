@@ -122,8 +122,10 @@ const AppConfigDialog = (props: AppConfigDialogProps) => {
                   <div key={`d-${name}`} className="items-center col-span-2 flex space-x-1 text-gray-400">
                     <span >$</span>
                     <Input
-                      placeholder="0"
-                      value={v}
+                      placeholder="0.01"
+                      step="0.10"
+                      type="number"
+                      value={parseFloat(v).toFixed(2)}
                       onChange={(e) => {
                         setAppConfig(v => {
                           const c = v.find(i => i.key === `basicCost_${name}`)

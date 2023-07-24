@@ -76,7 +76,7 @@ export function UserNav() {
           </DropdownMenuItem>
           <DropdownMenuItem disabled={true}>
             <CreditCard className="mr-2 h-4 w-4" />
-            <span>Billing</span>
+            <span>Income</span>
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />

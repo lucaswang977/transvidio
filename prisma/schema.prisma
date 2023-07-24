@@ -47,23 +47,29 @@ enum UserRole {
 }
 
 model User {
-  id            String    @id @default(cuid())
+  id            String         @id @default(cuid())
   name          String?
-  email         String?   @unique
+  email         String?        @unique
   emailVerified DateTime?
   image         String?
-  role          UserRole  @default(EDITOR)
+  role          UserRole       @default(EDITOR)
   pwd           String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  lastLogin     DateTime  @default(now())
-  blocked       Boolean   @default(false)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  lastLogin     DateTime       @default(now())
+  blocked       Boolean        @default(false)
+  memo          String?
+  paymentMethod PaymentMethod?
+  paymentTarget String?
 
   accounts Account[]
   sessions Session[]
 
   projects  ProjectsOfUsers[]
   documents Document[]
+
+  incomeRecords IncomeRecord[]
+  payoutRecords PayoutRecord[]
 }
 
 model VerificationToken {
@@ -80,18 +86,28 @@ enum Language {
   jaJP
 }
 
+enum ProjectStatus {
+  PREPARING
+  PROGRESSING
+  COMPLETED // Payout records will be generated
+  ARCHIVED
+}
+
 model Project {
-  id          String   @id @default(cuid())
+  id          String        @id @default(cuid())
   name        String
   srcLang     Language
   dstLang     Language
   memo        String?
   aiParameter Json?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  status      ProjectStatus @default(PREPARING)
 
   documents Document[]
   users     ProjectsOfUsers[]
+
+  incomeRecords IncomeRecord[]
 }
 
 model ProjectsOfUsers {
@@ -117,7 +133,7 @@ enum DocumentState {
   OPEN
   WORKING
   REVIEW
-  CLOSED
+  CLOSED // Income records will be generated
 }
 
 model Document {
@@ -139,35 +155,64 @@ model Document {
 
   userId String?
   user   User?   @relation(fields: [userId], references: [id], onDelete: NoAction)
+
+  incomeRecords IncomeRecord[]
 }
 
-enum ActivityTarget {
-  USER
-  PROJECT
-  DOCUMENT
+enum PayoutStatus {
+  NOTPAID
+  PAID
+  FROZEN
 }
 
-enum ActivityActionType {
-  UserRegister
-  UserProfileModify
-  ProjectCreate
-  ProjectAssign
-  ProjectUnassign
-  DocumentClaim
-  DocumentReset
-  DocumentSubmit
-  DocumentClose
+enum Currency {
+  USD
+  CNY
+  JPY
 }
 
-model Activity {
-  id        String             @id @default(cuid())
-  createdAt DateTime           @default(now())
-  seq       Int                @default(autoincrement())
-  memo      String
-  target    ActivityTarget
-  action    ActivityActionType
+enum PaymentMethod {
+  PayPal
+  Alipay
+}
 
-  userId     String?
-  projectId  String?
-  documentId String?
+model IncomeRecord {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  number    Float
+  wordCount Int
+  rate      Float
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: NoAction)
+
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: NoAction)
+
+  documentId String
+  document   Document @relation(fields: [documentId], references: [id], onDelete: NoAction)
+
+  payoutRecordId String?
+  payoutRecord   PayoutRecord? @relation(fields: [payoutRecordId], references: [id], onDelete: NoAction)
+}
+
+model PayoutRecord {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  number   Float // in USD
+  rate     Float
+  currency Currency
+
+  status        PayoutStatus
+  target        String
+  paymentMethod PaymentMethod
+  memo          String
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: NoAction)
+
+  incomeRecords IncomeRecord[]
 }

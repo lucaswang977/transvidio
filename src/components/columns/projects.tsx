@@ -126,7 +126,7 @@ export const columns: ColumnDef<ProjectColumn>[] = [
         </Avatar>)
       })
       return (
-        <div className="flex space-x-1" >
+        <div className="flex space-x-1 items-center" >
           {(myself && myself.role === "ADMIN") ?
             <>
               <AssignProjectToUserDialog

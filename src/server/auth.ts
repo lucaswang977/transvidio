@@ -12,6 +12,9 @@ import { env } from "~/env.mjs";
 import { prisma } from "~/server/db";
 import { randomUUID, randomBytes } from "crypto";
 
+import { cLog, LogLevels } from "~/utils/helper"
+const LOG_RANGE = "AUTH"
+
 /**
  * Module augmentation for `next-auth` types. Allows us to add custom properties to the `session`
  * object and keep type safety.
@@ -54,7 +57,7 @@ export const authOptions: NextAuthOptions = {
         }
       })
       if (u && u.blocked) {
-        console.log("user is blocked", u)
+        await cLog(LogLevels.WARN, LOG_RANGE, u.id, "user is blocked.")
         return false
       }
       return true
@@ -75,8 +78,8 @@ export const authOptions: NextAuthOptions = {
             id: token.id as string
           }
         })
+        await cLog(LogLevels.DEBUG, LOG_RANGE, token.id as string, "session updated.")
       }
-
       return token
     },
     session: ({ session, token }) => {

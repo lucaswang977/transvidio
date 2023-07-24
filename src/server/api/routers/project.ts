@@ -11,6 +11,9 @@ import { delay } from "~/utils/helper";
 import { env } from "~/env.mjs";
 import { type ProjectAiParamters } from "~/types";
 
+import { cLog, LogLevels } from "~/utils/helper"
+const LOG_RANGE = "PROJECT"
+
 export type ProjectRelatedUser = {
   id: string,
   name: string | null,
@@ -20,6 +23,8 @@ export type ProjectRelatedUser = {
 export const projectRouter = createTRPCRouter({
   getAll: protectedProcedure.query(async ({ ctx }) => {
     if (env.DELAY_ALL_API) await delay(3000)
+
+    await cLog(LogLevels.DEBUG, LOG_RANGE, ctx.session.user.id, "getAll() is called.")
 
     let whereCondition: Prisma.ProjectWhereInput = {}
 
@@ -69,8 +74,9 @@ export const projectRouter = createTRPCRouter({
       dstLang: z.nativeEnum(Language),
       memo: z.string()
     }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       if (env.DELAY_ALL_API) await delay(3000)
+      await cLog(LogLevels.INFO, LOG_RANGE, ctx.session.user.id, `create() is called: ${input.name}, ${input.srcLang}-${input.dstLang}.`)
 
       const project = await prisma.project.findFirst({
         where: {
@@ -96,6 +102,7 @@ export const projectRouter = createTRPCRouter({
         }
       })
 
+      await cLog(LogLevels.INFO, LOG_RANGE, ctx.session.user.id, `create() success: ${input.name}, ${input.srcLang}-${input.dstLang}.`)
       return result
     }),
 
@@ -104,9 +111,10 @@ export const projectRouter = createTRPCRouter({
       id: z.string().nonempty(),
       users: z.string().array()
     }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       if (env.DELAY_ALL_API) await delay(3000)
 
+      await cLog(LogLevels.INFO, LOG_RANGE, ctx.session.user.id, `assignUsers() called: ${input.id}, ${input.users.join(",")}.`)
       const project = await prisma.project.findUnique({
         where: {
           id: input.id,
@@ -131,6 +139,8 @@ export const projectRouter = createTRPCRouter({
           data: input.users.map((user) => { return { projectId: input.id, userId: user } })
         })
       }
+
+      await cLog(LogLevels.INFO, LOG_RANGE, ctx.session.user.id, `assignUsers() success: ${input.id}, ${input.users.join(",")}.`)
       return input
     }),
 
@@ -139,7 +149,10 @@ export const projectRouter = createTRPCRouter({
       projectId: z.string().nonempty(),
       value: z.string().nonempty()
     }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
+      if (env.DELAY_ALL_API) await delay(3000)
+
+      await cLog(LogLevels.INFO, LOG_RANGE, ctx.session.user.id, `saveAiParams() called: ${input.projectId}.`)
       const project = await prisma.project.findUnique({
         where: {
           id: input.projectId,
@@ -170,6 +183,7 @@ export const projectRouter = createTRPCRouter({
         }
       })
 
+      await cLog(LogLevels.INFO, LOG_RANGE, ctx.session.user.id, `saveAiParams() success: ${input.projectId}.`)
       return updatedProject.id
     }),
 });

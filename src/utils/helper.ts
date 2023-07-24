@@ -2,6 +2,8 @@ import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 import dayjs from "dayjs"
 import relativeTime from "dayjs/plugin/relativeTime";
+import { kv } from "@vercel/kv";
+import { env } from "~/env.mjs";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -74,7 +76,52 @@ export function countWordsInJSONValues(obj: any): number {
   const noNumberStrings = noSpecialCodeStrings.map(s => s.replace(/\b\d+\b/g, ''));
 
   const matches = noNumberStrings.join(' ').match(/\b\w+\b/g);
-  console.log(JSON.stringify(matches))
 
   return matches ? matches.length : 0;
+}
+
+export enum LogLevels {
+  ERROR = 'error',
+  WARN = 'warn',
+  INFO = 'info',
+  DEBUG = 'debug',
+}
+
+export async function cLog(level: LogLevels, range: string, calledBy: string, message: string) {
+  const logMsg = `[${range}] (${calledBy}) ${message}`
+
+  const dateStr = `${new Date().toISOString()} `
+
+  switch (level) {
+    case LogLevels.ERROR:
+      console.error(dateStr, logMsg);
+      break;
+    case LogLevels.WARN:
+      console.warn(dateStr, logMsg);
+      break;
+    case LogLevels.INFO:
+      console.info(dateStr, logMsg);
+      break;
+    case LogLevels.DEBUG:
+      console.debug(dateStr, logMsg);
+      break;
+    default:
+      console.log(dateStr, logMsg);
+      break;
+  }
+
+  if (env.NODE_ENV !== "development") {
+    if (level != LogLevels.DEBUG) {
+      const date = new Date().toISOString().split('T')[0] as string
+      const key = `logs:${date}`
+      const timestamp = Date.now()
+
+      try {
+        await kv.zadd(key, { score: timestamp, member: `${dateStr}${logMsg}` })
+        await kv.expire(key, 7 * 24 * 60 * 60)
+      } catch (err) {
+        console.error(err)
+      }
+    }
+  }
 }

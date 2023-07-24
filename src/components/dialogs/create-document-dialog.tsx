@@ -97,7 +97,7 @@ export function DocumentCreateDialog(props: { refetch: () => void }) {
       seq: values.seq
     }, {
       onError: (err) => {
-        console.log(err)
+        console.error(err)
         setIsOpen(false)
         setLoading(false)
       },

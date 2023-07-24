@@ -37,7 +37,7 @@ export function AiParamsDialog(props: AiParamsDialogProps) {
       value: JSON.stringify(params)
     }, {
       onError: (err) => {
-        console.log(err.message)
+        console.error(err.message)
       },
       onSuccess: () => {
         if (props.refetch) props.refetch()

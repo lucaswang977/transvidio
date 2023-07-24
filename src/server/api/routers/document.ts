@@ -11,6 +11,9 @@ import type { DocPermission, DocumentInfo } from "~/types";
 import { env } from "~/env.mjs";
 import { countWordsInJSONValues, delay } from "~/utils/helper";
 
+import { cLog, LogLevels } from "~/utils/helper"
+const LOG_RANGE = "DOCUMENT"
+
 const getDocumentAndPermission = async (userId: string, docId: string) => {
   const user = await prisma.user.findUnique({
     where: {
@@ -117,6 +120,8 @@ export const documentRouter = createTRPCRouter({
     }))
     .query(async ({ ctx, input }) => {
       if (env.DELAY_ALL_API) await delay(3000)
+      await cLog(LogLevels.DEBUG, LOG_RANGE, ctx.session.user.id, `getAll() called: ${input.pageSize}, ${input.pageIndex}, ${input.filterByType as string}, ${input.filterByState as string}, ${input.filterByProject as string}.`)
+
       const projects = await ctx.prisma.projectsOfUsers.findMany({
         where: {
           userId: ctx.session.user.id
@@ -140,6 +145,7 @@ export const documentRouter = createTRPCRouter({
         }
       }
 
+      await cLog(LogLevels.DEBUG, LOG_RANGE, ctx.session.user.id, `getAll() success: ${input.pageSize}, ${input.pageIndex}, ${input.filterByType as string}, ${input.filterByState as string}, ${input.filterByProject as string}.`)
       return {
         pagination: {
           pageIndex: input.pageIndex,
@@ -181,9 +187,10 @@ export const documentRouter = createTRPCRouter({
       seq: z.number().optional(),
       srcJson: z.string().optional(),
     }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       if (env.DELAY_ALL_API) await delay(3000)
 
+      await cLog(LogLevels.INFO, LOG_RANGE, ctx.session.user.id, `create() called: ${input.title}, ${input.type}, ${input.projectId}, ${input.seq as number}.`)
       const result = await prisma.document.create({
         data: {
           title: input.title,
@@ -198,6 +205,7 @@ export const documentRouter = createTRPCRouter({
         }
       })
 
+      await cLog(LogLevels.INFO, LOG_RANGE, ctx.session.user.id, `create() success: ${input.title}, ${result.id}.`)
       return result
     }),
 
@@ -205,15 +213,17 @@ export const documentRouter = createTRPCRouter({
     .input(z.object({
       documentId: z.string().nonempty(),
     }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       if (env.DELAY_ALL_API) await delay(3000)
 
+      await cLog(LogLevels.INFO, LOG_RANGE, ctx.session.user.id, `delete() called: ${input.documentId}`)
       const result = await prisma.document.delete({
         where: {
           id: input.documentId,
         }
       })
 
+      await cLog(LogLevels.INFO, LOG_RANGE, ctx.session.user.id, `delete() success: ${input.documentId}`)
       return result
     }),
 
@@ -223,6 +233,7 @@ export const documentRouter = createTRPCRouter({
     }))
     .mutation(async ({ ctx, input }) => {
       if (env.DELAY_ALL_API) await delay(3000)
+      await cLog(LogLevels.INFO, LOG_RANGE, ctx.session.user.id, `claimByUser() called: ${input.documentId}`)
 
       const document = await prisma.document.findFirst({
         where: {
@@ -259,6 +270,8 @@ export const documentRouter = createTRPCRouter({
           state: "WORKING"
         }
       })
+
+      await cLog(LogLevels.INFO, LOG_RANGE, ctx.session.user.id, `claimByUser() success: ${input.documentId}`)
     }),
 
   unclaimByUser: protectedProcedure
@@ -267,6 +280,7 @@ export const documentRouter = createTRPCRouter({
     }))
     .mutation(async ({ ctx, input }) => {
       if (env.DELAY_ALL_API) await delay(3000)
+      await cLog(LogLevels.INFO, LOG_RANGE, ctx.session.user.id, `unclaimByUser() called: ${input.documentId}`)
 
       const document = await prisma.document.findFirst({
         where: {
@@ -302,6 +316,8 @@ export const documentRouter = createTRPCRouter({
           state: "OPEN"
         }
       })
+
+      await cLog(LogLevels.INFO, LOG_RANGE, ctx.session.user.id, `unclaimByUser() success: ${input.documentId}`)
     }),
 
   submitByUser: protectedProcedure
@@ -310,6 +326,7 @@ export const documentRouter = createTRPCRouter({
     }))
     .mutation(async ({ ctx, input }) => {
       if (env.DELAY_ALL_API) await delay(3000)
+      await cLog(LogLevels.INFO, LOG_RANGE, ctx.session.user.id, `submitByUser() called: ${input.documentId}`)
 
       const document = await prisma.document.findFirst({
         where: {
@@ -345,6 +362,7 @@ export const documentRouter = createTRPCRouter({
           state: "REVIEW"
         }
       })
+      await cLog(LogLevels.INFO, LOG_RANGE, ctx.session.user.id, `submitByUser() success: ${input.documentId}`)
     }),
 
   closeByAdmin: protectedProcedure
@@ -353,6 +371,7 @@ export const documentRouter = createTRPCRouter({
     }))
     .mutation(async ({ ctx, input }) => {
       if (env.DELAY_ALL_API) await delay(3000)
+      await cLog(LogLevels.INFO, LOG_RANGE, ctx.session.user.id, `closeByAdmin() called: ${input.documentId}`)
 
       const document = await prisma.document.findFirst({
         where: {
@@ -381,6 +400,7 @@ export const documentRouter = createTRPCRouter({
           state: "CLOSED"
         }
       })
+      await cLog(LogLevels.INFO, LOG_RANGE, ctx.session.user.id, `closeByAdmin() success: ${input.documentId}`)
     }),
 
   resetByAdmin: protectedProcedure
@@ -389,6 +409,8 @@ export const documentRouter = createTRPCRouter({
     }))
     .mutation(async ({ ctx, input }) => {
       if (env.DELAY_ALL_API) await delay(3000)
+      await cLog(LogLevels.INFO, LOG_RANGE, ctx.session.user.id, `resetByAdmin() called: ${input.documentId}`)
+
       const document = await prisma.document.findFirst({
         where: {
           id: input.documentId,
@@ -418,6 +440,7 @@ export const documentRouter = createTRPCRouter({
           userId: null
         }
       })
+      await cLog(LogLevels.INFO, LOG_RANGE, ctx.session.user.id, `resetByAdmin() success: ${input.documentId}`)
     }),
 
   save: protectedProcedure
@@ -428,6 +451,7 @@ export const documentRouter = createTRPCRouter({
     }))
     .mutation(async ({ ctx, input }) => {
       if (env.DELAY_ALL_API) await delay(3000)
+      await cLog(LogLevels.INFO, LOG_RANGE, ctx.session.user.id, `save() called: ${input.documentId}, ${input.src?.length as number}, ${input.dst?.length as number}`)
 
       const result = await getDocumentAndPermission(
         ctx.session.user.id,
@@ -482,6 +506,7 @@ export const documentRouter = createTRPCRouter({
         })
       }
 
+      await cLog(LogLevels.INFO, LOG_RANGE, ctx.session.user.id, `save() success: ${input.documentId}.`)
       return docInfo
     }),
 
@@ -491,10 +516,14 @@ export const documentRouter = createTRPCRouter({
     }))
     .query(async ({ ctx, input }) => {
       if (env.DELAY_ALL_API) await delay(3000)
+      await cLog(LogLevels.DEBUG, LOG_RANGE, ctx.session.user.id, `load() called: ${input.documentId}.`)
 
-      return await getDocumentAndPermission(
+      const result = await getDocumentAndPermission(
         ctx.session.user.id,
         input.documentId)
+
+      await cLog(LogLevels.DEBUG, LOG_RANGE, ctx.session.user.id, `load() sucess: ${input.documentId}.`)
+      return result
     }),
 
   modifyWordCount: protectedProcedure
@@ -504,6 +533,7 @@ export const documentRouter = createTRPCRouter({
     }))
     .mutation(async ({ ctx, input }) => {
       if (env.DELAY_ALL_API) await delay(3000)
+      await cLog(LogLevels.INFO, LOG_RANGE, ctx.session.user.id, `modifyWordCount() called: ${input.documentId}, ${input.wordCount}.`)
 
       const result = await getDocumentAndPermission(
         ctx.session.user.id,
@@ -526,5 +556,7 @@ export const documentRouter = createTRPCRouter({
           message: "No permission on writing document."
         })
       }
+
+      await cLog(LogLevels.INFO, LOG_RANGE, ctx.session.user.id, `modifyWordCount() success: ${input.documentId}.`)
     }),
 });

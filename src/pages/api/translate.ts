@@ -9,6 +9,9 @@ import type { NextRequest } from 'next/server';
 import type { ProjectAiParamters } from '~/types';
 import { get } from '@vercel/edge-config';
 
+import { cLog, LogLevels } from "~/utils/helper"
+const LOG_RANGE = "TRANSLATE"
+
 export const runtime = 'edge';
 
 type RequestDataType = {
@@ -17,10 +20,12 @@ type RequestDataType = {
   background: string,
   syllabus: string
 }
+
 export default async function handler(req: NextRequest) {
   if (req.method === "POST") {
     try {
       const { translate, character, background, syllabus } = await req.json() as RequestDataType
+      await cLog(LogLevels.INFO, LOG_RANGE, "unknown", `translate() called: ${translate.length}.`)
 
       const aiParams: ProjectAiParamters = {
         character: character,
@@ -79,9 +84,9 @@ export default async function handler(req: NextRequest) {
           syllabus: syllabus
         });
 
-        chat.call(prompt).then((m) => {
-          console.log(prompt, m.text)
-        }).catch(e => console.log(e))
+        chat.call(prompt).then(async (m) => {
+          await cLog(LogLevels.INFO, LOG_RANGE, "unknown", `translate() success: ${m.text.length}.`)
+        }).catch(e => console.error(e))
 
         // We don't need to await the result of the chain.run() call because
         // the LLM will invoke the callbackManager's handleLLMEnd() method

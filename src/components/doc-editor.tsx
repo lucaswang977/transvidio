@@ -131,7 +131,7 @@ export const DocumentEditor = (props: DocumentEditorProps) => {
         }
       },
       onError: (err) => {
-        console.log(err)
+        console.error(err)
       }
     }
   )

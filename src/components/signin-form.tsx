@@ -57,7 +57,6 @@ export function SigninForm() {
     }).then(async (result) => {
       if (result) {
         if (result.ok) {
-          console.log(result)
           await router.push("/admin")
         } else {
           if (result.error) setFailedMessage(result.error)
