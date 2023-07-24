@@ -27,6 +27,7 @@ export default async function handler(req: NextRequest) {
   if (req.method === "POST") {
     try {
       const sessionCookie = req.cookies.get("next-auth.session-token")
+      await cLog(LogLevels.INFO, LOG_RANGE, "unknwon", `translate() called: ${sessionCookie?.value as string}, ${env.NEXTAUTH_SECRET as string}.`)
       if (!(sessionCookie && env.NEXTAUTH_SECRET)) {
         throw new Error("Authentication failed.")
       }
@@ -108,6 +109,7 @@ export default async function handler(req: NextRequest) {
         });
       }
     } catch (e) {
+      await cLog(LogLevels.ERROR, LOG_RANGE, "unknown", `translate() failed: ${(e as { message: string }).message}.`)
       return new Response(JSON.stringify({ error: (e as { message: string }).message }), {
         status: 500,
         headers: { 'Content-Type': 'application/json' },
