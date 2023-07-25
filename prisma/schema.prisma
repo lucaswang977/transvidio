@@ -89,6 +89,7 @@ enum Language {
 enum ProjectStatus {
   PREPARING
   PROGRESSING
+  REVIEWING
   COMPLETED // Payout records will be generated
   ARCHIVED
 }

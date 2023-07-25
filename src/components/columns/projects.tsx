@@ -24,6 +24,8 @@ import { extractLetters } from "~/utils/helper"
 import Link from "next/link"
 import { Badge } from "../ui/badge"
 import type { ProjectAiParamters } from "~/types"
+import type { ProjectStatus } from "@prisma/client"
+import { ProjectStateModifyDialog } from "~/components/dialogs/project-state-modify-dialog"
 
 export type ProjectColumn = {
   id: string
@@ -31,6 +33,7 @@ export type ProjectColumn = {
   srcLang: string
   dstLang: string
   memo: string
+  status: ProjectStatus
   users: ProjectRelatedUser[]
   aiParameter: ProjectAiParamters
   documentCount: Record<string, number>
@@ -81,6 +84,34 @@ export const columns: ColumnDef<ProjectColumn>[] = [
         </div>
       )
     },
+  },
+  {
+    accessorKey: "status",
+    header: "State",
+    cell: ({ row, table }) => {
+      const data = row.original
+      const myself = table.options.meta?.user
+      const refetch = table.options.meta?.refetchData
+      const value: ProjectStatus = row.getValue("status")
+
+      return (
+        <div className="flex items-center space-x-1">
+          {
+            (myself && myself.role === "ADMIN") ?
+              <ProjectStateModifyDialog
+                refetch={() => { if (refetch) refetch() }}
+                projectId={data.id}
+                currentValue={value}
+                triggerChild={
+                  <Button className="p-0" variant="link">{value}</Button>
+                }
+              />
+              : <p>{value}</p>
+          }
+        </div>
+      )
+    }
+
   },
   {
     accessorKey: "memo",

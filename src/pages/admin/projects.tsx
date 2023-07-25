@@ -31,6 +31,7 @@ const ProjectManagement: NextPageWithLayout = () => {
         name: project.name ? project.name : "",
         srcLang: project.srcLang,
         dstLang: project.dstLang,
+        status: project.status,
         memo: project.memo ? project.memo : "",
         aiParameter: project.aiParameter as ProjectAiParamters,
         users: project.users.map((user: { user: ProjectRelatedUser }) => {
