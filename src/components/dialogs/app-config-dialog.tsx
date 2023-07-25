@@ -17,6 +17,7 @@ import {
 } from "~/components/ui/select"
 import { clone } from "ramda";
 import type { AppConfig } from "~/types";
+import { AppConfigKeys } from "~/utils/helper"
 
 export type AppConfigDialogProps = {
   trigger: JSX.Element,
@@ -63,7 +64,7 @@ const AppConfigDialog = (props: AppConfigDialogProps) => {
     }
   }
 
-  const general_openaiGptModel = appConfig.find(i => i.key === "general_openaiGptModel")
+  const general_openaiGptModel = appConfig.find(i => i.key === AppConfigKeys.GPT_MODEL)
 
   return (
     <DropdownMenuDialogItem
@@ -90,9 +91,9 @@ const AppConfigDialog = (props: AppConfigDialogProps) => {
               onValueChange={(e) => {
                 setAppConfig(c => {
                   const obj = clone(c)
-                  const t = obj.find(i => i.key === "general_openaiGptModel")
+                  const t = obj.find(i => i.key === AppConfigKeys.GPT_MODEL)
                   if (t) t.value = e
-                  else obj.push({ key: "general_openaiGptModel", value: e })
+                  else obj.push({ key: AppConfigKeys.GPT_MODEL, value: e })
 
                   return obj
                 })
@@ -115,7 +116,8 @@ const AppConfigDialog = (props: AppConfigDialogProps) => {
           <div className="grid grid-cols-3 space-y-1 w-3/4 items-center">
             {
               Object.keys(DocumentType).map((name) => {
-                const o = appConfig.find(i => i.key === `basicCost_${name}`)
+                const key = `${AppConfigKeys.BASIC_COST_PREFIX}${name}`
+                const o = appConfig.find(i => i.key === key)
                 const v = o ? o.value : "0"
                 return ([
                   <p key={`p-${name}`} className="text-sm col-span-1">{name}</p>,
@@ -128,9 +130,12 @@ const AppConfigDialog = (props: AppConfigDialogProps) => {
                       value={parseFloat(v).toFixed(2)}
                       onChange={(e) => {
                         setAppConfig(v => {
-                          const c = v.find(i => i.key === `basicCost_${name}`)
+                          const c = v.find(i => i.key === key)
                           if (c) c.value = e.currentTarget.value
-                          else v.push({ key: `basicCost_${name}`, value: e.currentTarget.value })
+                          else v.push({
+                            key: key,
+                            value: e.currentTarget.value
+                          })
 
                           return [...v]
                         })

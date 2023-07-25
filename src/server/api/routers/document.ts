@@ -10,6 +10,7 @@ import { TRPCError } from "@trpc/server";
 import type { DocPermission, DocumentInfo } from "~/types";
 import { env } from "~/env.mjs";
 import { countWordsInJSONValues, delay } from "~/utils/helper";
+import { generateIncomeRecord } from "~/server/income"
 
 import { cLog, LogLevels } from "~/utils/helper"
 const LOG_RANGE = "DOCUMENT"
@@ -400,6 +401,9 @@ export const documentRouter = createTRPCRouter({
           state: "CLOSED"
         }
       })
+
+      await generateIncomeRecord(input.documentId, ctx.session.user.id)
+
       await cLog(LogLevels.INFO, LOG_RANGE, ctx.session.user.id, `closeByAdmin() success: ${input.documentId}`)
     }),
 

@@ -94,5 +94,3 @@ export type AppConfig = {
   key: string,
   value: string
 }
-
-

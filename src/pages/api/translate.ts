@@ -7,6 +7,7 @@ import {
 } from 'langchain/prompts';
 import type { NextRequest } from 'next/server';
 import type { ProjectAiParamters } from '~/types';
+import { AppConfigKeys } from "~/utils/helper"
 import { get } from '@vercel/edge-config';
 import { decode } from "next-auth/jwt"
 
@@ -41,7 +42,7 @@ export default async function handler(req: NextRequest) {
         background: background,
         syllabus: syllabus
       }
-      const model = await get("general_openaiGptModel")
+      const model = await get(AppConfigKeys.GPT_MODEL)
       const modelName = model ? model.toString() : "gpt-3.5-turbo"
 
       // Check if the request is for a streaming response.
