@@ -84,3 +84,56 @@ export const generateIncomeRecord = async (documentId: string, operateUserId: st
 
   await cLog(LogLevels.INFO, LOG_RANGE, operateUserId, `generateIncomeRecord() success: ${documentId}, ${result.id}.`)
 }
+
+export const generatePayoutRecord = async (projectId: string, operateUserId: string) => {
+  await cLog(LogLevels.INFO, LOG_RANGE, operateUserId, `generatePayoutRecord() called: ${projectId}.`)
+
+  const project = await prisma.project.findUnique({
+    where: {
+      id: projectId,
+    }
+  })
+
+  if (!project) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "Project not existed."
+    })
+  }
+
+  if (project.status !== "COMPLETED") {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "Invalid project state."
+    })
+  }
+
+  // All of the documents should be closed
+  const notClosedDocs = await prisma.document.findMany({
+    where: {
+      projectId: projectId,
+      state: { not: "CLOSED" }
+    }
+  })
+
+  if (notClosedDocs) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "Not closed documents exist."
+    })
+  }
+
+  // Get all the income records of this project
+  const incomes = await prisma.incomeRecord.findMany({
+    where: {
+      projectId: projectId,
+      payoutRecordId: null
+    }
+  })
+
+  // Create payout records based on different users
+  const payouts: { userId: string, amount: number }[] = []
+
+}
+
+

@@ -208,7 +208,7 @@ model PayoutRecord {
   currency Currency
 
   status        PayoutStatus
-  target        String
+  paymentTarget String
   paymentMethod PaymentMethod
   memo          String
 
