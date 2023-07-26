@@ -2,16 +2,19 @@
 
 import * as React from "react"
 
+import type {
+  ColumnDef,
+  RowSelectionState,
+  OnChangeFn,
+  RowData,
+  PaginationState,
+} from "@tanstack/react-table"
+
 import {
-  type ColumnDef,
-  type RowSelectionState,
   flexRender,
   getCoreRowModel,
   getPaginationRowModel,
   useReactTable,
-  type OnChangeFn,
-  type RowData,
-  type PaginationState,
 } from "@tanstack/react-table"
 
 import {
