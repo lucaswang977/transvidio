@@ -35,7 +35,11 @@ const AppConfigDialog = (props: AppConfigDialogProps) => {
   const { isFetching } = api.config.getAll.useQuery(
     undefined,
     {
-      enabled: (session !== null && session.user !== undefined && session.user.role === "ADMIN"),
+      enabled: (
+        session !== null &&
+        session.user !== undefined &&
+        session.user.role === "ADMIN" &&
+        props.open),
       refetchOnWindowFocus: false,
       onSuccess: (result) => {
         const obj = clone(result)

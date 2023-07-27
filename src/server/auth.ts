@@ -62,12 +62,13 @@ export const authOptions: NextAuthOptions = {
       }
       return true
     },
-    jwt: async ({ token, user }) => {
+    jwt: async ({ token, trigger, user }) => {
       if (user) {
         token.email = user.email
         token.name = user.name
         token.role = user.role
         token.id = user.id
+        token.picture = user.image
       }
       if ("id" in token) {
         await prisma.user.update({
@@ -78,7 +79,19 @@ export const authOptions: NextAuthOptions = {
             id: token.id as string
           }
         })
-        await cLog(LogLevels.DEBUG, LOG_RANGE, token.id as string, "session updated.")
+        if (trigger === "update") {
+          const result = await prisma.user.findUnique({
+            where: {
+              id: token.id as string
+            }
+          })
+
+          if (result) {
+            token.name = result.name
+            token.picture = result.image
+          }
+        }
+        await cLog(LogLevels.DEBUG, LOG_RANGE, token.id as string, `session updated. trigger: ${trigger as string}`)
       }
       return token
     },

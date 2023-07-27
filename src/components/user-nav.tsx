@@ -16,6 +16,7 @@ import { signOut, useSession } from "next-auth/react"
 import { extractLetters } from "~/utils/helper"
 import AppConfigDialog from "~/components/dialogs/app-config-dialog"
 import { UserIncomeDialog } from "~/components/dialogs/income-dialog"
+import { UserProfileDialog } from "~/components/dialogs/user-profile"
 
 export function UserNav() {
   const { data: sessionData } = useSession()
@@ -71,10 +72,13 @@ export function UserNav() {
           </>
         }
         <DropdownMenuGroup>
-          <DropdownMenuItem disabled={true}>
-            <User className="mr-2 h-4 w-4" />
-            <span>Profile</span>
-          </DropdownMenuItem>
+          <UserProfileDialog
+            trigger={
+              <>
+                <User className="mr-2 h-4 w-4" />
+                <span>Profile</span>
+              </>
+            } />
           <UserIncomeDialog
             trigger={
               <>

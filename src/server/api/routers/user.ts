@@ -12,6 +12,8 @@ import { env } from "~/env.mjs";
 import { delay } from "~/utils/helper";
 
 import { cLog, LogLevels } from "~/utils/helper"
+import { Currency, PaymentMethod } from "@prisma/client";
+import type { UserProfile } from "~/types";
 const LOG_RANGE = "USER"
 
 export const userRouter = createTRPCRouter({
@@ -56,6 +58,7 @@ export const userRouter = createTRPCRouter({
         })
       }
     }),
+
   getAll: protectedProcedure.query(async ({ ctx }) => {
     if (env.DELAY_ALL_API) await delay(3000)
     await cLog(LogLevels.DEBUG, LOG_RANGE, `${ctx.session.user.id}`, "getAll() called.")
@@ -70,4 +73,58 @@ export const userRouter = createTRPCRouter({
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       ({ emailVerified, pwd, updatedAt, ...rest }) => rest)
   }),
+
+  getProfile: protectedProcedure
+    .query(async ({ ctx }) => {
+      await cLog(LogLevels.DEBUG, LOG_RANGE, `${ctx.session.user.id}`, "getProfile() called.")
+      const result = await ctx.prisma.user.findUnique(
+        {
+          where: {
+            id: ctx.session.user.id
+          }
+        }
+      )
+
+      if (!result) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "User not exists."
+        })
+      }
+
+      return {
+        name: result.name,
+        avatar: result.image,
+        paymentMethod: result.paymentMethod,
+        paymentCurrency: result.paymentCurrency,
+        paymentTarget: result.paymentTarget
+      } as UserProfile
+    }),
+
+  updateProfile: protectedProcedure
+    .input(z.object({
+      name: z.string().optional(),
+      image: z.string().url().optional(),
+      paymentMethod: z.nativeEnum(PaymentMethod).optional(),
+      paymentCurrency: z.nativeEnum(Currency).optional(),
+      paymentTarget: z.string().optional(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      if (env.DELAY_ALL_API) await delay(3000)
+
+      await cLog(LogLevels.DEBUG, LOG_RANGE, `${ctx.session.user.id}`, `updateProfile() called: ${JSON.stringify(input)}`)
+      const result = await prisma.user.update({
+        data: {
+          name: input.name,
+          image: input.image,
+          paymentMethod: input.paymentMethod,
+          paymentCurrency: input.paymentCurrency,
+          paymentTarget: input.paymentTarget,
+        },
+        where: {
+          id: ctx.session.user.id
+        }
+      })
+      await cLog(LogLevels.DEBUG, LOG_RANGE, `${result.id}`, `updateProfile() success.`)
+    }),
 });

@@ -91,11 +91,17 @@ const getDocPermission = (cond: {
       if (cond.isClaimer) {
         np.srcReadable = true
         np.dstReadable = true
-        np.dstWritable = true
-        // Except it is a subtitle type
-        if (cond.docType === "SUBTITLE") {
-          np.srcWritable = true
+
+        // Even the claimer is unable to write once the doc is closed
+        if (cond.docState !== "CLOSED") {
+          np.dstWritable = true
+
+          // Source can be modified only when the doc is a subtitle
+          if (cond.docType === "SUBTITLE") {
+            np.srcWritable = true
+          }
         }
+
       } else {
         // Im in this project but this document is not claimed by me,
         // I can read it if it has been submitted
