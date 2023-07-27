@@ -5,7 +5,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "~/components/ui/avatar"
 import type { ProjectRelatedUser } from "~/server/api/routers/project"
 import { AssignProjectToUserDialog } from "~/components/dialogs/assign-project-to-user-dialog"
 import { AiParamsDialog } from "~/components/dialogs/ai-params-dialog"
-import { MoreHorizontal } from "lucide-react"
+import { CreditCard, MoreHorizontal } from "lucide-react"
 
 import { Button } from "~/components/ui/button"
 import { Label } from "~/components/ui/label"
@@ -213,14 +213,22 @@ export const columns: ColumnDef<ProjectColumn>[] = [
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem disabled={myself && myself.role === "EDITOR"}>
-              <Edit className="mr-2 h-4 w-4" />
-              <span>Edit</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem disabled={myself && myself.role === "EDITOR"}>
-              <Trash className="mr-2 h-4 w-4" />
-              <span>Delete</span>
-            </DropdownMenuItem>
+            {(myself && myself.role === "ADMIN") &&
+              <>
+                <DropdownMenuItem>
+                  <Edit className="mr-2 h-4 w-4" />
+                  <span>Edit</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <Trash className="mr-2 h-4 w-4" />
+                  <span>Delete</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <CreditCard className="mr-2 h-4 w-4" />
+                  <span>Payment</span>
+                </DropdownMenuItem>
+              </>
+            }
           </DropdownMenuContent>
         </DropdownMenu>
       )

@@ -205,14 +205,14 @@ model PayoutRecord {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  number   Float // in USD
-  rate     Float
-  currency Currency
+  number       Float // in USD
+  exchangeRate Float
 
-  status        PayoutStatus
-  paymentTarget String
-  paymentMethod PaymentMethod
-  memo          String
+  status          PayoutStatus
+  paymentCurrency Currency
+  paymentTarget   String
+  paymentMethod   PaymentMethod
+  memo            String?
 
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: NoAction)

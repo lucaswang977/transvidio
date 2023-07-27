@@ -129,6 +129,7 @@ export async function cLog(level: LogLevels, range: string, calledBy: string, me
 export const AppConfigKeys = {
   GPT_MODEL: "general_openaiGptModel",
   BASIC_COST_PREFIX: "basicCost_",
+  EXCHANGE_RATE_PREFIX: "exchangeRate_",
 }
 
 

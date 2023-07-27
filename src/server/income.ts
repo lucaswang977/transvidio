@@ -2,8 +2,11 @@ import { prisma } from "~/server/db";
 import { TRPCError } from "@trpc/server";
 import { get } from '@vercel/edge-config';
 import { AppConfigKeys } from "~/utils/helper"
+import { getAll } from '@vercel/edge-config';
 
 import { cLog, LogLevels } from "~/utils/helper"
+import type { Currency, PaymentMethod } from "@prisma/client";
+import type { AppConfig } from "~/types";
 const LOG_RANGE = "INCOME"
 
 export const generateIncomeRecord = async (documentId: string, operateUserId: string) => {
@@ -132,8 +135,108 @@ export const generatePayoutRecord = async (projectId: string, operateUserId: str
   })
 
   // Create payout records based on different users
-  const payouts: { userId: string, amount: number }[] = []
+  const payouts: {
+    number: number,
+    exchangeRate: number,
+    paymentCurrency: Currency,
+    paymentTarget: string,
+    paymentMethod: PaymentMethod,
+    userId: string,
+    incomeIds: string[]
+  }[] = []
 
+  const result = await getAll()
+  const configs: AppConfig[] = []
+  for (const k of Object.keys(result)) {
+    if (k.startsWith(AppConfigKeys.EXCHANGE_RATE_PREFIX))
+      configs.push({ key: k, value: result[k] as string })
+  }
+
+
+  for (const income of incomes) {
+    const payout = payouts.find(item => item.userId === income.userId)
+    let exchangeRate = 0
+
+    if (!payout) {
+      // Get user payment info
+      const user = await prisma.user.findUnique({
+        where: {
+          id: income.userId
+        }
+      })
+
+      if (!user) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: `User ${income.userId} not found.`
+        })
+      }
+
+      if (!user.paymentCurrency || !user.paymentMethod || !user.paymentTarget) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: `User ${income.userId} payment info invalid.`
+        })
+      }
+
+      if (user.paymentCurrency === "CNY") {
+        const c = configs.find(item => item.key = `${AppConfigKeys.EXCHANGE_RATE_PREFIX}CNY`)
+        if (c) {
+          exchangeRate = parseFloat(c.value)
+        }
+      } else if (user.paymentCurrency === "JPY") {
+        const c = configs.find(item => item.key = `${AppConfigKeys.EXCHANGE_RATE_PREFIX}JPY`)
+        if (c) {
+          exchangeRate = parseFloat(c.value)
+        }
+      } else if (user.paymentCurrency === "USD") {
+        exchangeRate = 1
+      }
+
+      if (exchangeRate === 0) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: `Exchange rate invalid.`
+        })
+      }
+
+      payouts.push({
+        number: income.number,
+        exchangeRate: exchangeRate,
+        paymentCurrency: user.paymentCurrency,
+        paymentTarget: user.paymentTarget,
+        paymentMethod: user.paymentMethod,
+        userId: user.id,
+        incomeIds: [income.id]
+      })
+    } else {
+      payout.number = payout.number + income.number
+      payout.incomeIds.push(income.id)
+    }
+  }
+
+  for (const payout of payouts) {
+    const result = await prisma.payoutRecord.create({
+      data: {
+        number: payout.number,
+        exchangeRate: payout.exchangeRate,
+        paymentCurrency: payout.paymentCurrency,
+        paymentTarget: payout.paymentTarget,
+        paymentMethod: payout.paymentMethod,
+        status: "NOTPAID",
+        userId: payout.userId,
+      }
+    })
+
+    for (const income of payout.incomeIds) {
+      await prisma.incomeRecord.update({
+        data: {
+          payoutRecordId: result.id
+        },
+        where: {
+          id: income
+        }
+      })
+    }
+  }
 }
-
-
