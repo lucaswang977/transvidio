@@ -7,8 +7,7 @@ import {
 } from 'langchain/prompts';
 import type { NextRequest } from 'next/server';
 import type { ProjectAiParamters } from '~/types';
-import { AppConfigKeys } from "~/utils/helper"
-import { getConfigByKey } from '~/server/api/routers/config';
+import { AppConfigKeys, getConfigByKey } from "~/utils/helper"
 import { decode } from "next-auth/jwt"
 
 import { cLog, LogLevels } from "~/utils/helper"

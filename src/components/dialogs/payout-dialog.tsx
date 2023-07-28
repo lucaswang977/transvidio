@@ -6,60 +6,31 @@ import { DataTable } from "~/components/ui/data-table"
 import { DropdownMenuDialogItem } from "~/components/ui/dropdown-dialog-item"
 import { DialogHeader, DialogTitle } from "~/components/ui/dialog"
 import type { IncomeColumn } from "~/components/columns/income"
-import type { PayoutColumn } from "~/components/columns/payout"
-import { columns as incomeColumns } from "~/components/columns/income"
-import { columns as payoutColumns } from "~/components/columns/payout"
+import { columns } from "~/components/columns/income"
 import { useSession } from "next-auth/react"
 import { api } from "~/utils/api";
 import { Separator } from "~/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs"
 import { Loader2 } from "lucide-react"
 
-type UserIncomeDialogProps = {
+type ProjectPayoutDialogProps = {
   trigger: JSX.Element,
   disabled?: boolean,
   refetch?: () => void
 }
 
-export function UserIncomeDialog(props: UserIncomeDialogProps) {
+export function ProjectPayoutDialog(props: ProjectPayoutDialogProps) {
   const [open, setOpen] = React.useState(false)
   const { data: sessionData } = useSession();
   const [rowSelection, setRowSelection] = React.useState({})
-  const [incomeData, setIncomeData] = React.useState<IncomeColumn[]>([])
-  const [payoutData, setPayoutData] = React.useState<PayoutColumn[]>([])
-  api.income.getMyPayouts.useQuery(
-    undefined,
-    {
-      enabled: sessionData?.user.id !== undefined && open,
-      refetchOnWindowFocus: false,
-      onSuccess: (res) => {
-        setPayoutData(res.map((i) => {
-          const r: PayoutColumn = {
-            id: i.id,
-            project: { id: i.project.id, name: i.project.name },
-            user: { id: i.user.id, name: i.user.name ? i.user.name : "", image: i.user.image ? i.user.image : "" },
-            currency: i.paymentCurrency,
-            number: i.number,
-            exchangeRate: i.exchangeRate,
-            method: i.paymentMethod,
-            status: i.status,
-            target: i.paymentTarget,
-            updated: i.updatedAt,
-            incomeCount: i.incomeRecords.length
-          }
-
-          return r
-        }))
-      }
-    })
-
+  const [data, setData] = React.useState<IncomeColumn[] | undefined>(undefined)
   api.income.getMyIncome.useQuery(
     undefined,
     {
       enabled: sessionData?.user.id !== undefined && open,
       refetchOnWindowFocus: false,
       onSuccess: (res) => {
-        setIncomeData(res.map((income) => {
+        setData(res.map((income) => {
           const r: IncomeColumn = {
             project: income.project.name,
             document: income.document.title,
@@ -76,8 +47,8 @@ export function UserIncomeDialog(props: UserIncomeDialogProps) {
       }
     })
   let unpaid = 0
-  if (incomeData) {
-    incomeData.forEach(d => {
+  if (data) {
+    data.forEach(d => {
       unpaid += d.number
     })
   }
@@ -99,12 +70,12 @@ export function UserIncomeDialog(props: UserIncomeDialogProps) {
         </TabsList>
         <TabsContent className="flex flex-col space-y-2 p-4" value="income">
           {
-            incomeData ?
+            data ?
               <>
                 <p className="text-xs">Total unpaid: <em>${unpaid.toFixed(2)}</em></p>
                 <DataTable
-                  columns={incomeColumns}
-                  data={incomeData}
+                  columns={columns}
+                  data={data}
                   rowSelection={rowSelection}
                   setRowSelection={setRowSelection}
                   manualPagination={false}
@@ -119,19 +90,7 @@ export function UserIncomeDialog(props: UserIncomeDialogProps) {
               <Loader2 className="animate-spin" />
           }
         </TabsContent>
-        <TabsContent className="flex flex-col space-y-2 p-4" value="payment">
-          {
-            payoutData ?
-              <DataTable
-                columns={payoutColumns}
-                data={payoutData}
-                rowSelection={rowSelection}
-                setRowSelection={setRowSelection}
-                manualPagination={false}
-              />
-              :
-              <Loader2 className="animate-spin" />
-          }
+        <TabsContent className="p-4" value="payment">
         </TabsContent>
       </Tabs>
     </DropdownMenuDialogItem>

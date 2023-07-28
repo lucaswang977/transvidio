@@ -5,9 +5,7 @@ import {
 } from "~/server/api/trpc";
 
 import { env } from "~/env.mjs";
-import { AppConfigKeys, delay } from "~/utils/helper";
-import { getAll, get } from '@vercel/edge-config';
-import type { AppConfig } from "~/types";
+import { AppConfigKeys, delay, getAllConfigs, getConfigByKey } from "~/utils/helper";
 import { TRPCError } from "@trpc/server";
 
 type EdgeConfigResponse = { status: string } |
@@ -15,26 +13,6 @@ type EdgeConfigResponse = { status: string } |
 
 import { cLog, LogLevels } from "~/utils/helper"
 const LOG_RANGE = "CONFIG"
-
-export const getConfigByKey = async (k: string) => {
-  const key = env.NODE_ENV === "development" ? `${AppConfigKeys.DEV_ENV_PREFIX}${k}` : k
-  const value = await get(key)
-  return value
-}
-
-export const getAllConfigs = async () => {
-  const allConfigs: AppConfig[] = []
-  const result = await getAll()
-  for (const k of Object.keys(result)) {
-    if (env.NODE_ENV === "development" && k.startsWith(AppConfigKeys.DEV_ENV_PREFIX)) {
-      allConfigs.push({ key: k.replace(AppConfigKeys.DEV_ENV_PREFIX, ""), value: result[k] as string })
-    } else if (env.NODE_ENV !== "development" && !k.startsWith(AppConfigKeys.DEV_ENV_PREFIX)) {
-      allConfigs.push({ key: k, value: result[k] as string })
-    }
-  }
-
-  return allConfigs
-}
 
 export const configRouter = createTRPCRouter({
   update: protectedProcedure

@@ -225,7 +225,7 @@ export const columns: ColumnDef<ProjectColumn>[] = [
                 </DropdownMenuItem>
                 <DropdownMenuItem>
                   <CreditCard className="mr-2 h-4 w-4" />
-                  <span>Payment</span>
+                  <span>Payout</span>
                 </DropdownMenuItem>
               </>
             }

@@ -1,4 +1,3 @@
-import { z } from "zod";
 import {
   createTRPCRouter,
   protectedProcedure,
@@ -11,17 +10,14 @@ const LOG_RANGE = "INCOME"
 
 export const incomeRouter = createTRPCRouter({
   getMyIncome: protectedProcedure
-    .input(z.object({
-      userId: z.string().nonempty(),
-    }))
-    .query(async ({ input, ctx }) => {
+    .query(async ({ ctx }) => {
       if (env.DELAY_ALL_API) await delay(3000)
       await cLog(LogLevels.DEBUG, LOG_RANGE, `${ctx.session.user.id}`, "getMyIncome() called.")
 
       return (await ctx.prisma.incomeRecord.findMany(
         {
           where: {
-            userId: input.userId,
+            userId: ctx.session.user.id,
           },
           orderBy: {
             createdAt: "desc"
@@ -43,6 +39,56 @@ export const incomeRouter = createTRPCRouter({
                 id: true
               }
             }
+          }
+        }
+      ))
+    }),
+
+  getMyPayouts: protectedProcedure
+    .query(async ({ ctx }) => {
+      if (env.DELAY_ALL_API) await delay(3000)
+      await cLog(LogLevels.DEBUG, LOG_RANGE, `${ctx.session.user.id}`, "getAllPayouts() called.")
+
+      return (await ctx.prisma.payoutRecord.findMany(
+        {
+          where: {
+            userId: ctx.session.user.id,
+          },
+          orderBy: {
+            createdAt: "desc"
+          },
+          include: {
+            project: {
+              select: { id: true, name: true }
+            },
+            user: {
+              select: { id: true, name: true, image: true }
+            },
+            incomeRecords: true
+          }
+        }
+      ))
+    }),
+
+
+  getAllPayouts: protectedProcedure
+    .query(async ({ ctx }) => {
+      if (env.DELAY_ALL_API) await delay(3000)
+      await cLog(LogLevels.DEBUG, LOG_RANGE, `${ctx.session.user.id}`, "getAllPayouts() called.")
+
+      return (await ctx.prisma.payoutRecord.findMany(
+        {
+          orderBy: {
+            createdAt: "desc"
+          },
+          include: {
+            project: {
+              select: { id: true, name: true }
+            },
+            user: {
+              select: { id: true, name: true, image: true }
+            },
+            incomeRecords: true
           }
         }
       ))

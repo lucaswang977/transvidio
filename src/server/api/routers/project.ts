@@ -12,6 +12,7 @@ import { env } from "~/env.mjs";
 import type { ProjectAiParamters } from "~/types";
 
 import { cLog, LogLevels } from "~/utils/helper"
+import { generatePayoutRecord } from "~/server/income";
 const LOG_RANGE = "PROJECT"
 
 export type ProjectRelatedUser = {
@@ -199,6 +200,11 @@ export const projectRouter = createTRPCRouter({
       const project = await prisma.project.findUnique({
         where: {
           id: input.projectId,
+        },
+        include: {
+          documents: {
+            select: { state: true }
+          }
         }
       })
 
@@ -207,6 +213,18 @@ export const projectRouter = createTRPCRouter({
           code: "FORBIDDEN",
           message: "Project not existed."
         })
+      }
+
+      if (input.value === "COMPLETED") {
+        const res = project.documents.find(i => i.state !== "CLOSED")
+        if (res) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Not all of the documents are closed."
+          })
+        }
+
+        await generatePayoutRecord(input.projectId, ctx.session.user.id)
       }
 
       const updatedProject = await prisma.project.update({

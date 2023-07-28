@@ -19,6 +19,11 @@ const navLinks = [
     adminOnly: true
   },
   {
+    title: "Payouts",
+    href: "/admin/payouts",
+    adminOnly: true
+  },
+  {
     title: "Projects",
     href: "/admin/projects",
     adminOnly: false

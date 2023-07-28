@@ -1,6 +1,6 @@
 import { prisma } from "~/server/db";
 import { TRPCError } from "@trpc/server";
-import { getConfigByKey, getAllConfigs } from '~/server/api/routers/config';
+import { getConfigByKey, getAllConfigs } from '~/utils/helper';
 import { AppConfigKeys } from "~/utils/helper"
 import type { Currency, PaymentMethod } from "@prisma/client";
 
@@ -216,6 +216,7 @@ export const generatePayoutRecord = async (projectId: string, operateUserId: str
         paymentTarget: payout.paymentTarget,
         paymentMethod: payout.paymentMethod,
         status: "NOTPAID",
+        projectId: projectId,
         userId: payout.userId,
       }
     })

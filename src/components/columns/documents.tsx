@@ -433,7 +433,7 @@ export const columns: ColumnDef<DocumentColumn>[] = [
                   <Info className="text-gray-400 h-3 w-3" />
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>The word count of attachment type document is not accurate.</p>
+                  <p>Inaccurately estimated</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>

@@ -111,6 +111,7 @@ model Project {
   users     ProjectsOfUsers[]
 
   incomeRecords IncomeRecord[]
+  payoutRecords PayoutRecord[]
 }
 
 model ProjectsOfUsers {
@@ -213,6 +214,9 @@ model PayoutRecord {
   paymentTarget   String
   paymentMethod   PaymentMethod
   memo            String?
+
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: NoAction)
 
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: NoAction)
