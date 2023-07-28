@@ -34,13 +34,6 @@ export const generateIncomeRecord = async (documentId: string, operateUserId: st
     })
   }
 
-  if (document.state !== "CLOSED") {
-    throw new TRPCError({
-      code: "FORBIDDEN",
-      message: "Invalid document state."
-    })
-  }
-
   const rec = await prisma.incomeRecord.findFirst({
     where: {
       documentId: documentId
@@ -102,13 +95,6 @@ export const generatePayoutRecord = async (projectId: string, operateUserId: str
     })
   }
 
-  if (project.status !== "COMPLETED") {
-    throw new TRPCError({
-      code: "FORBIDDEN",
-      message: "Invalid project state."
-    })
-  }
-
   // All of the documents should be closed
   const notClosedDocs = await prisma.document.findMany({
     where: {
@@ -117,10 +103,10 @@ export const generatePayoutRecord = async (projectId: string, operateUserId: str
     }
   })
 
-  if (notClosedDocs) {
+  if (notClosedDocs.length > 0) {
     throw new TRPCError({
       code: "FORBIDDEN",
-      message: "Not closed documents exist."
+      message: "Unclosed documents exist."
     })
   }
 
@@ -172,12 +158,12 @@ export const generatePayoutRecord = async (projectId: string, operateUserId: str
       }
 
       if (user.paymentCurrency === "CNY") {
-        const c = configs.find(item => item.key = `${AppConfigKeys.EXCHANGE_RATE_PREFIX}CNY`)
+        const c = configs.find(item => item.key = `${AppConfigKeys.EXCHANGE_RATE_PREFIX}USD-CNY`)
         if (c) {
           exchangeRate = parseFloat(c.value)
         }
       } else if (user.paymentCurrency === "JPY") {
-        const c = configs.find(item => item.key = `${AppConfigKeys.EXCHANGE_RATE_PREFIX}JPY`)
+        const c = configs.find(item => item.key = `${AppConfigKeys.EXCHANGE_RATE_PREFIX}USD-JPY`)
         if (c) {
           exchangeRate = parseFloat(c.value)
         }
@@ -221,15 +207,15 @@ export const generatePayoutRecord = async (projectId: string, operateUserId: str
       }
     })
 
-    for (const income of payout.incomeIds) {
-      await prisma.incomeRecord.update({
-        data: {
-          payoutRecordId: result.id
-        },
-        where: {
-          id: income
+    await prisma.incomeRecord.updateMany({
+      data: {
+        payoutRecordId: result.id
+      },
+      where: {
+        id: {
+          in: payout.incomeIds
         }
-      })
-    }
+      }
+    })
   }
 }

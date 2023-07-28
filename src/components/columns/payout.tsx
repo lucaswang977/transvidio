@@ -128,8 +128,8 @@ export const columns: ColumnDef<PayoutColumn>[] = [
     header: "Income Records"
   },
   {
-    accessorKey: "state",
-    header: "State",
+    accessorKey: "status",
+    header: "Status",
   },
   {
     accessorKey: "target",

@@ -399,6 +399,8 @@ export const documentRouter = createTRPCRouter({
         })
       }
 
+      await generateIncomeRecord(input.documentId, ctx.session.user.id)
+
       await prisma.document.update({
         where: {
           id: input.documentId
@@ -407,8 +409,6 @@ export const documentRouter = createTRPCRouter({
           state: "CLOSED"
         }
       })
-
-      await generateIncomeRecord(input.documentId, ctx.session.user.id)
 
       await cLog(LogLevels.INFO, LOG_RANGE, ctx.session.user.id, `closeByAdmin() success: ${input.documentId}`)
     }),

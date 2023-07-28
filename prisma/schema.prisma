@@ -198,7 +198,7 @@ model IncomeRecord {
   document   Document @relation(fields: [documentId], references: [id], onDelete: NoAction)
 
   payoutRecordId String?
-  payoutRecord   PayoutRecord? @relation(fields: [payoutRecordId], references: [id], onDelete: NoAction)
+  payoutRecord   PayoutRecord? @relation(fields: [payoutRecordId], references: [id], onDelete: Cascade)
 }
 
 model PayoutRecord {
