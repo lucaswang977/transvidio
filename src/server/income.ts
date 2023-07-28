@@ -1,12 +1,10 @@
 import { prisma } from "~/server/db";
 import { TRPCError } from "@trpc/server";
-import { get } from '@vercel/edge-config';
+import { getConfigByKey, getAllConfigs } from '~/server/api/routers/config';
 import { AppConfigKeys } from "~/utils/helper"
-import { getAll } from '@vercel/edge-config';
+import type { Currency, PaymentMethod } from "@prisma/client";
 
 import { cLog, LogLevels } from "~/utils/helper"
-import type { Currency, PaymentMethod } from "@prisma/client";
-import type { AppConfig } from "~/types";
 const LOG_RANGE = "INCOME"
 
 export const generateIncomeRecord = async (documentId: string, operateUserId: string) => {
@@ -57,7 +55,7 @@ export const generateIncomeRecord = async (documentId: string, operateUserId: st
   }
 
   const docType = document.type
-  const rateStr = await get(`${AppConfigKeys.BASIC_COST_PREFIX}${docType}`)
+  const rateStr = await getConfigByKey(`${AppConfigKeys.BASIC_COST_PREFIX}${docType}`)
   if (!rateStr) {
     throw new TRPCError({
       code: "FORBIDDEN",
@@ -145,13 +143,7 @@ export const generatePayoutRecord = async (projectId: string, operateUserId: str
     incomeIds: string[]
   }[] = []
 
-  const result = await getAll()
-  const configs: AppConfig[] = []
-  for (const k of Object.keys(result)) {
-    if (k.startsWith(AppConfigKeys.EXCHANGE_RATE_PREFIX))
-      configs.push({ key: k, value: result[k] as string })
-  }
-
+  const configs = await getAllConfigs()
 
   for (const income of incomes) {
     const payout = payouts.find(item => item.userId === income.userId)

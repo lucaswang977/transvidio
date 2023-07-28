@@ -5,8 +5,8 @@ import {
 } from "~/server/api/trpc";
 
 import { env } from "~/env.mjs";
-import { delay } from "~/utils/helper";
-import { getAll } from '@vercel/edge-config';
+import { AppConfigKeys, delay } from "~/utils/helper";
+import { getAll, get } from '@vercel/edge-config';
 import type { AppConfig } from "~/types";
 import { TRPCError } from "@trpc/server";
 
@@ -16,16 +16,36 @@ type EdgeConfigResponse = { status: string } |
 import { cLog, LogLevels } from "~/utils/helper"
 const LOG_RANGE = "CONFIG"
 
+export const getConfigByKey = async (k: string) => {
+  const key = env.NODE_ENV === "development" ? `${AppConfigKeys.DEV_ENV_PREFIX}${k}` : k
+  const value = await get(key)
+  return value
+}
+
+export const getAllConfigs = async () => {
+  const allConfigs: AppConfig[] = []
+  const result = await getAll()
+  for (const k of Object.keys(result)) {
+    if (env.NODE_ENV === "development" && k.startsWith(AppConfigKeys.DEV_ENV_PREFIX)) {
+      allConfigs.push({ key: k.replace(AppConfigKeys.DEV_ENV_PREFIX, ""), value: result[k] as string })
+    } else if (env.NODE_ENV !== "development" && !k.startsWith(AppConfigKeys.DEV_ENV_PREFIX)) {
+      allConfigs.push({ key: k, value: result[k] as string })
+    }
+  }
+
+  return allConfigs
+}
+
 export const configRouter = createTRPCRouter({
   update: protectedProcedure
     .input(z.object({
       key: z.string(),
       value: z.string(),
-    }))
+    }).array())
     .mutation(async ({ input, ctx }) => {
       if (env.DELAY_ALL_API) await delay(3000)
 
-      await cLog(LogLevels.INFO, LOG_RANGE, ctx.session.user.id, `update() called: ${input.key}, ${input.value}.`)
+      await cLog(LogLevels.INFO, LOG_RANGE, ctx.session.user.id, `update() called: ${JSON.stringify(input)}.`)
 
       const headers = new Headers({
         Authorization: `Bearer ${env.VERCEL_API_TOKEN}`,
@@ -37,13 +57,14 @@ export const configRouter = createTRPCRouter({
           method: "PATCH",
           headers: headers,
           body: JSON.stringify({
-            items: [
-              {
-                operation: "upsert",
-                key: input.key,
-                value: input.value
-              }
-            ]
+            items:
+              input.map(i => {
+                return {
+                  operation: "upsert",
+                  key: env.NODE_ENV === "development" ? `${AppConfigKeys.DEV_ENV_PREFIX}${i.key}` : i.key,
+                  value: i.value
+                }
+              })
           })
         }
       )
@@ -54,7 +75,7 @@ export const configRouter = createTRPCRouter({
           message: result.error.message
         })
       }
-      await cLog(LogLevels.INFO, LOG_RANGE, ctx.session.user.id, `update() success: ${input.key}, ${input.value}.`)
+      await cLog(LogLevels.INFO, LOG_RANGE, ctx.session.user.id, `update() success.`)
 
       return result
     }),
@@ -63,13 +84,21 @@ export const configRouter = createTRPCRouter({
     if (env.DELAY_ALL_API) await delay(3000)
     await cLog(LogLevels.DEBUG, LOG_RANGE, ctx.session.user.id, `getAll() called.`)
 
-    const result = await getAll()
-    const allConfigs: AppConfig[] = []
-    for (const k of Object.keys(result)) {
-      allConfigs.push({ key: k, value: result[k] as string })
-    }
+    const allConfigs = await getAllConfigs()
 
     await cLog(LogLevels.DEBUG, LOG_RANGE, ctx.session.user.id, `getAll() success: ${JSON.stringify(allConfigs)}.`)
     return allConfigs
   }),
+
+  get: protectedProcedure
+    .input(z.object({
+      key: z.string()
+    }))
+    .query(async ({ ctx, input }) => {
+      if (env.DELAY_ALL_API) await delay(3000)
+      await cLog(LogLevels.DEBUG, LOG_RANGE, ctx.session.user.id, `getAll() called: ${input.key}`)
+      const value = await getConfigByKey(input.key)
+      await cLog(LogLevels.DEBUG, LOG_RANGE, ctx.session.user.id, `getAll() success: ${value as string}`)
+      return value
+    }),
 });
