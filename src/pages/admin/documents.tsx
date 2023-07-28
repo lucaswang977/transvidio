@@ -105,6 +105,7 @@ const DocumentManagement: NextPageWithLayout = () => {
       return d
     })
   }
+
   return (
     <div className="flex-1 space-y-4 p-8 pt-6">
       <div className="flex items-center justify-between space-y-2">
@@ -198,6 +199,7 @@ const DocumentManagement: NextPageWithLayout = () => {
         user={session?.user}
         handleRefetch={() => refetch()}
         manualPagination={true}
+        rowIdKey="id"
         paginationArgs={{
           pagination: pagination,
           setPagination: setPagination,

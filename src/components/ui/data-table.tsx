@@ -45,6 +45,7 @@ interface DataTableProps<TData, TValue> {
   setRowSelection: OnChangeFn<RowSelectionState> | undefined,
   handleRefetch?: () => void,
   user?: { id: string, role: UserRole },
+  rowIdKey?: string,
   manualPagination: boolean,
   paginationArgs?: {
     pagination: { pageIndex: number, pageSize: number },
@@ -64,6 +65,7 @@ export function DataTable<TData, TValue>({
   user,
   manualPagination,
   paginationArgs,
+  rowIdKey,
   disabled,
 }: DataTableProps<TData, TValue>) {
 
@@ -78,6 +80,9 @@ export function DataTable<TData, TValue>({
       Math.ceil(paginationArgs.total / paginationArgs.pagination.pageSize) : 0),
     onPaginationChange: paginationArgs.setPagination,
     autoResetPageIndex: false,
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
+    getRowId: rowIdKey ? (row: any) => row[rowIdKey] : undefined,
+    autoResetSelectedRows: false,
 
     state: { pagination: paginationArgs.pagination, rowSelection, },
     meta: {
