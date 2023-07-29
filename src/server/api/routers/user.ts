@@ -97,7 +97,8 @@ export const userRouter = createTRPCRouter({
         avatar: result.image,
         paymentMethod: result.paymentMethod,
         paymentCurrency: result.paymentCurrency,
-        paymentTarget: result.paymentTarget
+        paymentTarget: result.paymentTarget,
+        paymentMemo: result.paymentMemo
       } as UserProfile
     }),
 
@@ -108,6 +109,7 @@ export const userRouter = createTRPCRouter({
       paymentMethod: z.nativeEnum(PaymentMethod).optional(),
       paymentCurrency: z.nativeEnum(Currency).optional(),
       paymentTarget: z.string().optional(),
+      paymentMemo: z.string().optional(),
     }))
     .mutation(async ({ input, ctx }) => {
       if (env.DELAY_ALL_API) await delay(3000)
@@ -120,6 +122,7 @@ export const userRouter = createTRPCRouter({
           paymentMethod: input.paymentMethod,
           paymentCurrency: input.paymentCurrency,
           paymentTarget: input.paymentTarget,
+          paymentMemo: input.paymentMemo,
         },
         where: {
           id: ctx.session.user.id

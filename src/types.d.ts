@@ -101,6 +101,7 @@ export type UserProfile = {
   paymentCurrency: Currency,
   paymentTarget: string,
   paymentMethod: PaymentMethod,
+  paymentMemo: string,
 }
 
 

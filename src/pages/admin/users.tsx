@@ -32,6 +32,9 @@ const UserManagement: NextPageWithLayout = () => {
         email: user.email ? user.email : "",
         image: user.image ? user.image : "",
         created: user.createdAt.toLocaleString(),
+        paymentMethod: user.paymentMethod ? user.paymentMethod : "",
+        paymentTarget: user.paymentTarget ? user.paymentTarget : "",
+        paymentMemo: user.paymentMemo ? user.paymentMemo : "",
         lastLogin: naturalTime(user.lastLogin)
       }
 

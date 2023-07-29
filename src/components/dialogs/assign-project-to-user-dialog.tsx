@@ -99,6 +99,8 @@ export function AssignProjectToUserDialog(props: AssignProjectToUserDialogProps)
     }
   }, [open])
 
+  console.log(columns.filter((c) => !(["paymentMethod", "paymentTarget", "paymentMemo", "lastLogin", "created"].find(v => c.id === v))))
+
   return (
     <div>
       <Dialog open={open} onOpenChange={setIsOpen}>
@@ -112,7 +114,13 @@ export function AssignProjectToUserDialog(props: AssignProjectToUserDialogProps)
             <DialogTitle>Who can access this project?</DialogTitle>
           </DialogHeader>
           <DataTable
-            columns={columns}
+            columns={columns.filter(
+              (c) => !([
+                "paymentMethod",
+                "paymentTarget",
+                "paymentMemo",
+                "lastLogin",
+                "created"].find(v => c.id === v)))}
             data={allUsers ? allUsers : []}
             rowSelection={rowSelection}
             setRowSelection={setRowSelection}

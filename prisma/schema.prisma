@@ -63,6 +63,7 @@ model User {
   paymentCurrency Currency?
   paymentMethod   PaymentMethod?
   paymentTarget   String?
+  paymentMemo     String?
 
   accounts Account[]
   sessions Session[]

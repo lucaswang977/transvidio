@@ -57,7 +57,8 @@ export function UserProfileDialog(props: UserProfileDialogProps) {
         image: data.avatar === null ? undefined : data.avatar,
         paymentMethod: data.paymentMethod as PaymentMethod,
         paymentTarget: data.paymentTarget,
-        paymentCurrency: data.paymentCurrency as Currency
+        paymentCurrency: data.paymentCurrency as Currency,
+        paymentMemo: data.paymentMemo,
       }, {
         onError: (err) => {
           toast({ description: err.message })
@@ -147,6 +148,27 @@ export function UserProfileDialog(props: UserProfileDialogProps) {
                 }
 
               </div>
+              {
+                data.paymentMethod === "Alipay" &&
+                <div className="flex flex-col space-y-1">
+                  <p>Your real name for Alipay account</p>
+                  <Input
+                    className="h-10"
+                    value={data.paymentMemo}
+                    onChange={(ev) => {
+                      setData((d) => {
+                        if (d) {
+                          return {
+                            ...d,
+                            paymentMemo: ev.currentTarget.value
+                          }
+                        }
+                        return d
+                      })
+                    }} />
+                </div>
+              }
+
               <div className="flex flex-col space-y-1">
                 <p>Payment receiving account</p>
                 <Input

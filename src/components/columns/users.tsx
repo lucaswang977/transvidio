@@ -12,6 +12,9 @@ export type UserColumn = {
   email: string
   image: string
   created: string
+  paymentMethod?: string
+  paymentTarget?: string
+  paymentMemo?: string
   lastLogin: string
 }
 
@@ -65,10 +68,28 @@ export const columns: ColumnDef<UserColumn>[] = [
     header: "Role"
   },
   {
+    id: "paymentMethod",
+    accessorKey: "paymentMethod",
+    header: "Payment method"
+  },
+  {
+    id: "paymentTarget",
+    accessorKey: "paymentTarget",
+    header: "Payment target"
+  },
+
+  {
+    id: "paymentMemo",
+    accessorKey: "paymentMemo",
+    header: "Payment memo"
+  },
+  {
+    id: "lastLogin",
     accessorKey: "lastLogin",
     header: "Last active"
   },
   {
+    id: "created",
     accessorKey: "created",
     header: "Created time"
   }
