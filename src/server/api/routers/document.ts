@@ -132,6 +132,9 @@ export const documentRouter = createTRPCRouter({
       const projects = await ctx.prisma.projectsOfUsers.findMany({
         where: {
           userId: ctx.session.user.id
+        },
+        include: {
+          project: true
         }
       })
 
@@ -142,7 +145,11 @@ export const documentRouter = createTRPCRouter({
           state: input.filterByState,
           projectId: (input.filterByProject && projects.find(p => p.projectId === input.filterByProject)) ?
             input.filterByProject :
-            { in: projects.map((project) => project.projectId) }
+            {
+              in: projects.map((project) => {
+                if (project.project.status !== "ARCHIVED") return project.projectId
+              })
+            }
         }
       } else {
         where = {

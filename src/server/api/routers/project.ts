@@ -35,6 +35,9 @@ export const projectRouter = createTRPCRouter({
           some: {
             userId: ctx.session.user.id
           }
+        },
+        status: {
+          not: "ARCHIVED"
         }
       }
     }
