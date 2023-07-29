@@ -5,7 +5,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "~/components/ui/avatar"
 import type { ProjectRelatedUser } from "~/server/api/routers/project"
 import { AssignProjectToUserDialog } from "~/components/dialogs/assign-project-to-user-dialog"
 import { AiParamsDialog } from "~/components/dialogs/ai-params-dialog"
-import { CreditCard, MoreHorizontal } from "lucide-react"
+import { MoreHorizontal } from "lucide-react"
 
 import { Button } from "~/components/ui/button"
 import { Label } from "~/components/ui/label"
@@ -38,6 +38,23 @@ export type ProjectColumn = {
   aiParameter: ProjectAiParamters
   documentCount: Record<string, number>
 }
+
+export const getProjectStateBadges = (state?: ProjectStatus) => {
+  const stateBadges = {
+    PREPARING: <Badge className="bg-sky-500">PREPARING</Badge>,
+    PROGRESSING: <Badge className="bg-red-500">PROGRESSING</Badge>,
+    REVIEWING: <Badge className="bg-teal-500">REVIEW</Badge>,
+    COMPLETED: <Badge className="bg-gray-500">COMPLETED</Badge>,
+    ARCHIVED: <Badge className="bg-gray-300">ARCHIVED</Badge>,
+  }
+
+  if (state) {
+    return stateBadges[state]
+  } else {
+    return stateBadges
+  }
+}
+
 
 export const columns: ColumnDef<ProjectColumn>[] = [
   {
@@ -93,6 +110,7 @@ export const columns: ColumnDef<ProjectColumn>[] = [
       const myself = table.options.meta?.user
       const refetch = table.options.meta?.refetchData
       const value: ProjectStatus = row.getValue("status")
+      const el = getProjectStateBadges(value) as React.ReactNode
 
       return (
         <div className="flex items-center space-x-1">
@@ -103,10 +121,12 @@ export const columns: ColumnDef<ProjectColumn>[] = [
                 projectId={data.id}
                 currentValue={value}
                 triggerChild={
-                  <Button className="p-0" variant="link">{value}</Button>
+                  <Button className="p-0" variant="ghost">
+                    {el}
+                  </Button>
                 }
               />
-              : <p>{value}</p>
+              : el
           }
         </div>
       )
@@ -222,10 +242,6 @@ export const columns: ColumnDef<ProjectColumn>[] = [
                 <DropdownMenuItem>
                   <Trash className="mr-2 h-4 w-4" />
                   <span>Delete</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <CreditCard className="mr-2 h-4 w-4" />
-                  <span>Payout</span>
                 </DropdownMenuItem>
               </>
             }

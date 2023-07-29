@@ -218,4 +218,6 @@ export const generatePayoutRecord = async (projectId: string, operateUserId: str
       }
     })
   }
+
+  await cLog(LogLevels.INFO, LOG_RANGE, operateUserId, `generatePayoutRecord() success: ${projectId}, ${payouts.length} records generated.`)
 }

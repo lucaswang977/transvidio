@@ -1,5 +1,5 @@
 import * as React from "react"
-import { CreditCard, LogOut, Settings2, User } from "lucide-react"
+import { LogOut, Settings2, User } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar"
 import { Button } from "~/components/ui/button"
 import {
@@ -15,7 +15,6 @@ import {
 import { signOut, useSession } from "next-auth/react"
 import { extractLetters } from "~/utils/helper"
 import AppConfigDialog from "~/components/dialogs/app-config-dialog"
-import { UserIncomeDialog } from "~/components/dialogs/income-dialog"
 import { UserProfileDialog } from "~/components/dialogs/user-profile"
 
 export function UserNav() {
@@ -68,25 +67,15 @@ export function UserNav() {
                 }
               />
             </DropdownMenuGroup>
-            <DropdownMenuSeparator />
           </>
         }
-        <DropdownMenuGroup>
-          <UserProfileDialog
-            trigger={
-              <>
-                <User className="mr-2 h-4 w-4" />
-                <span>Profile</span>
-              </>
-            } />
-          <UserIncomeDialog
-            trigger={
-              <>
-                <CreditCard className="mr-2 h-4 w-4" />
-                <span>Income</span>
-              </>
-            } />
-        </DropdownMenuGroup>
+        <UserProfileDialog
+          trigger={
+            <>
+              <User className="mr-2 h-4 w-4" />
+              <span>Profile</span>
+            </>
+          } />
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => signOut({ callbackUrl: "/" })}>
           <LogOut className="mr-2 h-4 w-4" />

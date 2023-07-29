@@ -13,10 +13,10 @@ const PayoutsManagement: NextPageWithLayout = () => {
   const [rowSelection, setRowSelection] = React.useState({})
   const [data, setData] = React.useState<PayoutColumn[]>([])
   const { data: session } = useSession();
-  const { isFetching, isLoading, isPreviousData, refetch } = api.income.getAllPayouts.useQuery(
+  const { isFetching, isLoading, isPreviousData, refetch } = api.income.getMyPayouts.useQuery(
     undefined, // no input
     {
-      enabled: session?.user.role === "ADMIN",
+      enabled: session?.user !== undefined,
       refetchOnWindowFocus: false,
       onSuccess: (res) => {
         setData(res.map(i => {

@@ -4,7 +4,6 @@ import type { ColumnDef } from "@tanstack/react-table"
 import { Checkbox } from "~/components/ui/checkbox"
 import type { Currency, PaymentMethod, PayoutStatus } from "@prisma/client"
 import { extractLetters, truncateString } from "~/utils/helper"
-import { naturalTime } from "~/utils/helper"
 import { Avatar, AvatarImage, AvatarFallback } from "~/components/ui/avatar"
 import {
   Tooltip,
@@ -12,6 +11,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "~/components/ui/tooltip"
+import { Button } from "~/components/ui/button"
+import { Badge } from "~/components/ui/badge"
+import { UserIncomeDialog } from "~/components/dialogs/income-dialog"
 
 export type PayoutColumn = {
   id: string
@@ -90,26 +92,17 @@ export const columns: ColumnDef<PayoutColumn>[] = [
     },
   },
   {
-    accessorKey: "currency",
-    header: "Currency",
-    cell: ({ row }) => {
-      const currency: Currency = row.getValue("currency")
-      if (currency === "USD")
-        return (<p>🇺🇸 $USD</p>)
-      else if (currency === "CNY")
-        return (<p>🇨🇳 ¥CNY</p>)
-      else if (currency === "JPY")
-        return (<p>🇯🇵 ¥JPY</p>)
-    }
-  },
-  {
     accessorKey: "number",
     header: "Amount",
     cell: ({ row }) => {
       const data = row.original
       const number = data.number * data.exchangeRate
-      return <p>{data.currency === "USD" ? "$" : "¥"}{number.toFixed(2)}</p>
+      return <p className="font-bold">{data.currency === "USD" ? "$" : "¥"}{number.toFixed(2)}</p>
     }
+  },
+  {
+    accessorKey: "currency",
+    header: "Currency",
   },
   {
     accessorKey: "exchangeRate",
@@ -124,22 +117,45 @@ export const columns: ColumnDef<PayoutColumn>[] = [
     header: "Payment Method"
   },
   {
-    accessorKey: "incomeCount",
-    header: "Income Records"
-  },
-  {
-    accessorKey: "status",
-    header: "Status",
-  },
-  {
     accessorKey: "target",
     header: "Payment Target",
   },
   {
     accessorKey: "updated",
-    header: "Updated time",
+    header: "Updated",
     cell: ({ row }) => {
-      return naturalTime(row.getValue("updated"))
+      const date: Date = row.getValue("updated")
+      return date.toLocaleString()
     }
-  }
+  },
+  {
+    accessorKey: "incomeCount",
+    header: "Records",
+    cell: ({ row }) => {
+      const count = row.getValue("incomeCount")
+      const data = row.original
+      return (
+        <UserIncomeDialog
+          payoutId={data.id}
+          userId={data.user.id}
+          trigger={
+            <Button variant="link">{count as string} &gt;</Button>
+          }
+        />
+      )
+    }
+  },
+  {
+    accessorKey: "status",
+    header: "Status",
+    cell: ({ row }) => {
+      const status: PayoutStatus = row.getValue("status")
+      const badge =
+        status === "PAID" ? <Badge className="bg-gray-500">PAID</Badge>
+          : status === "NOTPAID" ? <Badge className="bg-teal-500">NOT PAID</Badge>
+            : status === "FROZEN" && <Badge className="bg-red-500">FROZEN</Badge>
+      return badge
+    }
+  },
+
 ]

@@ -19,11 +19,6 @@ const navLinks = [
     adminOnly: true
   },
   {
-    title: "Payouts",
-    href: "/admin/payouts",
-    adminOnly: true
-  },
-  {
     title: "Projects",
     href: "/admin/projects",
     adminOnly: false
@@ -31,6 +26,11 @@ const navLinks = [
   {
     title: "Documents",
     href: "/admin/documents",
+    adminOnly: false
+  },
+  {
+    title: "Payouts",
+    href: "/admin/payouts",
     adminOnly: false
   },
 ]
