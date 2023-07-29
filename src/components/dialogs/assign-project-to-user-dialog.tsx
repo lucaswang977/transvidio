@@ -99,8 +99,6 @@ export function AssignProjectToUserDialog(props: AssignProjectToUserDialogProps)
     }
   }, [open])
 
-  console.log(columns.filter((c) => !(["paymentMethod", "paymentTarget", "paymentMemo", "lastLogin", "created"].find(v => c.id === v))))
-
   return (
     <div>
       <Dialog open={open} onOpenChange={setIsOpen}>
