@@ -158,12 +158,12 @@ export const generatePayoutRecord = async (projectId: string, operateUserId: str
       }
 
       if (user.paymentCurrency === "CNY") {
-        const c = configs.find(item => item.key = `${AppConfigKeys.EXCHANGE_RATE_PREFIX}USD-CNY`)
+        const c = configs.find(item => item.key === `${AppConfigKeys.EXCHANGE_RATE_PREFIX}USDCNY`)
         if (c) {
           exchangeRate = parseFloat(c.value)
         }
       } else if (user.paymentCurrency === "JPY") {
-        const c = configs.find(item => item.key = `${AppConfigKeys.EXCHANGE_RATE_PREFIX}USD-JPY`)
+        const c = configs.find(item => item.key === `${AppConfigKeys.EXCHANGE_RATE_PREFIX}USDJPY`)
         if (c) {
           exchangeRate = parseFloat(c.value)
         }
