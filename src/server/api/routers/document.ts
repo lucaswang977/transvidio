@@ -146,9 +146,9 @@ export const documentRouter = createTRPCRouter({
           projectId: (input.filterByProject && projects.find(p => p.projectId === input.filterByProject)) ?
             input.filterByProject :
             {
-              in: projects.map((project) => {
-                if (project.project.status !== "ARCHIVED") return project.projectId
-              })
+              in: projects
+                .filter(project => project.project.status !== "ARCHIVED")
+                .map((project) => project.projectId)
             }
         }
       } else {
@@ -188,7 +188,6 @@ export const documentRouter = createTRPCRouter({
             },
             where: where
           }
-
         )
       }
     }),
