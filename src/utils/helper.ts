@@ -3,6 +3,8 @@ import { twMerge } from "tailwind-merge"
 import dayjs from "dayjs"
 import relativeTime from "dayjs/plugin/relativeTime";
 import { kv } from "@vercel/kv";
+import { getAll, get } from '@vercel/edge-config';
+import type { AppConfig } from "~/types";
 import { env } from "~/env.mjs";
 
 export function cn(...inputs: ClassValue[]) {
@@ -125,3 +127,32 @@ export async function cLog(level: LogLevels, range: string, calledBy: string, me
     }
   }
 }
+
+export const AppConfigKeys = {
+  DEV_ENV_PREFIX: "dev_",
+  GPT_MODEL: "general_openaiGptModel",
+  BASIC_COST_PREFIX: "basicCost_",
+  EXCHANGE_RATE_PREFIX: "exchangeRate_",
+}
+
+export const getConfigByKey = async (k: string) => {
+  const key = env.NODE_ENV === "development" ? `${AppConfigKeys.DEV_ENV_PREFIX}${k}` : k
+  const value = await get(key)
+  return value
+}
+
+export const getAllConfigs = async () => {
+  const allConfigs: AppConfig[] = []
+  const result = await getAll()
+  for (const k of Object.keys(result)) {
+    if (env.NODE_ENV === "development" && k.startsWith(AppConfigKeys.DEV_ENV_PREFIX)) {
+      allConfigs.push({ key: k.replace(AppConfigKeys.DEV_ENV_PREFIX, ""), value: result[k] as string })
+    } else if (env.NODE_ENV !== "development" && !k.startsWith(AppConfigKeys.DEV_ENV_PREFIX)) {
+      allConfigs.push({ key: k, value: result[k] as string })
+    }
+  }
+
+  return allConfigs
+}
+
+

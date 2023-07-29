@@ -47,20 +47,23 @@ enum UserRole {
 }
 
 model User {
-  id            String         @id @default(cuid())
+  id            String    @id @default(cuid())
   name          String?
-  email         String?        @unique
+  email         String?   @unique
   emailVerified DateTime?
   image         String?
-  role          UserRole       @default(EDITOR)
+  role          UserRole  @default(EDITOR)
   pwd           String?
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  lastLogin     DateTime       @default(now())
-  blocked       Boolean        @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  lastLogin     DateTime  @default(now())
+  blocked       Boolean   @default(false)
   memo          String?
-  paymentMethod PaymentMethod?
-  paymentTarget String?
+
+  paymentCurrency Currency?
+  paymentMethod   PaymentMethod?
+  paymentTarget   String?
+  paymentMemo     String?
 
   accounts Account[]
   sessions Session[]
@@ -89,6 +92,7 @@ enum Language {
 enum ProjectStatus {
   PREPARING
   PROGRESSING
+  REVIEWING
   COMPLETED // Payout records will be generated
   ARCHIVED
 }
@@ -108,6 +112,7 @@ model Project {
   users     ProjectsOfUsers[]
 
   incomeRecords IncomeRecord[]
+  payoutRecords PayoutRecord[]
 }
 
 model ProjectsOfUsers {
@@ -194,7 +199,7 @@ model IncomeRecord {
   document   Document @relation(fields: [documentId], references: [id], onDelete: NoAction)
 
   payoutRecordId String?
-  payoutRecord   PayoutRecord? @relation(fields: [payoutRecordId], references: [id], onDelete: NoAction)
+  payoutRecord   PayoutRecord? @relation(fields: [payoutRecordId], references: [id], onDelete: Cascade)
 }
 
 model PayoutRecord {
@@ -202,14 +207,17 @@ model PayoutRecord {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  number   Float // in USD
-  rate     Float
-  currency Currency
+  number       Float // in USD
+  exchangeRate Float
 
-  status        PayoutStatus
-  target        String
-  paymentMethod PaymentMethod
-  memo          String
+  status          PayoutStatus
+  paymentCurrency Currency
+  paymentTarget   String
+  paymentMethod   PaymentMethod
+  memo            String?
+
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: NoAction)
 
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: NoAction)

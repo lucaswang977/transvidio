@@ -5,13 +5,14 @@ import {
 
 import { prisma } from "~/server/db";
 import { z } from "zod";
-import { Language, type Prisma } from "@prisma/client"
+import { ProjectStatus, Language, type Prisma } from "@prisma/client"
 import { TRPCError } from "@trpc/server";
 import { delay } from "~/utils/helper";
 import { env } from "~/env.mjs";
-import { type ProjectAiParamters } from "~/types";
+import type { ProjectAiParamters } from "~/types";
 
 import { cLog, LogLevels } from "~/utils/helper"
+import { generatePayoutRecord } from "~/server/income";
 const LOG_RANGE = "PROJECT"
 
 export type ProjectRelatedUser = {
@@ -34,6 +35,9 @@ export const projectRouter = createTRPCRouter({
           some: {
             userId: ctx.session.user.id
           }
+        },
+        status: {
+          not: "ARCHIVED"
         }
       }
     }
@@ -184,6 +188,58 @@ export const projectRouter = createTRPCRouter({
       })
 
       await cLog(LogLevels.INFO, LOG_RANGE, ctx.session.user.id, `saveAiParams() success: ${input.projectId}.`)
+      return updatedProject.id
+    }),
+
+  changeStatus: protectedProcedure
+    .input(z.object({
+      projectId: z.string().nonempty(),
+      value: z.nativeEnum(ProjectStatus)
+    }))
+    .mutation(async ({ input, ctx }) => {
+      if (env.DELAY_ALL_API) await delay(3000)
+
+      await cLog(LogLevels.INFO, LOG_RANGE, ctx.session.user.id, `changeStatus() called: ${input.projectId}, ${input.value}.`)
+      const project = await prisma.project.findUnique({
+        where: {
+          id: input.projectId,
+        },
+        include: {
+          documents: {
+            select: { state: true }
+          }
+        }
+      })
+
+      if (!project) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Project not existed."
+        })
+      }
+
+      if (input.value === "COMPLETED") {
+        const res = project.documents.find(i => i.state !== "CLOSED")
+        if (res) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Not all of the documents are closed."
+          })
+        }
+
+        await generatePayoutRecord(input.projectId, ctx.session.user.id)
+      }
+
+      const updatedProject = await prisma.project.update({
+        where: {
+          id: input.projectId
+        },
+        data: {
+          status: input.value
+        }
+      })
+
+      await cLog(LogLevels.INFO, LOG_RANGE, ctx.session.user.id, `changeStatus() success: ${input.projectId}.`)
       return updatedProject.id
     }),
 });

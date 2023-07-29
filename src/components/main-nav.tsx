@@ -28,6 +28,11 @@ const navLinks = [
     href: "/admin/documents",
     adminOnly: false
   },
+  {
+    title: "Payouts",
+    href: "/admin/payouts",
+    adminOnly: false
+  },
 ]
 
 export function MainNav({

@@ -10,6 +10,7 @@ import { TRPCError } from "@trpc/server";
 import type { DocPermission, DocumentInfo } from "~/types";
 import { env } from "~/env.mjs";
 import { countWordsInJSONValues, delay } from "~/utils/helper";
+import { generateIncomeRecord } from "~/server/income"
 
 import { cLog, LogLevels } from "~/utils/helper"
 const LOG_RANGE = "DOCUMENT"
@@ -90,11 +91,17 @@ const getDocPermission = (cond: {
       if (cond.isClaimer) {
         np.srcReadable = true
         np.dstReadable = true
-        np.dstWritable = true
-        // Except it is a subtitle type
-        if (cond.docType === "SUBTITLE") {
-          np.srcWritable = true
+
+        // Even the claimer is unable to write once the doc is closed
+        if (cond.docState !== "CLOSED") {
+          np.dstWritable = true
+
+          // Source can be modified only when the doc is a subtitle
+          if (cond.docType === "SUBTITLE") {
+            np.srcWritable = true
+          }
         }
+
       } else {
         // Im in this project but this document is not claimed by me,
         // I can read it if it has been submitted
@@ -125,6 +132,9 @@ export const documentRouter = createTRPCRouter({
       const projects = await ctx.prisma.projectsOfUsers.findMany({
         where: {
           userId: ctx.session.user.id
+        },
+        include: {
+          project: true
         }
       })
 
@@ -135,7 +145,11 @@ export const documentRouter = createTRPCRouter({
           state: input.filterByState,
           projectId: (input.filterByProject && projects.find(p => p.projectId === input.filterByProject)) ?
             input.filterByProject :
-            { in: projects.map((project) => project.projectId) }
+            {
+              in: projects
+                .filter(project => project.project.status !== "ARCHIVED")
+                .map((project) => project.projectId)
+            }
         }
       } else {
         where = {
@@ -174,7 +188,6 @@ export const documentRouter = createTRPCRouter({
             },
             where: where
           }
-
         )
       }
     }),
@@ -392,6 +405,8 @@ export const documentRouter = createTRPCRouter({
         })
       }
 
+      await generateIncomeRecord(input.documentId, ctx.session.user.id)
+
       await prisma.document.update({
         where: {
           id: input.documentId
@@ -400,6 +415,7 @@ export const documentRouter = createTRPCRouter({
           state: "CLOSED"
         }
       })
+
       await cLog(LogLevels.INFO, LOG_RANGE, ctx.session.user.id, `closeByAdmin() success: ${input.documentId}`)
     }),
 

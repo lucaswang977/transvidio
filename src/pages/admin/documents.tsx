@@ -3,6 +3,7 @@ import { useSession } from "next-auth/react"
 import { DataTable } from "~/components/ui/data-table"
 import Layout from "./layout"
 import { useRouter } from 'next/router';
+import { useToast } from "~/components/ui/use-toast"
 import { api } from "~/utils/api";
 import { RefreshCw } from "lucide-react"
 import { Button } from "~/components/ui/button"
@@ -37,6 +38,8 @@ const DocumentManagement: NextPageWithLayout = () => {
   const [docStateFilter, setDocStateFilter] = React.useState<DocumentState | undefined>(undefined)
   const [docTypeFilter, setDocTypeFilter] = React.useState<DocumentType | undefined>(undefined)
   const [rowSelection, setRowSelection] = React.useState({})
+  const mutation = api.document.closeByAdmin.useMutation()
+  const { toast } = useToast()
 
   const [{ pageIndex, pageSize }, setPagination] =
     React.useState<PaginationState>({
@@ -105,6 +108,22 @@ const DocumentManagement: NextPageWithLayout = () => {
       return d
     })
   }
+
+  const multiOps = session?.user.role === "ADMIN" ?
+    [{
+      buttonName: "close",
+      func: async (rows: string[]) => {
+        for (const id of rows) {
+          try {
+            await mutation.mutateAsync({ documentId: id })
+          } catch (err) {
+            toast({ description: (err as { message: string }).message })
+          }
+        }
+        await refetch()
+      }
+    }] : undefined
+
   return (
     <div className="flex-1 space-y-4 p-8 pt-6">
       <div className="flex items-center justify-between space-y-2">
@@ -198,6 +217,8 @@ const DocumentManagement: NextPageWithLayout = () => {
         user={session?.user}
         handleRefetch={() => refetch()}
         manualPagination={true}
+        rowIdKey="id"
+        multiOps={multiOps}
         paginationArgs={{
           pagination: pagination,
           setPagination: setPagination,

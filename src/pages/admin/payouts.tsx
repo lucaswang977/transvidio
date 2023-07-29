@@ -2,45 +2,41 @@ import * as React from "react"
 import Layout from "./layout"
 import { DataTable } from "~/components/ui/data-table"
 import type { NextPageWithLayout } from "../_app"
-import type { UserColumn } from "~/components/columns/users"
-import { columns } from "~/components/columns/users"
+import type { PayoutColumn } from "~/components/columns/payout"
+import { columns } from "~/components/columns/payout"
 import { useSession } from "next-auth/react"
 import { api } from "~/utils/api";
-import { naturalTime } from "~/utils/helper"
 import { Button } from "~/components/ui/button"
 import { RefreshCw } from "lucide-react"
 
-const UserManagement: NextPageWithLayout = () => {
+const PayoutsManagement: NextPageWithLayout = () => {
   const [rowSelection, setRowSelection] = React.useState({})
+  const [data, setData] = React.useState<PayoutColumn[]>([])
   const { data: session } = useSession();
-  const { data: users, isFetching, isLoading, isPreviousData, refetch } = api.user.getAll.useQuery(
+  const { isFetching, isLoading, isPreviousData, refetch } = api.income.getMyPayouts.useQuery(
     undefined, // no input
     {
       enabled: session?.user !== undefined,
-      refetchOnWindowFocus: false
+      refetchOnWindowFocus: false,
+      onSuccess: (res) => {
+        setData(res.map(i => {
+          return {
+            id: i.id,
+            project: { id: i.project.id, name: i.project.name },
+            user: { id: i.user.id, name: i.user.name, image: i.user.image },
+            currency: i.paymentCurrency,
+            number: i.number,
+            exchangeRate: i.exchangeRate,
+            method: i.paymentMethod,
+            status: i.status,
+            target: i.paymentTarget,
+            updated: i.updatedAt,
+            incomeCount: i.incomeRecords.length
+          } as PayoutColumn
+        }))
+      }
     },
   );
-
-  let usersData: UserColumn[] = []
-
-  if (users) {
-    usersData = users.map((user) => {
-      const u: UserColumn = {
-        id: user.id,
-        name: user.name ? user.name : "",
-        role: user.role === "ADMIN" ? "admin" : "editor",
-        email: user.email ? user.email : "",
-        image: user.image ? user.image : "",
-        created: user.createdAt.toLocaleString(),
-        paymentMethod: user.paymentMethod ? user.paymentMethod : "",
-        paymentTarget: user.paymentTarget ? user.paymentTarget : "",
-        paymentMemo: user.paymentMemo ? user.paymentMemo : "",
-        lastLogin: naturalTime(user.lastLogin)
-      }
-
-      return u
-    })
-  }
 
   const handleRefetch = async () => {
     await refetch()
@@ -48,7 +44,7 @@ const UserManagement: NextPageWithLayout = () => {
   return (
     <div className="flex-1 space-y-4 p-8 pt-6">
       <div className="flex items-center justify-between space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight">All users</h2>
+        <h2 className="text-3xl font-bold tracking-tight">All payouts</h2>
         <div className="flex space-x-2">
           <Button disabled={isFetching} size="sm" variant="outline" onClick={handleRefetch}>
             <RefreshCw className={`mr-2 h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
@@ -61,7 +57,7 @@ const UserManagement: NextPageWithLayout = () => {
         <DataTable
           disabled={isLoading || isPreviousData}
           columns={columns}
-          data={usersData}
+          data={data}
           rowSelection={rowSelection}
           setRowSelection={setRowSelection}
           manualPagination={false}
@@ -71,8 +67,8 @@ const UserManagement: NextPageWithLayout = () => {
   )
 }
 
-UserManagement.getTitle = () => "Users - Transvid.io"
-UserManagement.getLayout = (page) => {
+PayoutsManagement.getTitle = () => "Payouts - Transvid.io"
+PayoutsManagement.getLayout = (page) => {
   return (
     <Layout>
       {page}
@@ -80,5 +76,4 @@ UserManagement.getLayout = (page) => {
   )
 }
 
-
-export default UserManagement
+export default PayoutsManagement

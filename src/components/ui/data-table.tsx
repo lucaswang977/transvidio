@@ -2,16 +2,19 @@
 
 import * as React from "react"
 
+import type {
+  ColumnDef,
+  RowSelectionState,
+  OnChangeFn,
+  RowData,
+  PaginationState,
+} from "@tanstack/react-table"
+
 import {
-  type ColumnDef,
-  type RowSelectionState,
   flexRender,
   getCoreRowModel,
   getPaginationRowModel,
   useReactTable,
-  type OnChangeFn,
-  type RowData,
-  type PaginationState,
 } from "@tanstack/react-table"
 
 import {
@@ -25,7 +28,8 @@ import {
 
 import type { UserRole } from "@prisma/client"
 import { Button } from "~/components/ui/button"
-import { ChevronFirst, ChevronLast, ChevronLeft, ChevronRight } from "lucide-react"
+import { ChevronFirst, ChevronLast, ChevronLeft, ChevronRight, Trash } from "lucide-react"
+import { ConfirmDialog } from "~/components/dialogs/confirm-dialog"
 
 declare module '@tanstack/react-table' {
   interface TableMeta<TData extends RowData> {
@@ -42,6 +46,8 @@ interface DataTableProps<TData, TValue> {
   setRowSelection: OnChangeFn<RowSelectionState> | undefined,
   handleRefetch?: () => void,
   user?: { id: string, role: UserRole },
+  rowIdKey?: string,
+  multiOps?: { buttonName: string, func: (ids: string[]) => Promise<void> }[],
   manualPagination: boolean,
   paginationArgs?: {
     pagination: { pageIndex: number, pageSize: number },
@@ -61,6 +67,8 @@ export function DataTable<TData, TValue>({
   user,
   manualPagination,
   paginationArgs,
+  rowIdKey,
+  multiOps,
   disabled,
 }: DataTableProps<TData, TValue>) {
 
@@ -75,6 +83,9 @@ export function DataTable<TData, TValue>({
       Math.ceil(paginationArgs.total / paginationArgs.pagination.pageSize) : 0),
     onPaginationChange: paginationArgs.setPagination,
     autoResetPageIndex: false,
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
+    getRowId: rowIdKey ? (row: any) => row[rowIdKey] : undefined,
+    autoResetSelectedRows: false,
 
     state: { pagination: paginationArgs.pagination, rowSelection, },
     meta: {
@@ -97,10 +108,13 @@ export function DataTable<TData, TValue>({
     }
   }
   const table = useReactTable(tableParams)
+  const [multiWorking, setMultiWorking] = React.useState(false)
+  const [multiOpen, setMultiOpen] = React.useState(false)
 
   const total = (manualPagination && paginationArgs) ?
     paginationArgs.total
     : table.getFilteredRowModel().rows.length
+
 
   return (
     <div className="w-full rounded-md border relative">
@@ -151,7 +165,49 @@ export function DataTable<TData, TValue>({
         </TableBody>
       </Table>
       <div className="flex items-center justify-between">
-        <p className="p-4 text-sm text-gray-400">Total {total} items</p>
+        <div className="p-4 flex text-sm text-gray-400 items-center">
+          <p>Total {total} items</p>
+          {
+            rowSelection && Object.keys(rowSelection).length > 0 &&
+            <>
+              <p className="px-2">/</p>
+              <button
+                className="text-xs pr-1"
+                onClick={() => table.resetRowSelection()}>
+                <Trash className="h-3 w-3" />
+              </button>
+              <p>{Object.keys(rowSelection).length} selected</p>
+              <div className="flex px-2">
+                {
+                  multiOps && multiOps.map(m => {
+                    return (
+                      <ConfirmDialog
+                        key={m.buttonName}
+                        trigger={
+                          <Button variant="link" >{m.buttonName}</Button>
+                        }
+                        title="Are you absolutely sure?"
+                        description={`This operation will affect ${Object.keys(rowSelection).length} items and this action cannot be undone.`}
+                        working={multiWorking}
+                        open={multiOpen}
+                        setOpen={setMultiOpen}
+                        handleConfirm={
+                          async () => {
+                            setMultiWorking(true)
+                            await m.func(Object.keys(rowSelection))
+                            table.resetRowSelection()
+                            setMultiWorking(false)
+                            setMultiOpen(false)
+                          }
+                        }
+                      />
+                    )
+                  })
+                }
+              </div>
+            </>
+          }
+        </div>
         {
           (table.getPageCount() > 1) ?
             <div className="flex space-x-2 py-4 pr-4 items-center">

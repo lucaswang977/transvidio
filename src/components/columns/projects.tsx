@@ -24,6 +24,8 @@ import { extractLetters } from "~/utils/helper"
 import Link from "next/link"
 import { Badge } from "../ui/badge"
 import type { ProjectAiParamters } from "~/types"
+import type { ProjectStatus } from "@prisma/client"
+import { ProjectStateModifyDialog } from "~/components/dialogs/project-state-modify-dialog"
 
 export type ProjectColumn = {
   id: string
@@ -31,10 +33,28 @@ export type ProjectColumn = {
   srcLang: string
   dstLang: string
   memo: string
+  status: ProjectStatus
   users: ProjectRelatedUser[]
   aiParameter: ProjectAiParamters
   documentCount: Record<string, number>
 }
+
+export const getProjectStateBadges = (state?: ProjectStatus) => {
+  const stateBadges = {
+    PREPARING: <Badge className="bg-sky-500">PREPARING</Badge>,
+    PROGRESSING: <Badge className="bg-red-500">PROGRESSING</Badge>,
+    REVIEWING: <Badge className="bg-teal-500">REVIEW</Badge>,
+    COMPLETED: <Badge className="bg-gray-500">COMPLETED</Badge>,
+    ARCHIVED: <Badge className="bg-gray-300">ARCHIVED</Badge>,
+  }
+
+  if (state) {
+    return stateBadges[state]
+  } else {
+    return stateBadges
+  }
+}
+
 
 export const columns: ColumnDef<ProjectColumn>[] = [
   {
@@ -81,6 +101,37 @@ export const columns: ColumnDef<ProjectColumn>[] = [
         </div>
       )
     },
+  },
+  {
+    accessorKey: "status",
+    header: "State",
+    cell: ({ row, table }) => {
+      const data = row.original
+      const myself = table.options.meta?.user
+      const refetch = table.options.meta?.refetchData
+      const value: ProjectStatus = row.getValue("status")
+      const el = getProjectStateBadges(value) as React.ReactNode
+
+      return (
+        <div className="flex items-center space-x-1">
+          {
+            (myself && myself.role === "ADMIN") ?
+              <ProjectStateModifyDialog
+                refetch={() => { if (refetch) refetch() }}
+                projectId={data.id}
+                currentValue={value}
+                triggerChild={
+                  <Button className="p-0" variant="ghost">
+                    {el}
+                  </Button>
+                }
+              />
+              : el
+          }
+        </div>
+      )
+    }
+
   },
   {
     accessorKey: "memo",
@@ -182,14 +233,18 @@ export const columns: ColumnDef<ProjectColumn>[] = [
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem disabled={myself && myself.role === "EDITOR"}>
-              <Edit className="mr-2 h-4 w-4" />
-              <span>Edit</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem disabled={myself && myself.role === "EDITOR"}>
-              <Trash className="mr-2 h-4 w-4" />
-              <span>Delete</span>
-            </DropdownMenuItem>
+            {(myself && myself.role === "ADMIN") &&
+              <>
+                <DropdownMenuItem>
+                  <Edit className="mr-2 h-4 w-4" />
+                  <span>Edit</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <Trash className="mr-2 h-4 w-4" />
+                  <span>Delete</span>
+                </DropdownMenuItem>
+              </>
+            }
           </DropdownMenuContent>
         </DropdownMenu>
       )

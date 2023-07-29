@@ -95,4 +95,13 @@ export type AppConfig = {
   value: string
 }
 
+export type UserProfile = {
+  name: string,
+  avatar: string,
+  paymentCurrency: Currency,
+  paymentTarget: string,
+  paymentMethod: PaymentMethod,
+  paymentMemo: string,
+}
+
 
