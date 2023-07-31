@@ -118,7 +118,7 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
         </div>
 
         <ScrollArea className="h-[60vh] lg:h-[90vh]">
-          <div className="flex">
+          <div className="flex space-x-2 p-2">
             <div className="flex flex-col space-y-2">
               {
                 srcObj.subtitle.map((item, index) => {

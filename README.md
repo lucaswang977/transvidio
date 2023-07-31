@@ -13,6 +13,7 @@ An online translation collaborative platform which enables project-based transla
   - Attachment
   - Quiz
 - AI powered auto translation(auto filling)
+- Payout management for translators
 
 ## Functions to be implemented
 - [ ] Dashboard related
@@ -27,8 +28,14 @@ An online translation collaborative platform which enables project-based transla
   - [x] Prompt template
   - [x] Course intro, curriculum, article, quiz translation
   - [x] Video transcription & subtitle translation
-  - [ ] OpenAI model global config
+  - [x] OpenAI model global config
   - [ ] Attachment translation
 - [ ] Document edit history and restore back
-- [ ] Payment management
+- [x] Payout management
+  - [x] Exchange rate support based on USD
+  - [x] Auto generate income records on documents
+  - [x] Auto generate payout records on projects
 - [ ] AI dubbing
+  - [ ] Voice synthesis based on translated subtitles
+  - [ ] Voice duration indicator based on the segment length 
+  - [ ] Synced synthesized voice & original video playback
