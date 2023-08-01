@@ -24,12 +24,9 @@ import { timeFormat } from "~/utils/helper"
 import type { NextPageWithLayout } from "~/pages/_app"
 import type ReactPlayer from "react-player";
 import { clone } from "ramda";
-import {
-  type AutofillHandler,
-  DocumentEditor,
-  handleTranslate,
-  type EditorComponentProps
-} from "~/components/doc-editor";
+import type { AutofillHandler, EditorComponentProps } from "~/components/doc-editor";
+import { DocumentEditor, handleTranslate, } from "~/components/doc-editor";
+import { Button } from "~/components/ui/button"
 
 const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentProps>(
   ({ srcJson, dstJson, handleChange, permission, setAutoFillInit }, ref) => {
@@ -91,6 +88,24 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
       })
     }
 
+    const [audioUrl, setAudioUrl] = React.useState<{ key: number, value: string } | null>(null)
+    const synthesizeAudio = async (text: string) => {
+      const apiUrl = `/api/synthesis?phrase=${encodeURIComponent(text)}`;
+      try {
+        const response = await fetch(apiUrl);
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        const audioBlob = await response.blob();
+        const audioDataUrl = URL.createObjectURL(audioBlob);
+        setAudioUrl(d => {
+          if (d) return { value: audioDataUrl, key: d.key + 1 }
+          else return { value: audioDataUrl, key: 0 }
+        });
+      } catch (error) {
+        console.error('Error fetching audio data:', error);
+      }
+    };
     return (
       <div className="pt-8 flex flex-col items-center lg:items-start lg:flex-row lg:space-x-2">
         <div className="flex flex-col items-center space-y-2 mb-4 lg:order-last lg:mx-4">
@@ -115,6 +130,11 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
           </VideoPlayer>
           <p className="text-lg w-[500px] text-center">{captions.dst}</p>
           <p className="text-sm w-[500px] text-center">{captions.src}</p>
+          {audioUrl &&
+            <audio key={audioUrl.key} controls>
+              <source src={audioUrl.value} type="audio/mpeg" />
+            </audio>
+          }
         </div>
 
         <ScrollArea className="h-[60vh] lg:h-[90vh]">
@@ -124,8 +144,14 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
                 srcObj.subtitle.map((item, index) => {
                   return (
                     <div key={`src-${index}`} className="flex space-x-1">
-                      <div className="flex flex-col text-slate-300 py-2">
-                        <Label className="text-xs h-full">{timeFormat(item.from)}</Label>
+                      <div className="flex flex-col text-slate-300">
+                        <Label className="text-xs">{timeFormat(item.from)}</Label>
+                        <Button size="sm" className="text-xs" variant="link" onClick={async () => {
+                          const subtitle = dstObj.subtitle[index]
+                          if (subtitle) {
+                            await synthesizeAudio(subtitle.text)
+                          }
+                        }}>Synthesize</Button>
                         <Label className="text-xs">{timeFormat(item.to)}</Label>
                       </div>
                       <Textarea
@@ -194,7 +220,7 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
             </div>
           </div>
         </ScrollArea>
-      </div>
+      </div >
     )
   })
 
