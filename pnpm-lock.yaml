@@ -247,9 +247,6 @@ devDependencies:
   typescript:
     specifier: ^5.1.6
     version: 5.1.6
-  whisper-nodejs:
-    specifier: ^1.0.0
-    version: 1.0.0
 
 packages:
 
@@ -6192,15 +6189,6 @@ packages:
     hasBin: true
     dependencies:
       isexe: 2.0.0
-    dev: true
-
-  /whisper-nodejs@1.0.0:
-    resolution: {integrity: sha512-Uqm3BSwIMadwHGyHqzF2lhrOr1UEGUlVK9+I+u4C9YLeV1bAnE3qIe3k6evNpDFXa7Ct0b4VvL+XU55FOhIVbQ==}
-    dependencies:
-      axios: 1.4.0
-      form-data: 4.0.0
-    transitivePeerDependencies:
-      - debug
     dev: true
 
   /wrappy@1.0.2:
