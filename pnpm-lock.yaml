@@ -115,7 +115,7 @@ dependencies:
     version: 2.1.2
   langchain:
     specifier: ^0.0.96
-    version: 0.0.96(@aws-sdk/client-s3@3.369.0)
+    version: 0.0.96(@aws-sdk/client-s3@3.369.0)(axios@1.4.0)
   lucide-react:
     specifier: ^0.248.0
     version: 0.248.0(react@18.2.0)
@@ -211,12 +211,18 @@ devDependencies:
   autoprefixer:
     specifier: ^10.4.14
     version: 10.4.14(postcss@8.4.25)
+  axios:
+    specifier: ^1.4.0
+    version: 1.4.0
   eslint:
     specifier: ^8.44.0
     version: 8.44.0
   eslint-config-next:
     specifier: ^13.4.9
     version: 13.4.9(eslint@8.44.0)(typescript@5.1.6)
+  form-data:
+    specifier: ^4.0.0
+    version: 4.0.0
   husky:
     specifier: ^8.0.3
     version: 8.0.3
@@ -241,6 +247,9 @@ devDependencies:
   typescript:
     specifier: ^5.1.6
     version: 5.1.6
+  whisper-nodejs:
+    specifier: ^1.0.0
+    version: 1.0.0
 
 packages:
 
@@ -3091,7 +3100,6 @@ packages:
 
   /asynckit@0.4.0:
     resolution: {integrity: sha512-Oei9OH4tRh0YqU3GxhX79dM/mwVgvbZJaSNaRk+bshkj0S5cfHcgYakreBjrHwatXKbz+IoIdYLxrKim2MjW0Q==}
-    dev: false
 
   /autoprefixer@10.4.14(postcss@8.4.25):
     resolution: {integrity: sha512-FQzyfOsTlwVzjHxKEqRIAdJx9niO6VCBCoEwax/VLSoQF29ggECcPuBqUMZ+u8jCZOPSy8b8/8KnuFbp0SaFZQ==}
@@ -3126,6 +3134,15 @@ packages:
     transitivePeerDependencies:
       - debug
     dev: false
+
+  /axios@1.4.0:
+    resolution: {integrity: sha512-S4XCWMEmzvo64T9GfvQDOXgYRDJ/wsSZc7Jvdgx5u1sd0JwsuPLqb3SYmusag+edF6ziyMensPVqLTSc1PiSEA==}
+    dependencies:
+      follow-redirects: 1.15.2
+      form-data: 4.0.0
+      proxy-from-env: 1.1.0
+    transitivePeerDependencies:
+      - debug
 
   /axobject-query@3.2.1:
     resolution: {integrity: sha512-jsyHu61e6N4Vbz/v18DHwWYKK0bSWLqn47eeDSKPB7m8tqMHF9YJ+mhIk2lVteyZrY8tnSj/jHOv4YiTCuCJgg==}
@@ -3307,7 +3324,6 @@ packages:
     engines: {node: '>= 0.8'}
     dependencies:
       delayed-stream: 1.0.0
-    dev: false
 
   /commander@10.0.1:
     resolution: {integrity: sha512-y4Mg2tXshplEbSGzx7amzPwKKOCGuoSRP/CjEdwwk0FOGlUbq6lKuoyDZTNZkmxHdJtp54hdfY/JUrdL7Xfdug==}
@@ -3436,7 +3452,6 @@ packages:
   /delayed-stream@1.0.0:
     resolution: {integrity: sha512-ZySD7Nf91aLB0RxL4KGrKHBXl7Eds1DAmEdcoVawXnLD7SDhpNgtuII2aAkg7a7QS41jxPSZ17p4VdGnMHk3MQ==}
     engines: {node: '>=0.4.0'}
-    dev: false
 
   /dequal@2.0.3:
     resolution: {integrity: sha512-0je+qPKHEMohvfRTCEo3CrPG6cAzAYgmzKyxRiYSSDkS6eGJdyVJm7WaYA5ECaAD9wLB2T4EEeymA5aFVcYXCA==}
@@ -4017,7 +4032,6 @@ packages:
     peerDependenciesMeta:
       debug:
         optional: true
-    dev: false
 
   /for-each@0.3.3:
     resolution: {integrity: sha512-jqYfLp7mo9vIyQf8ykW2v7A+2N4QjeCeI5+Dz9XraiO1ign81wjiH7Fb9vSOWvQfNtmSa4H2RoQTrrXivdUZmw==}
@@ -4032,7 +4046,6 @@ packages:
       asynckit: 0.4.0
       combined-stream: 1.0.8
       mime-types: 2.1.35
-    dev: false
 
   /fraction.js@4.2.0:
     resolution: {integrity: sha512-MhLuK+2gUcnZe8ZHlaaINnQLl0xRIGRfcGk2yl8xoQAfHrSsL3rYu6FCmBdkdbhc9EPlwyGHewaRsvwRMJtAlA==}
@@ -4538,7 +4551,7 @@ packages:
       object.values: 1.1.6
     dev: true
 
-  /langchain@0.0.96(@aws-sdk/client-s3@3.369.0):
+  /langchain@0.0.96(@aws-sdk/client-s3@3.369.0)(axios@1.4.0):
     resolution: {integrity: sha512-m1d0IWjwZK+D19uBfgmfp5sUTxJXcjJb/YuIyn2cGNmXGqOH2r2cl0TUnhuFKxTXpMTXgTywd7MYF5U5/qkNTQ==}
     engines: {node: '>=18'}
     peerDependencies:
@@ -4691,6 +4704,7 @@ packages:
       '@anthropic-ai/sdk': 0.4.4
       '@aws-sdk/client-s3': 3.369.0
       ansi-styles: 5.2.0
+      axios: 1.4.0
       binary-extensions: 2.2.0
       camelcase: 6.3.0
       decamelize: 5.0.1
@@ -4820,14 +4834,12 @@ packages:
   /mime-db@1.52.0:
     resolution: {integrity: sha512-sPU4uV7dYlvtWJxwwxHD0PuihVNiE7TyAbQ5SWxDCB9mUYvOgroQOwYQQOKPJ8CIbE+1ETVlOoK1UC2nU3gYvg==}
     engines: {node: '>= 0.6'}
-    dev: false
 
   /mime-types@2.1.35:
     resolution: {integrity: sha512-ZDY+bPm5zTTF+YpCrAU9nK0UgICYPT0QtT1NZWFv4s++TNkcgVaT0g6+4R2uI4MjQjzysHB1zxuWL50hzaeXiw==}
     engines: {node: '>= 0.6'}
     dependencies:
       mime-db: 1.52.0
-    dev: false
 
   /mimic-fn@2.1.0:
     resolution: {integrity: sha512-OqbOk5oEQeAZ8WXWydlu9HJjz9WVdEIvamMCcXmuqUYjTknH/sqsWvhQ3vgwKFRR1HpjvNBKQ37nbJgYzGqGcg==}
@@ -5430,6 +5442,9 @@ packages:
       loose-envify: 1.4.0
       object-assign: 4.1.1
       react-is: 16.13.1
+
+  /proxy-from-env@1.1.0:
+    resolution: {integrity: sha512-D+zkORCbA9f1tdWRK0RaCR3GPv50cMxcrz4X8k5LTSUD1Dkw47mKJEZQNunItRTkWwgtaUSo1RVFRIG9ZXiFYg==}
 
   /punycode@2.3.0:
     resolution: {integrity: sha512-rRV+zQD8tVFys26lAGR9WUuS4iUAngJScM+ZRSKtvl5tKeZ2t5bvdNFdNHBW9FWR4guGHlgmsZ1G7BSm2wTbuA==}
@@ -6177,6 +6192,15 @@ packages:
     hasBin: true
     dependencies:
       isexe: 2.0.0
+    dev: true
+
+  /whisper-nodejs@1.0.0:
+    resolution: {integrity: sha512-Uqm3BSwIMadwHGyHqzF2lhrOr1UEGUlVK9+I+u4C9YLeV1bAnE3qIe3k6evNpDFXa7Ct0b4VvL+XU55FOhIVbQ==}
+    dependencies:
+      axios: 1.4.0
+      form-data: 4.0.0
+    transitivePeerDependencies:
+      - debug
     dev: true
 
   /wrappy@1.0.2:
