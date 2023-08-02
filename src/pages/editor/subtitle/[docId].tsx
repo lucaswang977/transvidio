@@ -28,10 +28,14 @@ import type { AutofillHandler, EditorComponentProps } from "~/components/doc-edi
 import { DocumentEditor, handleTranslate, } from "~/components/doc-editor";
 import { Button } from "~/components/ui/button"
 
+const regexToSegementSentence = /[.!?)'"“”]+$/
+
 const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentProps>(
   ({ srcJson, dstJson, handleChange, permission, setAutoFillInit }, ref) => {
     const reactPlayerRef = React.useRef<ReactPlayer>(null);
     const [captions, setCaptions] = React.useState({ src: "", dst: "" })
+    const [focusedIndex, setFocusedIndex] = React.useState<number | null>(null)
+
     React.useImperativeHandle(ref, () => {
       return { autofillHandler: handleAutoFill }
     }, [srcJson, dstJson])
@@ -58,8 +62,6 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
       }
 
       return new Promise<void>(async (resolve, reject) => {
-        const regex = /[.,;!?)'"“”]+$/
-
         let sentences: string[] = []
         let i = 0
         for (const s of srcObj.subtitle) {
@@ -67,7 +69,7 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
           // skip the translated sentences
           sentences.push(s.text)
           const sentence = sentences.join(" ")
-          if (regex.test(sentence.trim())) {
+          if (regexToSegementSentence.test(sentence.trim())) {
             if (!dst || dst.text.length === 0) {
               await handleTranslate(aip, sentence, (output) => {
                 const _i = i
@@ -88,6 +90,39 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
       })
     }
 
+    const getWholeSentenceOnFocus = () => {
+      let sentences: string[] = []
+      let dstSentences: string[] = []
+      let index = 0
+      const result: { text: string, duration: number } = { text: "", duration: 0 }
+      let focusedFound = false
+      let duration = 0
+      srcObj.subtitle.forEach(item => {
+        sentences.push(item.text)
+
+        const dstItem = dstObj.subtitle[index]
+        if (dstItem) dstSentences.push(dstItem.text)
+
+        const sentence = sentences.join(" ")
+        duration = duration + item.to - item.from
+
+        const dstSentence = dstSentences.join(" ")
+        if (index === focusedIndex) focusedFound = true
+        if (regexToSegementSentence.test(sentence.trim())) {
+          sentences = []
+          dstSentences = []
+          if (focusedFound) {
+            result.text = dstSentence
+            result.duration = duration
+            focusedFound = false
+          }
+          duration = 0
+        }
+        index = index + 1
+      })
+      return result
+    }
+
     const [audioUrl, setAudioUrl] = React.useState<{ key: number, value: string } | null>(null)
     const synthesizeAudio = async (text: string) => {
       const apiUrl = `/api/synthesis?phrase=${encodeURIComponent(text)}`;
@@ -106,6 +141,10 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
         console.error('Error fetching audio data:', error);
       }
     };
+    let sentences: string[] = []
+    let gray = false
+    let turnColor = false
+    const focusedSentence = getWholeSentenceOnFocus()
     return (
       <div className="pt-8 flex flex-col items-center lg:items-start lg:flex-row lg:space-x-2">
         <div className="flex flex-col items-center space-y-2 mb-4 lg:order-last lg:mx-4">
@@ -130,6 +169,15 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
           </VideoPlayer>
           <p className="text-lg w-[500px] text-center">{captions.dst}</p>
           <p className="text-sm w-[500px] text-center">{captions.src}</p>
+          {
+            <Button className="text-sm" variant="outline" onClick={async () => {
+              if (focusedSentence.text.length > 0) {
+                await synthesizeAudio(focusedSentence.text)
+              }
+            }}>Synthesize</Button>
+          }
+          <p>{focusedSentence.text}</p>
+          <p>{focusedSentence.duration} / unknown</p>
           {audioUrl &&
             <audio key={audioUrl.key} controls>
               <source src={audioUrl.value} type="audio/mpeg" />
@@ -139,19 +187,29 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
 
         <ScrollArea className="h-[60vh] lg:h-[90vh]">
           <div className="flex space-x-2 p-2">
-            <div className="flex flex-col space-y-2">
+            <div className="flex flex-col">
               {
                 srcObj.subtitle.map((item, index) => {
+                  if (turnColor) {
+                    gray = !gray
+                    turnColor = false
+                  }
+                  sentences.push(item.text)
+                  const sentence = sentences.join(" ")
+                  if (regexToSegementSentence.test(sentence.trim())) {
+                    turnColor = true
+                    sentences = []
+                  }
+
+                  const dstItem = dstObj.subtitle[index] ? dstObj.subtitle[index] : {
+                    ...item,
+                    text: ""
+                  }
+
                   return (
-                    <div key={`src-${index}`} className="flex space-x-1">
+                    <div key={`src-${index}`} className={`flex p-2 space-x-1 ${gray ? "bg-gray-100 dark:bg-gray-900" : ""}`}>
                       <div className="flex flex-col text-slate-300">
                         <Label className="text-xs">{timeFormat(item.from)}</Label>
-                        <Button size="sm" className="text-xs" variant="link" onClick={async () => {
-                          const subtitle = dstObj.subtitle[index]
-                          if (subtitle) {
-                            await synthesizeAudio(subtitle.text)
-                          }
-                        }}>Synthesize</Button>
                         <Label className="text-xs">{timeFormat(item.to)}</Label>
                       </div>
                       <Textarea
@@ -171,23 +229,10 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
                           if (reactPlayerRef.current) {
                             const duration = reactPlayerRef.current.getDuration()
                             reactPlayerRef.current.seekTo(item.from / 1000 / duration, "fraction")
+                            setFocusedIndex(index)
                           }
                         }}
                       />
-                    </div>
-                  )
-                })
-              }
-            </div>
-            <div className="flex flex-col space-y-2">
-              {
-                srcObj.subtitle.map((item, index) => {
-                  const dstItem = dstObj.subtitle[index] ? dstObj.subtitle[index] : {
-                    ...item,
-                    text: ""
-                  }
-                  return (
-                    <div key={`dst-${index}`} className="flex space-x-1">
                       <Textarea
                         disabled={!permission.dstWritable}
                         id={`dst.items.${index}`}
@@ -210,9 +255,11 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
                           if (reactPlayerRef.current) {
                             const duration = reactPlayerRef.current.getDuration()
                             reactPlayerRef.current.seekTo(item.from / 1000 / duration * 1.001, "fraction")
+                            setFocusedIndex(index)
                           }
                         }}
                       />
+
                     </div>
                   )
                 })
