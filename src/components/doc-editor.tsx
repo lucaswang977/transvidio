@@ -87,6 +87,7 @@ export const DocumentEditor = (props: DocumentEditorProps) => {
   const [saveState, setSaveState] = React.useState<"dirty" | "saving" | "saved">("saved")
   const [abortCtrl, setAbortCtrl] = React.useState(new AbortController())
   const [subtitleExportOpen, setSubtitleExportOpen] = React.useState(false)
+  const [history, setHistory] = React.useState<string[]>([])
   const { toast } = useToast()
   const { data: session } = useSession()
 
@@ -136,10 +137,32 @@ export const DocumentEditor = (props: DocumentEditorProps) => {
     }
   )
 
+  function debounce<F extends (...args: any[]) => any>(func: F, wait: number) {
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+
+    return function executedFunction(...args: Parameters<F>): void {
+      const later = () => {
+        timeout = undefined;
+        func(...args);
+      };
+
+      if (timeout) {
+        clearTimeout(timeout);
+      }
+      timeout = setTimeout(later, wait);
+    };
+  }
+
+
   const handleChange: HandleChangeInterface = (t, updater) => {
     if (t === "src") setSrcJson(updater)
     else setDstJson(updater)
     setSaveState("dirty")
+    setHistory(h => {
+      h.push(JSON.stringify({ src: srcJson, dst: dstJson }))
+      console.log(srcJson, dstJson, h)
+      return [...h]
+    })
   }
 
   function saveDoc() {
@@ -234,6 +257,15 @@ export const DocumentEditor = (props: DocumentEditorProps) => {
                       <Save className="h-4 w-4 mr-1" />
                       <span>{saveState === "saving" ? "Saving" : "Save"}</span>
                     </Button>
+                    <Button onClick={() => {
+                      const data = history.pop()
+                      if (data) {
+                        const d = JSON.parse(data) as { src: Prisma.JsonValue, dst: Prisma.JsonValue }
+                        setSrcJson(d.src)
+                        setDstJson(d.dst)
+                      }
+                      setHistory([...history])
+                    }}>Undo {history.length}</Button>
                     <ModeToggle />
                     <UserNav />
                     {
@@ -274,7 +306,7 @@ export const DocumentEditor = (props: DocumentEditorProps) => {
                   docInfo.projectId,
                   setAutoFillInit)}
               </div>
-            </main>
+            </main >
           </>
   )
 }

@@ -170,14 +170,14 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
           <p className="text-lg w-[500px] text-center">{captions.dst}</p>
           <p className="text-sm w-[500px] text-center">{captions.src}</p>
           {
-            <Button className="text-sm" variant="outline" onClick={async () => {
+            <Button className="hidden text-sm" variant="outline" onClick={async () => {
               if (focusedSentence.text.length > 0) {
                 await synthesizeAudio(focusedSentence.text)
               }
             }}>Synthesize</Button>
           }
-          <p>{focusedSentence.text}</p>
-          <p>{focusedSentence.duration} / unknown</p>
+          <p className="hidden">{focusedSentence.text}</p>
+          <p className="hidden">{focusedSentence.duration} / unknown</p>
           {audioUrl &&
             <audio key={audioUrl.key} controls>
               <source src={audioUrl.value} type="audio/mpeg" />

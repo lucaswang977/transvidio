@@ -8,6 +8,7 @@
 
 import { env } from "../src/env.mjs"
 import { prisma } from "../src/server/db"
+import * as path from "path"
 import type { Document } from "@prisma/client"
 import type {
   Curriculum,
@@ -107,9 +108,13 @@ async function createCurriculum(
           si.lectureId === item.id && si.assetId === item.assetId)
 
         if (supItem && supItem.assetFilename) {
-          const originalSubtitleSrcUrl = `${env.CDN_BASE_URL}/${projectId}/${supItem.assetFilename}.src.vtt`
+          const filename = (path.extname(supItem.assetFilename).toLowerCase() !== "mp4") ?
+            path.basename(supItem.assetFilename, path.extname(supItem.assetFilename)) + ".mp4" :
+            supItem.assetFilename
+
+          const originalSubtitleSrcUrl = `${env.CDN_BASE_URL}/${projectId}/${filename}.src.vtt`
           const srcData: SubtitleType = {
-            videoUrl: `${env.CDN_BASE_URL}/${projectId}/${supItem.assetFilename}`,
+            videoUrl: `${env.CDN_BASE_URL}/${projectId}/${filename}`,
             subtitle: []
           }
           const respSrc = await fetch(originalSubtitleSrcUrl)
