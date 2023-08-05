@@ -6,7 +6,7 @@
 // 2. Promotional video
 
 // Find the course ID first
-const COURSE_ID = 4958172;
+const COURSE_ID = 5482452;
 
 // Do not touch this URLs unless they are changed.
 const COURSE_INTRO_JSON_URL = `/api-2.0/courses/${COURSE_ID}/?fields[course]=title,headline,description,prerequisites,objectives,target_audiences`
@@ -348,7 +348,7 @@ const downloadVideo = async (lectureId, filename) => {
             headers: {
               'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ is_free: true })
+            body: JSON.stringify({ is_free: false })
           }).then(resp2 => {
             if (resp2.ok) {
               console.log('Video ', lectureId, ' freepreview set to false.');
