@@ -8,6 +8,7 @@ const path = require('path');
 const ffmpeg = require('fluent-ffmpeg');
 const axios = require('axios');
 const FormData = require('form-data');
+const yargs = require('yargs');
 
 const S3Client = require("@aws-sdk/client-s3").S3Client;
 const Upload = require("@aws-sdk/lib-storage").Upload;
@@ -23,9 +24,28 @@ if (process.argv.length < 4) {
   process.exit(1);
 }
 
+const argv = yargs
+  .option("project-id", {
+    alias: "p",
+    describe: "project ID",
+  })
+  .option("video-file", {
+    alias: "f",
+    describe: "local video file",
+  })
+  .option("vtt-file", {
+    alias: "v",
+    describe: "(optional) subtitle file in webvtt format",
+  })
+  .demandOption(["project-id", "video-file"])
+  .help()
+  .argv;
+
+
 // Get the target directory and local directory
-const targetDirectory = process.argv[2];
-const videoFile = process.argv[3];
+const targetDirectory = argv["project-id"];
+const videoFile = argv["video-file"];
+const vttFile = argv["vtt-file"];
 
 async function transcribeToVtt(filePath, modelName) {
   console.log("Transcribing audio...", filePath)
@@ -112,9 +132,20 @@ async function processAndUploadFile() {
         await convertVideoTo480p(videoFile, convertedFilePath);
         await uploadFileToS3(convertedFilePath, s3Key);
         fs.unlinkSync(convertedFilePath);
-        const mp3FilePath = path.join(path.dirname(videoFile), path.basename(videoFile, ".mp4")) + ".mp3";
-        await convertVideoToMp3(videoFile, mp3FilePath);
-        const vtt = await transcribeToVtt(mp3FilePath, "whisper-1")
+
+        let vtt = undefined
+
+        if (vttFile) {
+          vtt = fs.readFileSync(vttFile, "utf8")
+          console.log("Loaded subtitle from file.", vttFile)
+        } else {
+          const mp3FilePath = path.join(path.dirname(videoFile), path.basename(videoFile, ".mp4")) + ".mp3";
+          await convertVideoToMp3(videoFile, mp3FilePath);
+
+          vtt = await transcribeToVtt(mp3FilePath, "whisper-1")
+          fs.unlinkSync(mp3FilePath);
+        }
+
         const { entries } = parse(vtt)
         const srcJson = {
           videoUrl: `${process.env.CDN_BASE_URL}/${s3Key}`,
@@ -123,7 +154,6 @@ async function processAndUploadFile() {
         console.log("====== Source JSON ======")
         console.log(JSON.stringify(srcJson))
         console.log("====== Source JSON ======")
-        fs.unlinkSync(mp3FilePath);
       } else {
         throw new Error("The extension of file must be .mp4")
       }
