@@ -5,7 +5,7 @@ import { UserNav } from "~/components/user-nav";
 import { Logo } from "~/components/logo-with-name"
 import { Button } from "~/components/ui/button"
 import Link from "next/link";
-import { Bot, Download, Loader2, MoreVertical, Save } from "lucide-react";
+import { Bot, Download, Loader2, MoreVertical, Save, Undo, Redo } from "lucide-react";
 import { naturalTime } from "~/utils/helper"
 import type { DocPermission, DocumentInfo, ProjectAiParamters, SrcOrDst, SubtitleType } from "~/types";
 import { Beforeunload } from 'react-beforeunload';
@@ -16,6 +16,7 @@ import { fetchEventSource } from '@microsoft/fetch-event-source';
 import type { Prisma } from "@prisma/client";
 import { ModeToggle } from "~/components/mode-toggle";
 import { SubtitleExportDialog } from "~/components/dialogs/subtitle-export-dialog"
+import { useDebouncedCallback } from "use-debounce"
 
 import {
   DropdownMenu,
@@ -82,12 +83,13 @@ type DocumentEditorProps = {
   handleAutoFill?: (aiParams?: ProjectAiParamters) => Promise<void>
 }
 
+type History = { undo: string[], redo: string[] }
+
 export const DocumentEditor = (props: DocumentEditorProps) => {
   const [filling, setFilling] = React.useState(false)
   const [saveState, setSaveState] = React.useState<"dirty" | "saving" | "saved">("saved")
   const [abortCtrl, setAbortCtrl] = React.useState(new AbortController())
   const [subtitleExportOpen, setSubtitleExportOpen] = React.useState(false)
-  const [history, setHistory] = React.useState<string[]>([])
   const { toast } = useToast()
   const { data: session } = useSession()
 
@@ -108,6 +110,12 @@ export const DocumentEditor = (props: DocumentEditorProps) => {
 
   const [srcJson, setSrcJson] = React.useState<Prisma.JsonValue | undefined>()
   const [dstJson, setDstJson] = React.useState<Prisma.JsonValue | undefined>()
+
+  const [history, setHistory] = React.useState<History>()
+  const debouncedHistory = useDebouncedCallback((history: React.SetStateAction<History | undefined>) => {
+    setHistory(history)
+  }, 1500)
+  const [notSaveHistory, setNotSaveHistory] = React.useState(false)
 
   const { status } = api.document.load.useQuery(
     { documentId: props.docId },
@@ -137,32 +145,11 @@ export const DocumentEditor = (props: DocumentEditorProps) => {
     }
   )
 
-  function debounce<F extends (...args: any[]) => any>(func: F, wait: number) {
-    let timeout: ReturnType<typeof setTimeout> | undefined;
-
-    return function executedFunction(...args: Parameters<F>): void {
-      const later = () => {
-        timeout = undefined;
-        func(...args);
-      };
-
-      if (timeout) {
-        clearTimeout(timeout);
-      }
-      timeout = setTimeout(later, wait);
-    };
-  }
-
-
   const handleChange: HandleChangeInterface = (t, updater) => {
+    setNotSaveHistory(false)
     if (t === "src") setSrcJson(updater)
     else setDstJson(updater)
     setSaveState("dirty")
-    setHistory(h => {
-      h.push(JSON.stringify({ src: srcJson, dst: dstJson }))
-      console.log(srcJson, dstJson, h)
-      return [...h]
-    })
   }
 
   function saveDoc() {
@@ -204,6 +191,23 @@ export const DocumentEditor = (props: DocumentEditorProps) => {
     setAbortCtrl(new AbortController())
   }
 
+  React.useEffect(() => {
+    if (!notSaveHistory) {
+      debouncedHistory(h => {
+        if (h) {
+          const data = { src: srcJson, dst: dstJson }
+          const strData = JSON.stringify(data)
+          if (h.undo.at(-1) !== strData) {
+            h.undo.push(strData)
+          }
+          return { undo: [...h.undo], redo: [] }
+        } else {
+          return { undo: [JSON.stringify({ src: srcJson, dst: dstJson })], redo: [] }
+        }
+      })
+    }
+  }, [srcJson, dstJson])
+
   return (
     status === "loading" ?
       <div className="w-full h-screen flex flex-col justify-center items-center space-y-2">
@@ -225,8 +229,11 @@ export const DocumentEditor = (props: DocumentEditorProps) => {
             {saveState !== "saved" && (<Beforeunload onBeforeunload={(event) => event.preventDefault()} />)}
             <main className="flex min-h-screen flex-col">
               <div className="border-b">
-                <div className="fixed bg-white dark:bg-black z-100 w-full border-b flex items-center justify-between h-16 px-4">
-                  <Link href="/admin"><Logo /></Link>
+                <div className="fixed bg-white dark:bg-black z-100 w-full border-b grid grid-cols-[1fr_auto_1fr] items-center h-16 px-4">
+                  <div className="flex justify-start">
+                    <Link className="block" href="/admin"><Logo /></Link>
+                    <div className="grow"></div>
+                  </div>
 
                   <div className="flex flex-col items-center">
                     <p className="text">{docInfo.title}</p>
@@ -235,37 +242,74 @@ export const DocumentEditor = (props: DocumentEditorProps) => {
                     </p>
                   </div>
 
-                  <div className="flex space-x-4 items-center">
+                  <div className="flex space-x-2 items-center justify-end">
                     {
                       isAutoFillInit &&
                       <Button
+                        variant="outline"
+                        size="icon"
                         disabled={!permission.dstWritable}
                         onClick={filling ? cancelFilling : startFilling} >
                         {filling ?
                           <Loader2 className="w-4 animate-spin mr-1" />
-                          : <Bot className="h-4 w-4 mr-1" />
+                          : <Bot className="h-4 w-4" />
                         }
-                        <span>{filling ? "Cancel" : "Auto Fill"}</span>
                       </Button>
                     }
                     <Button
+                      variant="outline"
+                      size="icon"
                       disabled={saveState !== "dirty" ||
                         (!permission.srcWritable && !permission.dstWritable)}
                       onClick={async () => {
                         await saveDoc()
                       }} >
-                      <Save className="h-4 w-4 mr-1" />
-                      <span>{saveState === "saving" ? "Saving" : "Save"}</span>
+                      <Save className="h-4 w-4" />
                     </Button>
-                    <Button onClick={() => {
-                      const data = history.pop()
-                      if (data) {
-                        const d = JSON.parse(data) as { src: Prisma.JsonValue, dst: Prisma.JsonValue }
-                        setSrcJson(d.src)
-                        setDstJson(d.dst)
-                      }
-                      setHistory([...history])
-                    }}>Undo {history.length}</Button>
+                    <Button
+                      size="icon"
+                      variant="outline"
+                      disabled={!history || history.undo.length <= 1}
+                      onClick={() => {
+                        if (history) {
+                          debouncedHistory.flush()
+                          setNotSaveHistory(true)
+                          const undoData = history.undo.pop()
+                          if (undoData) history.redo.push(undoData)
+                          const data = history.undo.at(-1)
+
+                          if (data) {
+                            const d = JSON.parse(data) as { src: Prisma.JsonValue, dst: Prisma.JsonValue }
+                            setSrcJson(d.src)
+                            setDstJson(d.dst)
+                          }
+                          setHistory({ undo: [...history.undo], redo: [...history.redo] })
+                        }
+                      }}>
+                      <Undo className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="outline"
+                      disabled={!history || history.redo.length <= 0}
+                      onClick={() => {
+                        if (history) {
+                          debouncedHistory.flush()
+                          setNotSaveHistory(true)
+                          const redoData = history.redo.pop()
+
+                          if (redoData) {
+                            history.undo.push(redoData)
+                            const d = JSON.parse(redoData) as { src: Prisma.JsonValue, dst: Prisma.JsonValue }
+                            setSrcJson(d.src)
+                            setDstJson(d.dst)
+                          }
+                          setHistory({ undo: [...history.undo], redo: [...history.redo] })
+                        }
+                      }}>
+                      <Redo className="w-4 h-4" />
+                    </Button>
+
                     <ModeToggle />
                     <UserNav />
                     {
