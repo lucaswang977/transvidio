@@ -120,7 +120,7 @@ export async function cLog(level: LogLevels, range: string, calledBy: string, me
 
       try {
         await kv.zadd(key, { score: timestamp, member: `${dateStr}${logMsg}` })
-        await kv.expire(key, 7 * 24 * 60 * 60)
+        await kv.expire(key, 30 * 24 * 60 * 60)
       } catch (err) {
         console.error(err)
       }

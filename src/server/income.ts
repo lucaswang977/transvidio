@@ -125,6 +125,7 @@ export const generatePayoutRecord = async (projectId: string, operateUserId: str
     paymentCurrency: Currency,
     paymentTarget: string,
     paymentMethod: PaymentMethod,
+    paymentMemo: string | null,
     userId: string,
     incomeIds: string[]
   }[] = []
@@ -184,6 +185,7 @@ export const generatePayoutRecord = async (projectId: string, operateUserId: str
         paymentCurrency: user.paymentCurrency,
         paymentTarget: user.paymentTarget,
         paymentMethod: user.paymentMethod,
+        paymentMemo: user.paymentMemo,
         userId: user.id,
         incomeIds: [income.id]
       })
@@ -201,6 +203,7 @@ export const generatePayoutRecord = async (projectId: string, operateUserId: str
         paymentCurrency: payout.paymentCurrency,
         paymentTarget: payout.paymentTarget,
         paymentMethod: payout.paymentMethod,
+        paymentMemo: payout.paymentMemo,
         status: "NOTPAID",
         projectId: projectId,
         userId: payout.userId,

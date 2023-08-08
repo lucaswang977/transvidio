@@ -14,6 +14,7 @@ import {
 import { Button } from "~/components/ui/button"
 import { Badge } from "~/components/ui/badge"
 import { UserIncomeDialog } from "~/components/dialogs/income-dialog"
+import { PayoutStatusModifyDialog } from "~/components/dialogs/payout-status-modify-dialog"
 
 export type PayoutColumn = {
   id: string
@@ -24,6 +25,7 @@ export type PayoutColumn = {
   exchangeRate: number
   method: PaymentMethod
   status: PayoutStatus
+  memo: string
   target: string
   updated: Date
   incomeCount: number
@@ -114,11 +116,15 @@ export const columns: ColumnDef<PayoutColumn>[] = [
   },
   {
     accessorKey: "method",
-    header: "Payment Method"
+    header: "Method"
   },
   {
     accessorKey: "target",
-    header: "Payment Target",
+    header: "Target",
+  },
+  {
+    accessorKey: "memo",
+    header: "Memo",
   },
   {
     accessorKey: "updated",
@@ -130,7 +136,7 @@ export const columns: ColumnDef<PayoutColumn>[] = [
   },
   {
     accessorKey: "incomeCount",
-    header: "Records",
+    header: "Detail",
     cell: ({ row }) => {
       const count = row.getValue("incomeCount")
       const data = row.original
@@ -148,13 +154,35 @@ export const columns: ColumnDef<PayoutColumn>[] = [
   {
     accessorKey: "status",
     header: "Status",
-    cell: ({ row }) => {
+    cell: ({ table, row }) => {
+      const data = row.original
+      const myself = table.options.meta?.user
+      const refetch = table.options.meta?.refetchData
       const status: PayoutStatus = row.getValue("status")
-      const badge =
-        status === "PAID" ? <Badge className="bg-gray-500">PAID</Badge>
-          : status === "NOTPAID" ? <Badge className="bg-teal-500">NOT PAID</Badge>
-            : status === "FROZEN" && <Badge className="bg-red-500">FROZEN</Badge>
-      return badge
+      const badge = status === "PAID" ? <Badge className="bg-gray-500">PAID</Badge>
+        : status === "NOTPAID" ? <Badge className="bg-teal-500">NOT PAID</Badge>
+          : status === "FROZEN" && <Badge className="bg-red-500">FROZEN</Badge>
+
+
+      return (
+        <div className="flex items-center space-x-1">
+          {
+            (myself && myself.role === "ADMIN") ?
+              <PayoutStatusModifyDialog
+                refetch={() => { if (refetch) refetch() }}
+                payoutId={data.id}
+                status={status}
+                triggerChild={
+                  <Button className="p-0" variant="ghost">
+                    {badge}
+                  </Button>
+                }
+              />
+              : badge
+          }
+        </div>
+      )
+
     }
   },
 

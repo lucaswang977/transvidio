@@ -6,8 +6,9 @@ import { env } from "~/env.mjs";
 import { z } from "zod";
 import { delay } from "~/utils/helper";
 
-import type { Prisma } from "@prisma/client"
+import { PayoutStatus, type Prisma } from "@prisma/client"
 import { cLog, LogLevels } from "~/utils/helper"
+import { TRPCError } from "@trpc/server";
 const LOG_RANGE = "INCOME"
 
 export const incomeRouter = createTRPCRouter({
@@ -104,4 +105,45 @@ export const incomeRouter = createTRPCRouter({
       return result
     }),
 
+  changePayoutStatus: protectedProcedure
+    .input(z.object({
+      payoutId: z.string(),
+      status: z.nativeEnum(PayoutStatus)
+    }))
+    .mutation(async ({ input, ctx }) => {
+      if (env.DELAY_ALL_API) await delay(3000)
+      await cLog(LogLevels.DEBUG, LOG_RANGE, `${ctx.session.user.id}`, `changePayoutStatus() called. payoutId: ${input.payoutId}, status: ${input.status}`)
+
+      if (ctx.session.user.role !== "ADMIN") {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "No priviledge to operate."
+        })
+      }
+
+      const payout = await ctx.prisma.payoutRecord.findUnique({
+        where: {
+          id: input.payoutId,
+        },
+      })
+
+      if (!payout) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Payout not exists."
+        })
+      }
+
+      const updatedPayout = await ctx.prisma.payoutRecord.update({
+        where: {
+          id: input.payoutId
+        },
+        data: {
+          status: input.status
+        }
+      })
+
+      await cLog(LogLevels.DEBUG, LOG_RANGE, `${ctx.session.user.id}`, `changePayoutStatus() success. payoutId: ${input.payoutId}, status: ${input.status}, originalStatus: ${payout.status}`)
+      return updatedPayout.id
+    }),
 });

@@ -28,6 +28,7 @@ const PayoutsManagement: NextPageWithLayout = () => {
             number: i.number,
             exchangeRate: i.exchangeRate,
             method: i.paymentMethod,
+            memo: i.paymentMemo,
             status: i.status,
             target: i.paymentTarget,
             updated: i.updatedAt,
@@ -60,6 +61,8 @@ const PayoutsManagement: NextPageWithLayout = () => {
           data={data}
           rowSelection={rowSelection}
           setRowSelection={setRowSelection}
+          handleRefetch={handleRefetch}
+          user={session?.user}
           manualPagination={false}
         />
       </div>
