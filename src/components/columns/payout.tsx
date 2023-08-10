@@ -168,16 +168,17 @@ export const columns: ColumnDef<PayoutColumn>[] = [
         <div className="flex items-center space-x-1">
           {
             (myself && myself.role === "ADMIN") ?
-              <PayoutStatusModifyDialog
-                refetch={() => { if (refetch) refetch() }}
-                payoutId={data.id}
-                status={status}
-                triggerChild={
-                  <Button className="p-0" variant="ghost">
-                    {badge}
-                  </Button>
-                }
-              />
+              status !== "PAID" ?
+                <PayoutStatusModifyDialog
+                  refetch={() => { if (refetch) refetch() }}
+                  payoutId={data.id}
+                  status={status}
+                  triggerChild={
+                    <Button className="p-0" variant="ghost">
+                      {badge}
+                    </Button>
+                  }
+                /> : badge
               : badge
           }
         </div>

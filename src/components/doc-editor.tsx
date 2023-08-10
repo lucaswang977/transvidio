@@ -17,6 +17,7 @@ import type { Prisma } from "@prisma/client";
 import { ModeToggle } from "~/components/mode-toggle";
 import { SubtitleExportDialog } from "~/components/dialogs/subtitle-export-dialog"
 import { useDebouncedCallback } from "use-debounce"
+import { tooltipWrapped } from "~/components/ui/tooltip"
 
 import {
   DropdownMenu,
@@ -182,6 +183,7 @@ export const DocumentEditor = (props: DocumentEditorProps) => {
         })
         .finally(() => {
           setFilling(false)
+          toast({ title: "Filling completed." })
         })
     }
   }
@@ -243,73 +245,95 @@ export const DocumentEditor = (props: DocumentEditorProps) => {
                   </div>
 
                   <div className="flex space-x-2 items-center justify-end">
-                    {
-                      isAutoFillInit &&
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        disabled={!permission.dstWritable}
-                        onClick={filling ? cancelFilling : startFilling} >
-                        {filling ?
-                          <Loader2 className="w-4 animate-spin mr-1" />
-                          : <Bot className="h-4 w-4" />
-                        }
-                      </Button>
-                    }
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      disabled={saveState !== "dirty" ||
-                        (!permission.srcWritable && !permission.dstWritable)}
-                      onClick={async () => {
-                        await saveDoc()
-                      }} >
-                      <Save className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      size="icon"
-                      variant="outline"
-                      disabled={!history || history.undo.length <= 1}
-                      onClick={() => {
-                        if (history) {
-                          debouncedHistory.flush()
-                          setNotSaveHistory(true)
-                          const undoData = history.undo.pop()
-                          if (undoData) history.redo.push(undoData)
-                          const data = history.undo.at(-1)
+                    <div className="hidden md:flex space-x-1 items-center">
+                      {
+                        isAutoFillInit &&
+                        tooltipWrapped(
+                          <span tabIndex={0}>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              disabled={!permission.dstWritable}
+                              onClick={filling ? cancelFilling : startFilling} >
+                              {filling ?
+                                <Loader2 className="w-4 animate-spin mr-1" />
+                                : <Bot className="h-4 w-4" />
+                              }
+                            </Button>
+                          </span>, filling ? "Cancel" : "Auto fill")
+                      }
+                      {
+                        tooltipWrapped(
+                          <span tabIndex={0}>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              disabled={saveState !== "dirty" ||
+                                (!permission.srcWritable && !permission.dstWritable)}
+                              onClick={async () => {
+                                await saveDoc()
+                              }} >
+                              <Save className="h-4 w-4" />
+                            </Button>
+                          </span>, "Save"
+                        )
+                      }
+                      {
+                        tooltipWrapped(
+                          <span tabIndex={0}>
+                            <Button
+                              size="icon"
+                              variant="outline"
+                              disabled={!history || history.undo.length <= 1}
+                              onClick={() => {
+                                if (history) {
+                                  debouncedHistory.flush()
+                                  setNotSaveHistory(true)
+                                  const undoData = history.undo.pop()
+                                  if (undoData) history.redo.push(undoData)
+                                  const data = history.undo.at(-1)
 
-                          if (data) {
-                            const d = JSON.parse(data) as { src: Prisma.JsonValue, dst: Prisma.JsonValue }
-                            setSrcJson(d.src)
-                            setDstJson(d.dst)
-                          }
-                          setHistory({ undo: [...history.undo], redo: [...history.redo] })
-                        }
-                      }}>
-                      <Undo className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      size="icon"
-                      variant="outline"
-                      disabled={!history || history.redo.length <= 0}
-                      onClick={() => {
-                        if (history) {
-                          debouncedHistory.flush()
-                          setNotSaveHistory(true)
-                          const redoData = history.redo.pop()
+                                  if (data) {
+                                    const d = JSON.parse(data) as { src: Prisma.JsonValue, dst: Prisma.JsonValue }
+                                    setSrcJson(d.src)
+                                    setDstJson(d.dst)
+                                  }
+                                  setHistory({ undo: [...history.undo], redo: [...history.redo] })
+                                }
+                              }}>
+                              <Undo className="w-4 h-4" />
+                            </Button>
+                          </span>, "Undo"
+                        )
+                      }
+                      {
+                        tooltipWrapped(
+                          <span tabIndex={0}>
+                            <Button
+                              size="icon"
+                              variant="outline"
+                              disabled={!history || history.redo.length <= 0}
+                              onClick={() => {
+                                if (history) {
+                                  debouncedHistory.flush()
+                                  setNotSaveHistory(true)
+                                  const redoData = history.redo.pop()
 
-                          if (redoData) {
-                            history.undo.push(redoData)
-                            const d = JSON.parse(redoData) as { src: Prisma.JsonValue, dst: Prisma.JsonValue }
-                            setSrcJson(d.src)
-                            setDstJson(d.dst)
-                          }
-                          setHistory({ undo: [...history.undo], redo: [...history.redo] })
-                        }
-                      }}>
-                      <Redo className="w-4 h-4" />
-                    </Button>
-
+                                  if (redoData) {
+                                    history.undo.push(redoData)
+                                    const d = JSON.parse(redoData) as { src: Prisma.JsonValue, dst: Prisma.JsonValue }
+                                    setSrcJson(d.src)
+                                    setDstJson(d.dst)
+                                  }
+                                  setHistory({ undo: [...history.undo], redo: [...history.redo] })
+                                }
+                              }}>
+                              <Redo className="w-4 h-4" />
+                            </Button>
+                          </span>, "Redo"
+                        )
+                      }
+                    </div>
                     <ModeToggle />
                     <UserNav />
                     {

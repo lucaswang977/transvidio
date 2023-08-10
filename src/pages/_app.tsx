@@ -1,12 +1,12 @@
-import { type Session } from "next-auth";
+import type { Session } from "next-auth";
 import { SessionProvider } from "next-auth/react";
-import { type AppInitialProps } from "next/app";
+import type { AppInitialProps } from "next/app";
 import { api } from "~/utils/api";
 import { Lato } from "next/font/google";
 import "~/styles/globals.css";
 import Head from "next/head";
 import * as React from "react";
-import { type NextPage } from "next";
+import type { NextPage } from "next";
 import { Toaster } from "~/components/ui/toaster"
 import { ThemeProvider } from "~/components/theme-provider"
 

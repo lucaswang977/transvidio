@@ -2,6 +2,13 @@ import Image from "next/image"
 import { cn } from "~/utils/helper"
 import { useTheme } from 'next-themes'
 import * as React from "react"
+import { Oswald } from "next/font/google";
+
+const oswald = Oswald({
+  subsets: ["latin"],
+  weight: ["400"]
+});
+
 
 export function Logo({
   className,
@@ -35,7 +42,7 @@ export function Logo({
             loading="lazy"
             alt="Tranvidio"
             width={500} height={500} className="w-8" />
-          <p>Transvid.io</p>
+          <p className={cn("text-lg hidden md:block", oswald.className)}>Transvid.io</p>
         </button>
       }
     </>
