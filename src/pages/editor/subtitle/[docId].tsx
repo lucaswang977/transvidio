@@ -163,6 +163,7 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
                   src: srcItem?.text ? srcItem.text : "<empty>",
                   dst: dstItem?.text ? dstItem.text : "<empty>"
                 })
+                setFocusedIndex(index)
               }
             }}
           >
@@ -170,14 +171,14 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
           <p className="text-lg w-[500px] text-center">{captions.dst}</p>
           <p className="text-sm w-[500px] text-center">{captions.src}</p>
           {
-            <Button className="hidden text-sm" variant="outline" onClick={async () => {
+            <Button className="text-sm" variant="outline" onClick={async () => {
               if (focusedSentence.text.length > 0) {
                 await synthesizeAudio(focusedSentence.text)
               }
             }}>Synthesize</Button>
           }
-          <p className="hidden">{focusedSentence.text}</p>
-          <p className="hidden">{focusedSentence.duration} / unknown</p>
+          <p className="">{focusedSentence.text}</p>
+          <p className="">{focusedSentence.duration} / unknown</p>
           {audioUrl &&
             <audio key={audioUrl.key} controls>
               <source src={audioUrl.value} type="audio/mpeg" />
@@ -207,7 +208,9 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
                   }
 
                   return (
-                    <div key={`src-${index}`} className={`flex p-2 space-x-1 ${gray ? "bg-gray-100 dark:bg-gray-900" : ""}`}>
+                    <div
+                      key={`src-${index}`}
+                      className={`flex p-2 space-x-1 ${focusedIndex === index ? "border-red-100 border-2 rounded" : ""} ${gray ? "bg-gray-100 dark:bg-gray-900" : ""}`}>
                       <div className="flex flex-col text-slate-300">
                         <Label className="text-xs">{timeFormat(item.from)}</Label>
                         <Label className="text-xs">{timeFormat(item.to)}</Label>
