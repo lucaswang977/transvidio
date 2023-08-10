@@ -30,11 +30,21 @@ import { Button } from "~/components/ui/button"
 
 const regexToSegementSentence = /[.!?)'"“”]+$/
 
+type AudioSynthesisType = {
+  subtitleItemIds: number[],
+  text: string,
+  textDuration: number,
+  audioSynced: boolean,
+  audioData: string,
+  audioDuration: number,
+}
+
 const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentProps>(
   ({ srcJson, dstJson, handleChange, permission, setAutoFillInit }, ref) => {
     const reactPlayerRef = React.useRef<ReactPlayer>(null);
     const [captions, setCaptions] = React.useState({ src: "", dst: "" })
     const [focusedIndex, setFocusedIndex] = React.useState<number | null>(null)
+    const [audioData, setAudioData] = React.useState<AudioSynthesisType[]>([])
 
     React.useImperativeHandle(ref, () => {
       return { autofillHandler: handleAutoFill }
@@ -90,53 +100,68 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
       })
     }
 
-    const getWholeSentenceOnFocus = () => {
-      let sentences: string[] = []
+    React.useEffect(() => {
+      const emptyAudioSynthesisData: AudioSynthesisType = {
+        subtitleItemIds: [],
+        text: "",
+        textDuration: 0,
+        audioSynced: false,
+        audioData: "",
+        audioDuration: 0,
+      }
+      const result: AudioSynthesisType[] = []
+      let srcSentences: string[] = []
       let dstSentences: string[] = []
+      let subtitleItemIds: number[] = []
       let index = 0
-      const result: { text: string, duration: number } = { text: "", duration: 0 }
-      let focusedFound = false
       let duration = 0
+      let data = emptyAudioSynthesisData
+
       srcObj.subtitle.forEach(item => {
-        sentences.push(item.text)
+        srcSentences.push(item.text)
 
         const dstItem = dstObj.subtitle[index]
-        if (dstItem) dstSentences.push(dstItem.text)
+        if (dstItem) {
+          dstSentences.push(dstItem.text)
+          subtitleItemIds.push(index)
+        }
 
-        const sentence = sentences.join(" ")
         duration = duration + item.to - item.from
 
-        const dstSentence = dstSentences.join(" ")
-        if (index === focusedIndex) focusedFound = true
-        if (regexToSegementSentence.test(sentence.trim())) {
-          sentences = []
-          dstSentences = []
-          if (focusedFound) {
-            result.text = dstSentence
-            result.duration = duration
-            focusedFound = false
-          }
+        if (regexToSegementSentence.test(srcSentences.join(" ").trim())) {
+          data.text = dstSentences.join(" ")
+          data.textDuration = duration
+          data.subtitleItemIds = [...subtitleItemIds]
           duration = 0
+          srcSentences = []
+          dstSentences = []
+          subtitleItemIds = []
+          result.push({ ...data })
+          data = emptyAudioSynthesisData
         }
         index = index + 1
       })
-      return result
-    }
+      setAudioData(result)
+    }, [dstObj])
 
-    const [audioUrl, setAudioUrl] = React.useState<{ key: number, value: string } | null>(null)
-    const synthesizeAudio = async (text: string) => {
+    console.log(audioData)
+    console.log(focusedIndex)
+
+    const synthesizeAudio = async (index: number, text: string) => {
       const apiUrl = `/api/synthesis?phrase=${encodeURIComponent(text)}`;
       try {
         const response = await fetch(apiUrl);
         if (!response.ok) {
           throw new Error('Network response was not ok');
         }
-        const audioBlob = await response.blob();
-        const audioDataUrl = URL.createObjectURL(audioBlob);
-        setAudioUrl(d => {
-          if (d) return { value: audioDataUrl, key: d.key + 1 }
-          else return { value: audioDataUrl, key: 0 }
-        });
+        // const durationStr = response.headers.get("Audio-Duration")
+        // const duration = parseFloat(durationStr ? durationStr : "0")
+        // const audioBlob = await response.blob();
+        // const audioDataUrl = URL.createObjectURL(audioBlob);
+        // setAudioUrl(d => {
+        //   if (d) return { value: audioDataUrl, key: d.key + 1 }
+        //   else return { value: audioDataUrl, key: 0 }
+        // });
       } catch (error) {
         console.error('Error fetching audio data:', error);
       }
@@ -144,7 +169,6 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
     let sentences: string[] = []
     let gray = false
     let turnColor = false
-    const focusedSentence = getWholeSentenceOnFocus()
     return (
       <div className="pt-8 flex flex-col items-center lg:items-start lg:flex-row lg:space-x-2">
         <div className="flex flex-col items-center space-y-2 mb-4 lg:order-last lg:mx-4">
@@ -172,18 +196,16 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
           <p className="text-sm w-[500px] text-center">{captions.src}</p>
           {
             <Button className="text-sm" variant="outline" onClick={async () => {
-              if (focusedSentence.text.length > 0) {
-                await synthesizeAudio(focusedSentence.text)
-              }
+              // if (focusedSentence.text.length > 0) {
+              //   await synthesizeAudio(focusedSentence.text)
+              // }
             }}>Synthesize</Button>
           }
-          <p className="">{focusedSentence.text}</p>
-          <p className="">{focusedSentence.duration} / unknown</p>
-          {audioUrl &&
-            <audio key={audioUrl.key} controls>
-              <source src={audioUrl.value} type="audio/mpeg" />
-            </audio>
-          }
+          <p className="">{audioData.find(item => {
+            if (focusedIndex !== null && item.subtitleItemIds.includes(focusedIndex)) {
+              return item
+            }
+          })?.textDuration} / unknown</p>
         </div>
 
         <ScrollArea className="h-[60vh] lg:h-[90vh]">

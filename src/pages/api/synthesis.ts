@@ -1,72 +1,72 @@
 import * as sdk from 'microsoft-cognitiveservices-speech-sdk'
-import { type NextRequest } from 'next/server';
+import * as mm from 'music-metadata';
 import { env } from "~/env.mjs";
-
-export const runtime = 'edge';
-
+import { authOptions } from "~/server/auth";
+import { getServerSession } from "next-auth/next"
 import { cLog, LogLevels } from "~/utils/helper"
+import type { NextApiRequest, NextApiResponse } from 'next';
 const LOG_RANGE = "SPEECH"
 
-export default async function handler(req: NextRequest) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const session = await getServerSession(req, res, authOptions)
+
   if (req.method === "GET") {
-    const phrase = req.nextUrl.searchParams.get("phrase")
+    const phrase = req.query.phrase as string
     if (!phrase) {
       return new Response(null, { status: 500 })
     }
 
-    await cLog(LogLevels.INFO, LOG_RANGE, "unknown", `synthesis() called: ${phrase}.`)
+    await cLog(LogLevels.INFO, LOG_RANGE, session ? session.user.id : "unknown", `synthesis() called: ${phrase}.`)
 
     const speechConfig = sdk.SpeechConfig.fromSubscription(
       env.AZURE_SPEECH_KEY, env.AZURE_SPEECH_REGION);
     speechConfig.speechSynthesisOutputFormat = 5; // mp3
     speechConfig.speechSynthesisLanguage = "zh-CN";
-    speechConfig.speechSynthesisVoiceName = "zh-CN-XiaoyiNeural";
+    speechConfig.speechSynthesisVoiceName = "zh-CN-YunjianNeural";
 
     const synthesizer = new sdk.SpeechSynthesizer(speechConfig);
     synthesizer.synthesisCompleted = async function(_s, e) {
       await cLog(LogLevels.INFO, LOG_RANGE, "unknown", `synthesis complete: ${e.result.audioData.byteLength}.`)
     };
 
-    const arrayBufferStream = new ReadableStream({
-      start(controller) {
-        synthesizer.speakTextAsync(
-          phrase,
-          (result) => {
-            const { audioData } = result;
-            const dataView = new Uint8Array(audioData)
-            let chunkIndex = 0;
+    synthesizer.speakTextAsync(
+      phrase,
+      async (result) => {
+        const { audioData } = result;
+        const dataView = new Uint8Array(audioData)
+        const metadata = await mm.parseBuffer(dataView, 'audio/mpeg', { duration: true });
 
-            function pushNextChunk() {
-              const chunk = dataView.subarray(chunkIndex, chunkIndex + 1024)
-              chunkIndex += chunk.length
+        res.writeHead(200, {
+          'Content-Type': 'audio/mpeg',
+          'Transfer-Encoding': 'chunked',
+          'Audio-Duration': metadata.format.duration
+        })
 
-              if (chunk.length > 0) {
-                controller.enqueue(chunk)
-              }
+        let chunkIndex = 0;
 
-              if (chunkIndex >= dataView.length) {
-                controller.close()
-                synthesizer.close()
-              } else {
-                setTimeout(pushNextChunk, 0)
-              }
-            }
+        function pushNextChunk() {
+          const chunk = dataView.subarray(chunkIndex, chunkIndex + 1024)
+          chunkIndex += chunk.length
 
-            pushNextChunk();
-          },
-          (error) => {
-            console.log(error)
-            synthesizer.close()
+          if (chunk.length > 0) {
+            res.write(chunk)
           }
-        );
+
+          if (chunkIndex >= dataView.length) {
+            res.end()
+            synthesizer.close()
+          } else {
+            setTimeout(pushNextChunk, 0)
+          }
+        }
+
+        pushNextChunk();
+      },
+      (error) => {
+        console.log(error)
+        synthesizer.close()
       }
-    });
-    return new Response(arrayBufferStream, {
-      headers: {
-        'Content-Type': 'audio/mpeg',
-        'Transfer-Encoding': 'chunked'
-      }
-    })
+    );
   }
 }
 
