@@ -32,6 +32,8 @@ const regexToSegementSentence = /[.!?)'"“”]+$/
 
 type AudioSynthesisType = {
   subtitleItemIds: number[],
+  from: number,
+  to: number,
   text: string,
   textDuration: number,
   audioSynced: boolean,
@@ -103,6 +105,8 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
     React.useEffect(() => {
       const emptyAudioSynthesisData: AudioSynthesisType = {
         subtitleItemIds: [],
+        from: 0,
+        to: 0,
         text: "",
         textDuration: 0,
         audioSynced: false,
@@ -114,10 +118,12 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
       let dstSentences: string[] = []
       let subtitleItemIds: number[] = []
       let index = 0
-      let duration = 0
       let data = emptyAudioSynthesisData
 
       srcObj.subtitle.forEach(item => {
+        if (srcSentences.length === 0) {
+          data.from = item.from
+        }
         srcSentences.push(item.text)
 
         const dstItem = dstObj.subtitle[index]
@@ -126,13 +132,11 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
           subtitleItemIds.push(index)
         }
 
-        duration = duration + item.to - item.from
-
         if (regexToSegementSentence.test(srcSentences.join(" ").trim())) {
           data.text = dstSentences.join(" ")
-          data.textDuration = duration
           data.subtitleItemIds = [...subtitleItemIds]
-          duration = 0
+          data.to = item.to
+          data.textDuration = data.to - data.from
           srcSentences = []
           dstSentences = []
           subtitleItemIds = []
@@ -141,34 +145,65 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
         }
         index = index + 1
       })
-      setAudioData(result)
+
+      setAudioData(origData => {
+        result.forEach(item => {
+          const origItem = origData.find(i => i.from === item.from && i.to === item.to)
+          if (origItem && origItem.audioSynced && origItem.text === item.text) {
+            item.audioSynced = true
+            item.audioData = origItem.audioData
+            item.audioDuration = origItem.audioDuration
+          } else {
+            item.audioSynced = false
+          }
+        })
+
+        return result
+      })
     }, [dstObj])
 
     console.log(audioData)
-    console.log(focusedIndex)
 
-    const synthesizeAudio = async (index: number, text: string) => {
-      const apiUrl = `/api/synthesis?phrase=${encodeURIComponent(text)}`;
-      try {
-        const response = await fetch(apiUrl);
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
+    const synthesizeAudio = async () => {
+      const newAudioData = clone(audioData)
+      for (const data of newAudioData) {
+        if (!data.audioSynced) {
+          const text = data.text
+          const apiUrl = `/api/synthesis?phrase=${encodeURIComponent(text)}`;
+          try {
+            const response = await fetch(apiUrl);
+            if (!response.ok) {
+              throw new Error('Network response was not ok');
+            }
+            const durationStr = response.headers.get("Audio-Duration")
+            data.audioDuration = Math.floor(parseFloat(durationStr ? durationStr : "0") * 1000)
+            const audioBlob = await response.blob();
+            data.audioData = URL.createObjectURL(audioBlob);
+            data.audioSynced = true
+            console.log("audio synthesized: ", data)
+          } catch (error) {
+            console.error('Error fetching audio data:', error);
+          }
         }
-        // const durationStr = response.headers.get("Audio-Duration")
-        // const duration = parseFloat(durationStr ? durationStr : "0")
-        // const audioBlob = await response.blob();
-        // const audioDataUrl = URL.createObjectURL(audioBlob);
-        // setAudioUrl(d => {
-        //   if (d) return { value: audioDataUrl, key: d.key + 1 }
-        //   else return { value: audioDataUrl, key: 0 }
-        // });
-      } catch (error) {
-        console.error('Error fetching audio data:', error);
       }
+
+      setAudioData(newAudioData)
     };
     let sentences: string[] = []
     let gray = false
     let turnColor = false
+
+    const focusedAudioData = audioData.find(item => {
+      if (focusedIndex !== null && item.subtitleItemIds.includes(focusedIndex)) {
+        return item
+      }
+    })
+    const goodAudioState = focusedAudioData &&
+      focusedAudioData.textDuration > 0 &&
+      focusedAudioData.audioDuration > 0 &&
+      focusedAudioData.textDuration >= focusedAudioData.audioDuration &&
+      focusedAudioData.audioDuration / focusedAudioData.textDuration >= 0.9
+
     return (
       <div className="pt-8 flex flex-col items-center lg:items-start lg:flex-row lg:space-x-2">
         <div className="flex flex-col items-center space-y-2 mb-4 lg:order-last lg:mx-4">
@@ -196,16 +231,15 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
           <p className="text-sm w-[500px] text-center">{captions.src}</p>
           {
             <Button className="text-sm" variant="outline" onClick={async () => {
-              // if (focusedSentence.text.length > 0) {
-              //   await synthesizeAudio(focusedSentence.text)
-              // }
+              await synthesizeAudio()
             }}>Synthesize</Button>
           }
-          <p className="">{audioData.find(item => {
-            if (focusedIndex !== null && item.subtitleItemIds.includes(focusedIndex)) {
-              return item
-            }
-          })?.textDuration} / unknown</p>
+          <p className={goodAudioState ? "text-green-500" : "text-red-500"}>{focusedAudioData?.textDuration} / {focusedAudioData?.audioDuration}</p>
+          {(focusedAudioData && focusedAudioData.audioData.length > 0) &&
+            <audio key={focusedAudioData.from} controls>
+              <source src={focusedAudioData.audioData} type="audio/mpeg" />
+            </audio>
+          }
         </div>
 
         <ScrollArea className="h-[60vh] lg:h-[90vh]">
