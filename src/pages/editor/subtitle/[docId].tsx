@@ -47,6 +47,10 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
     const [captions, setCaptions] = React.useState({ src: "", dst: "" })
     const [focusedIndex, setFocusedIndex] = React.useState<number | null>(null)
     const [audioData, setAudioData] = React.useState<AudioSynthesisType[]>([])
+    const [currentItemIndex, setCurrentItemIndex] = React.useState(0)
+    const [currentAudioPlayPosition, setCurrentAudioPlayPostision] = React.useState(0)
+    const [isSynthAudioPlaying, setIsSynthAudioPlaying] = React.useState(false)
+    const audioRef = React.useRef(null);
 
     React.useImperativeHandle(ref, () => {
       return { autofillHandler: handleAutoFill }
@@ -133,7 +137,7 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
         }
 
         if (regexToSegementSentence.test(srcSentences.join(" ").trim())) {
-          data.text = dstSentences.join(" ")
+          data.text = dstSentences.join("")
           data.subtitleItemIds = [...subtitleItemIds]
           data.to = item.to
           data.textDuration = data.to - data.from
@@ -162,7 +166,39 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
       })
     }, [dstObj])
 
-    console.log(audioData)
+    const playAudio = async () => {
+      if (audioRef.current) {
+        const audioElement = audioRef.current as HTMLAudioElement
+
+        const currentAudioData = audioData[currentItemIndex]
+        const currentAudioUrl = currentAudioData?.audioData
+        let pauseDuration = currentAudioData ? currentAudioData.from - currentAudioPlayPosition : 0
+        if (pauseDuration < 0) pauseDuration = 0
+        console.log("audio:", currentItemIndex, currentAudioPlayPosition, currentAudioData?.from, pauseDuration)
+
+        await new Promise(resolve => setTimeout(resolve, pauseDuration));
+
+        if (currentAudioUrl) {
+          audioElement.src = currentAudioUrl
+          await audioElement.play();
+        }
+
+        if (currentItemIndex < audioData.length) {
+          setCurrentItemIndex(currentItemIndex + 1);
+          setCurrentAudioPlayPostision(v => {
+            if (currentAudioData)
+              return v + currentAudioData.audioDuration + pauseDuration
+            else
+              return v + pauseDuration
+          })
+        } else {
+          (audioRef.current as HTMLAudioElement).pause()
+          setCurrentItemIndex(0)
+          setCurrentAudioPlayPostision(0)
+          setIsSynthAudioPlaying(false)
+        }
+      }
+    }
 
     const synthesizeAudio = async () => {
       const newAudioData = clone(audioData)
@@ -210,6 +246,8 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
           <VideoPlayer
             url={srcObj.videoUrl}
             ref={reactPlayerRef}
+            muted={isSynthAudioPlaying}
+            playing={isSynthAudioPlaying}
             handleProgress={(playedSeconds: number) => {
               const index = srcObj.subtitle.findIndex(
                 (item) =>
@@ -234,6 +272,22 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
               await synthesizeAudio()
             }}>Synthesize</Button>
           }
+          {
+            <Button className="text-sm" variant="outline" onClick={async () => {
+              if (!isSynthAudioPlaying) {
+                if (reactPlayerRef.current) reactPlayerRef.current.seekTo(0)
+                await playAudio();
+              } else {
+                setCurrentItemIndex(0)
+                setCurrentAudioPlayPostision(0)
+                if (audioRef.current) {
+                  (audioRef.current as HTMLAudioElement).pause()
+                }
+              }
+              setIsSynthAudioPlaying(v => !v);
+            }}>{!isSynthAudioPlaying ? "Play from beginning" : "Stop"}</Button>
+          }
+          <audio className="hidden" ref={audioRef} onEnded={playAudio} />
           <p className={goodAudioState ? "text-green-500" : "text-red-500"}>{focusedAudioData?.textDuration} / {focusedAudioData?.audioDuration}</p>
           {(focusedAudioData && focusedAudioData.audioData.length > 0) &&
             <audio key={focusedAudioData.from} controls>

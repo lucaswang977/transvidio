@@ -43,6 +43,7 @@
     "@trpc/next": "^10.34.0",
     "@trpc/react-query": "^10.34.0",
     "@trpc/server": "^10.34.0",
+    "@types/fluent-ffmpeg": "^2.1.21",
     "@vercel/edge-config": "^0.2.1",
     "@vercel/kv": "^0.2.2",
     "bcryptjs": "^2.4.3",

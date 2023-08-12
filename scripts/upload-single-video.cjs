@@ -125,9 +125,12 @@ async function processAndUploadFile() {
     const fileStat = fs.statSync(videoFile);
 
     if (fileStat.isFile()) {
-      const s3Key = path.join(targetDirectory, path.basename(videoFile));
+      const fileExtname = path.extname(videoFile)
+      const fileBasename = path.basename(file, fileExtname)
+      const s3Key = path.join(targetDirectory, fileBasename + ".mp4");
 
-      if (path.extname(videoFile).toLowerCase() === '.mp4') {
+      if (path.extname(videoFile).toLowerCase() === '.mp4' ||
+        path.extname(videoFile).toLowerCase() === '.mov') {
         const convertedFilePath = path.join(path.dirname(videoFile), '/converted_' + path.basename(videoFile));
         await convertVideoTo480p(videoFile, convertedFilePath);
         await uploadFileToS3(convertedFilePath, s3Key);
