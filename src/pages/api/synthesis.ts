@@ -34,7 +34,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const synthesizer = new sdk.SpeechSynthesizer(speechConfig);
     synthesizer.synthesisCompleted = async function(_s, e) {
-      await cLog(LogLevels.INFO, LOG_RANGE, "unknown", `synthesis complete: ${e.result.audioData.byteLength}.`)
+      await cLog(LogLevels.INFO, LOG_RANGE, session ? session.user.id : "unknown", `synthesis complete: ${e.result.audioData.byteLength}.`)
     };
 
     const ssml = `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xmlns:mstts="https://www.w3.org/2001/mstts" xml:lang="${voiceLang}"> <voice name="${voiceName}"> <mstts:express-as role="${voiceRole}" style="${voiceStyle}"> <prosody rate="${voiceRate}">${phrase}</prosody></mstts:express-as></voice></speak>`
@@ -53,7 +53,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               }
             }))
             .audioFilters([
-              'silenceremove=stop_periods=1:stop_duration=0.5:stop_threshold=-50dB'
+              'silenceremove=stop_periods=1:stop_duration=0.4:stop_threshold=0:detection=peak'
             ])
             .output("/tmp/output.mp3")
             .on('end', async () => {

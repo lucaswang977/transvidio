@@ -27,6 +27,7 @@ import { clone } from "ramda";
 import type { AutofillHandler, EditorComponentProps } from "~/components/doc-editor";
 import { DocumentEditor, handleTranslate, } from "~/components/doc-editor";
 import { Button } from "~/components/ui/button"
+import { PlayCircle } from "lucide-react"
 
 const regexToSegementSentence = /[.!?)'"“”]+$/
 
@@ -178,6 +179,7 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
 
         await new Promise(resolve => setTimeout(resolve, pauseDuration));
 
+        console.log("play audio")
         if (currentAudioUrl) {
           audioElement.src = currentAudioUrl
           await audioElement.play();
@@ -205,20 +207,22 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
       for (const data of newAudioData) {
         if (!data.audioSynced) {
           const text = data.text
-          const apiUrl = `/api/synthesis?phrase=${encodeURIComponent(text)}`;
-          try {
-            const response = await fetch(apiUrl);
-            if (!response.ok) {
-              throw new Error('Network response was not ok');
+          if (text.length > 0) {
+            const apiUrl = `/api/synthesis?phrase=${encodeURIComponent(text)}`;
+            try {
+              const response = await fetch(apiUrl);
+              if (!response.ok) {
+                throw new Error('Network response was not ok');
+              }
+              const durationStr = response.headers.get("Audio-Duration")
+              data.audioDuration = Math.floor(parseFloat(durationStr ? durationStr : "0") * 1000)
+              const audioBlob = await response.blob();
+              data.audioData = URL.createObjectURL(audioBlob);
+              data.audioSynced = true
+              console.log("audio synthesized: ", data)
+            } catch (error) {
+              console.error('Error fetching audio data:', error);
             }
-            const durationStr = response.headers.get("Audio-Duration")
-            data.audioDuration = Math.floor(parseFloat(durationStr ? durationStr : "0") * 1000)
-            const audioBlob = await response.blob();
-            data.audioData = URL.createObjectURL(audioBlob);
-            data.audioSynced = true
-            console.log("audio synthesized: ", data)
-          } catch (error) {
-            console.error('Error fetching audio data:', error);
           }
         }
       }
@@ -229,16 +233,22 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
     let gray = false
     let turnColor = false
 
-    const focusedAudioData = audioData.find(item => {
-      if (focusedIndex !== null && item.subtitleItemIds.includes(focusedIndex)) {
-        return item
-      }
-    })
-    const goodAudioState = focusedAudioData &&
-      focusedAudioData.textDuration > 0 &&
-      focusedAudioData.audioDuration > 0 &&
-      focusedAudioData.textDuration >= focusedAudioData.audioDuration &&
-      focusedAudioData.audioDuration / focusedAudioData.textDuration >= 0.9
+    const getAudioDataByIndex = (index: number | null) => {
+      return audioData.findIndex(item => {
+        if (index !== null && item.subtitleItemIds.includes(index)) {
+          return item
+        }
+      })
+    }
+
+    const isGoogdAudioState = (audioData: AudioSynthesisType | undefined) => {
+      return (audioData &&
+        audioData.textDuration > 0 &&
+        audioData.audioDuration > 0 &&
+        Math.abs(audioData.audioDuration - audioData.textDuration) <= 500)
+    }
+
+    const focusedAudioData = audioData[getAudioDataByIndex(focusedIndex)]
 
     return (
       <div className="pt-8 flex flex-col items-center lg:items-start lg:flex-row lg:space-x-2">
@@ -269,31 +279,21 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
           <p className="text-sm w-[500px] text-center">{captions.src}</p>
           {
             <Button className="text-sm" variant="outline" onClick={async () => {
-              await synthesizeAudio()
-            }}>Synthesize</Button>
-          }
-          {
-            <Button className="text-sm" variant="outline" onClick={async () => {
               if (!isSynthAudioPlaying) {
                 if (reactPlayerRef.current) reactPlayerRef.current.seekTo(0)
+                setIsSynthAudioPlaying(true);
                 await playAudio();
               } else {
+                setIsSynthAudioPlaying(false);
                 setCurrentItemIndex(0)
                 setCurrentAudioPlayPostision(0)
                 if (audioRef.current) {
                   (audioRef.current as HTMLAudioElement).pause()
                 }
               }
-              setIsSynthAudioPlaying(v => !v);
             }}>{!isSynthAudioPlaying ? "Play from beginning" : "Stop"}</Button>
           }
           <audio className="hidden" ref={audioRef} onEnded={playAudio} />
-          <p className={goodAudioState ? "text-green-500" : "text-red-500"}>{focusedAudioData?.textDuration} / {focusedAudioData?.audioDuration}</p>
-          {(focusedAudioData && focusedAudioData.audioData.length > 0) &&
-            <audio key={focusedAudioData.from} controls>
-              <source src={focusedAudioData.audioData} type="audio/mpeg" />
-            </audio>
-          }
         </div>
 
         <ScrollArea className="h-[60vh] lg:h-[90vh]">
@@ -317,13 +317,43 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
                     text: ""
                   }
 
+                  const audioDataIndex = getAudioDataByIndex(index)
+                  const auData = audioData[audioDataIndex]
+                  const goodState = isGoogdAudioState(auData)
+                  const diffCharacters = auData ?
+                    Math.floor(((auData.textDuration > 0 ? auData.textDuration : 0) -
+                      (auData.audioDuration > 0 ? auData.audioDuration : 0))
+                      / auData.textDuration * auData.text.length)
+                    : 0
+
                   return (
                     <div
                       key={`src-${index}`}
                       className={`flex p-2 space-x-1 ${focusedIndex === index ? "border-red-100 border-2 rounded" : ""} ${gray ? "bg-gray-100 dark:bg-gray-900" : ""}`}>
-                      <div className="flex flex-col text-slate-300">
-                        <Label className="text-xs">{timeFormat(item.from)}</Label>
-                        <Label className="text-xs">{timeFormat(item.to)}</Label>
+                      <div className="flex flex-col justify-between items-end pr-1">
+                        <div className="flex flex-col space-y-1">
+                          <Label className="text-xs text-slate-300">{timeFormat(item.from)}</Label>
+                          <Label className="text-xs text-slate-300">{timeFormat(item.to)}</Label>
+                        </div>
+                        {
+                          auData && auData.audioDuration > 0 ?
+                            <div className="flex space-x-1 items-center">
+                              {
+                                (focusedIndex === index && focusedAudioData && focusedAudioData.audioData.length > 0) &&
+                                <>
+                                  <audio className="hidden" key={focusedAudioData.from} controls>
+                                    <source src={focusedAudioData.audioData} type="audio/mpeg" />
+                                  </audio>
+                                  <PlayCircle onClick={() => { console.log("clicked") }} className="h-3 w-3 text-slate-500" />
+                                </>
+                              }
+                              <p className={`text-xs ${goodState ? "text-green-500" : "text-red-500"}`}>
+                                {audioDataIndex}) {!goodState && (diffCharacters > 0 ? `+${diffCharacters}c` : `${diffCharacters}c`)}
+                              </p>
+                            </div>
+                            :
+                            <p className="text-xs text-slate-300">{audioDataIndex})</p>
+                        }
                       </div>
                       <Textarea
                         disabled={!permission.srcWritable}
@@ -351,6 +381,9 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
                         id={`dst.items.${index}`}
                         value={dstItem?.text}
                         className="overflow-hidden w-72"
+                        onBlur={async () => {
+                          await synthesizeAudio()
+                        }}
                         onChange={(event) => {
                           const subtitles = [...dstObj.subtitle]
                           const subtitle = subtitles[index]
@@ -372,7 +405,6 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
                           }
                         }}
                       />
-
                     </div>
                   )
                 })
