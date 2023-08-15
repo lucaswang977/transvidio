@@ -39,6 +39,16 @@ const QuizEditor = React.forwardRef<AutofillHandler | null, EditorComponentProps
       results: []
     }
 
+    const defaultQuizItemValue: QuizItem = {
+      id: "",
+      correct_response: [],
+      prompt: {
+        question: "",
+        answers: [],
+        feedbacks: [],
+      }
+    }
+
     React.useImperativeHandle(ref, () => {
       return { autofillHandler: handleAutoFill }
     }, [srcJson, dstJson])
@@ -62,7 +72,7 @@ const QuizEditor = React.forwardRef<AutofillHandler | null, EditorComponentProps
       return new Promise<void>(async (resolve, reject) => {
         let i = 0
         for (const q of srcObj.results) {
-          if (dstObj.results[i] === undefined) {
+          if (!dstObj.results[i]) {
             dstObj.results[i] = {
               ...q, prompt: {
                 question: "",
@@ -74,11 +84,20 @@ const QuizEditor = React.forwardRef<AutofillHandler | null, EditorComponentProps
           const dq = dstObj.results[i]
 
           // question
-          if (dq && dq.prompt.question.length === 0) {
+          if (q.prompt.question.length > 0 && dq && dq.prompt.question.length === 0) {
             await handleTranslate(aip, q.prompt.question, (output) => {
               const _i = i
               handleChange("dst", o => {
                 const d = clone(o ? (o as QuizType) : defaultValue)
+                if (!d.results[_i]) {
+                  d.results[_i] = {
+                    ...q, prompt: {
+                      question: "",
+                      answers: [],
+                      feedbacks: []
+                    }
+                  }
+                }
                 const v = d.results[_i]?.prompt
                 if (v) v.question = `${v.question}${output}`
 
@@ -95,12 +114,22 @@ const QuizEditor = React.forwardRef<AutofillHandler | null, EditorComponentProps
                 dq.prompt.answers[j] = ""
               }
               const p = dq.prompt.answers[j]
-              if (p !== undefined && p.length === 0) {
+              if (a.length > 0 && p !== undefined && p.length === 0) {
                 await handleTranslate(aip, a, (output) => {
                   const _i = i
                   const _j = j
                   handleChange("dst", o => {
                     const d = clone(o ? (o as QuizType) : defaultValue)
+                    if (!d.results[_i]) {
+                      d.results[_i] = {
+                        ...q, prompt: {
+                          question: "",
+                          answers: [],
+                          feedbacks: []
+                        }
+                      }
+                    }
+
                     const v = d.results[_i]?.prompt.answers
                     if (v) {
                       const s = v[_j]
@@ -124,12 +153,22 @@ const QuizEditor = React.forwardRef<AutofillHandler | null, EditorComponentProps
                 dq.prompt.feedbacks[j] = ""
               }
               const p = dq.prompt.feedbacks[j]
-              if (p !== undefined && p.length === 0) {
+              if (f.length > 0 && p !== undefined && p.length === 0) {
                 await handleTranslate(aip, f, (output) => {
                   const _i = i
                   const _j = j
                   handleChange("dst", o => {
                     const d = clone(o ? (o as QuizType) : defaultValue)
+                    if (!d.results[_i]) {
+                      d.results[_i] = {
+                        ...q, prompt: {
+                          question: "",
+                          answers: [],
+                          feedbacks: []
+                        }
+                      }
+                    }
+
                     const v = d.results[_i]?.prompt.feedbacks
                     if (v) {
                       const s = v[_j]
@@ -258,6 +297,13 @@ const QuizEditor = React.forwardRef<AutofillHandler | null, EditorComponentProps
                     value={dstObj.results[i]?.prompt.question}
                     onChange={(event) => {
                       const newObj = clone(dstObj)
+                      if (!newObj.results[i]) {
+                        newObj.results[i] = {
+                          ...defaultQuizItemValue,
+                          id: q.id,
+                          correct_response: q.correct_response
+                        }
+                      }
                       const res = newObj.results[i]
                       if (res) res.prompt.question = event.target.value
                       handleChange("dst", newObj)
@@ -292,8 +338,16 @@ const QuizEditor = React.forwardRef<AutofillHandler | null, EditorComponentProps
                             value={dstObj.results[i]?.prompt.answers[j]}
                             onChange={(event) => {
                               const newObj = clone(dstObj)
+                              if (!newObj.results[i]) {
+                                newObj.results[i] = {
+                                  ...defaultQuizItemValue,
+                                  id: q.id,
+                                  correct_response: q.correct_response
+                                }
+                              }
                               const res = newObj.results[i]
                               if (res) res.prompt.answers[j] = event.target.value
+
                               handleChange("dst", newObj)
                             }}
                           />
@@ -331,6 +385,14 @@ const QuizEditor = React.forwardRef<AutofillHandler | null, EditorComponentProps
                             value={dstObj.results[i]?.prompt.feedbacks[j]}
                             onChange={(event) => {
                               const newObj = clone(dstObj)
+                              if (!newObj.results[i]) {
+                                newObj.results[i] = {
+                                  ...defaultQuizItemValue,
+                                  id: q.id,
+                                  correct_response: q.correct_response
+                                }
+                              }
+
                               const res = newObj.results[i]
                               if (res) res.prompt.feedbacks[j] = event.target.value
                               handleChange("dst", newObj)
