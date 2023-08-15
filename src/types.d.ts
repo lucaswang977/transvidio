@@ -49,6 +49,18 @@ export type SubtitleItem = {
 export type SubtitleType = {
   videoUrl: string,
   subtitle: SubtitleItem[],
+  audio: AudioSynthesisType[],
+}
+
+type AudioSynthesisType = {
+  subtitleItemIds: number[],
+  from: number,
+  to: number,
+  text: string,
+  textDuration: number,
+  audioSynced: boolean,
+  audioData: string,
+  audioDuration: number,
 }
 
 export type QuizPromptItem = {

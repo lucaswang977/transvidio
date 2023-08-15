@@ -17,7 +17,7 @@ import { useRouter } from "next/router"
 import { VideoPlayer } from "~/components/ui/video-player"
 import { Label } from "~/components/ui/label"
 import { Textarea } from "~/components/ui/textarea"
-import type { SubtitleType, ProjectAiParamters } from "~/types"
+import type { SubtitleType, ProjectAiParamters, AudioSynthesisType } from "~/types"
 import { ScrollArea } from "~/components/ui/scroll-area"
 
 import { timeFormat } from "~/utils/helper"
@@ -31,27 +31,16 @@ import { PlayCircle } from "lucide-react"
 
 const regexToSegementSentence = /[.!?)'"“”]+$/
 
-type AudioSynthesisType = {
-  subtitleItemIds: number[],
-  from: number,
-  to: number,
-  text: string,
-  textDuration: number,
-  audioSynced: boolean,
-  audioData: string,
-  audioDuration: number,
-}
-
 const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentProps>(
   ({ srcJson, dstJson, handleChange, permission, setAutoFillInit }, ref) => {
     const reactPlayerRef = React.useRef<ReactPlayer>(null);
     const [captions, setCaptions] = React.useState({ src: "", dst: "" })
     const [focusedIndex, setFocusedIndex] = React.useState<number | null>(null)
-    const [audioData, setAudioData] = React.useState<AudioSynthesisType[]>([])
     const [currentItemIndex, setCurrentItemIndex] = React.useState(0)
     const [currentAudioPlayPosition, setCurrentAudioPlayPostision] = React.useState(0)
     const [isSynthAudioPlaying, setIsSynthAudioPlaying] = React.useState(false)
     const audioRef = React.useRef(null);
+    const singleAudioRef = React.useRef(null);
 
     React.useImperativeHandle(ref, () => {
       return { autofillHandler: handleAutoFill }
@@ -63,7 +52,8 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
 
     const defaultValue: SubtitleType = {
       videoUrl: "",
-      subtitle: []
+      subtitle: [],
+      audio: []
     }
 
     let srcObj = defaultValue
@@ -108,63 +98,66 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
     }
 
     React.useEffect(() => {
-      const emptyAudioSynthesisData: AudioSynthesisType = {
-        subtitleItemIds: [],
-        from: 0,
-        to: 0,
-        text: "",
-        textDuration: 0,
-        audioSynced: false,
-        audioData: "",
-        audioDuration: 0,
-      }
-      const result: AudioSynthesisType[] = []
-      let srcSentences: string[] = []
-      let dstSentences: string[] = []
-      let subtitleItemIds: number[] = []
-      let index = 0
-      let data = emptyAudioSynthesisData
-
-      srcObj.subtitle.forEach(item => {
-        if (srcSentences.length === 0) {
-          data.from = item.from
+      if (dstObj && dstObj.subtitle) {
+        const emptyAudioSynthesisData: AudioSynthesisType = {
+          subtitleItemIds: [],
+          from: 0,
+          to: 0,
+          text: "",
+          textDuration: 0,
+          audioSynced: false,
+          audioData: "",
+          audioDuration: 0,
         }
-        srcSentences.push(item.text)
+        const result: AudioSynthesisType[] = []
+        let srcSentences: string[] = []
+        let dstSentences: string[] = []
+        let subtitleItemIds: number[] = []
+        let index = 0
+        let data = emptyAudioSynthesisData
 
-        const dstItem = dstObj.subtitle[index]
-        if (dstItem) {
-          dstSentences.push(dstItem.text)
-          subtitleItemIds.push(index)
-        }
-
-        if (regexToSegementSentence.test(srcSentences.join(" ").trim())) {
-          data.text = dstSentences.join("")
-          data.subtitleItemIds = [...subtitleItemIds]
-          data.to = item.to
-          data.textDuration = data.to - data.from
-          srcSentences = []
-          dstSentences = []
-          subtitleItemIds = []
-          result.push({ ...data })
-          data = emptyAudioSynthesisData
-        }
-        index = index + 1
-      })
-
-      setAudioData(origData => {
-        result.forEach(item => {
-          const origItem = origData.find(i => i.from === item.from && i.to === item.to)
-          if (origItem && origItem.audioSynced && origItem.text === item.text) {
-            item.audioSynced = true
-            item.audioData = origItem.audioData
-            item.audioDuration = origItem.audioDuration
-          } else {
-            item.audioSynced = false
+        srcObj.subtitle.forEach(item => {
+          if (srcSentences.length === 0) {
+            data.from = item.from
           }
+          srcSentences.push(item.text)
+
+          const dstItem = dstObj.subtitle[index]
+          if (dstItem) {
+            dstSentences.push(dstItem.text)
+            subtitleItemIds.push(index)
+          }
+
+          if (regexToSegementSentence.test(srcSentences.join(" ").trim())) {
+            data.text = dstSentences.join("")
+            data.subtitleItemIds = [...subtitleItemIds]
+            data.to = item.to
+            data.textDuration = data.to - data.from
+            srcSentences = []
+            dstSentences = []
+            subtitleItemIds = []
+            result.push({ ...data })
+            data = emptyAudioSynthesisData
+          }
+          index = index + 1
         })
 
-        return result
-      })
+        handleChange("dst", dstObj => {
+          const origData = (dstObj as SubtitleType).audio
+          result.forEach(item => {
+            const origItem = origData.find(i => i.from === item.from && i.to === item.to)
+            if (origItem && origItem.audioSynced && origItem.text === item.text) {
+              item.audioSynced = true
+              item.audioData = origItem.audioData
+              item.audioDuration = origItem.audioDuration
+            } else {
+              item.audioSynced = false
+            }
+          })
+
+          return { ...(dstObj as SubtitleType), audio: result }
+        })
+      }
     }, [dstObj])
 
     const playAudio = async () => {
@@ -224,21 +217,24 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
               console.error('Error fetching audio data:', error);
             }
           }
+          handleChange("dst", { ...dstObj, audio: newAudioData })
         }
       }
-
-      setAudioData(newAudioData)
     };
     let sentences: string[] = []
     let gray = false
     let turnColor = false
 
+    const audioData = dstObj.audio
+
     const getAudioDataByIndex = (index: number | null) => {
-      return audioData.findIndex(item => {
-        if (index !== null && item.subtitleItemIds.includes(index)) {
-          return item
-        }
-      })
+      if (audioData)
+        return audioData.findIndex(item => {
+          if (index !== null && item.subtitleItemIds.includes(index)) {
+            return item
+          }
+        })
+      else return -1
     }
 
     const isGoogdAudioState = (audioData: AudioSynthesisType | undefined) => {
@@ -248,7 +244,7 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
         Math.abs(audioData.audioDuration - audioData.textDuration) <= 500)
     }
 
-    const focusedAudioData = audioData[getAudioDataByIndex(focusedIndex)]
+    const focusedAudioData = audioData ? audioData[getAudioDataByIndex(focusedIndex)] : undefined
 
     return (
       <div className="pt-8 flex flex-col items-center lg:items-start lg:flex-row lg:space-x-2">
@@ -301,112 +297,119 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
             <div className="flex flex-col">
               {
                 srcObj.subtitle.map((item, index) => {
-                  if (turnColor) {
-                    gray = !gray
-                    turnColor = false
-                  }
-                  sentences.push(item.text)
-                  const sentence = sentences.join(" ")
-                  if (regexToSegementSentence.test(sentence.trim())) {
-                    turnColor = true
-                    sentences = []
-                  }
+                  if (dstObj && dstObj.subtitle && dstObj.subtitle[index]) {
+                    if (turnColor) {
+                      gray = !gray
+                      turnColor = false
+                    }
+                    sentences.push(item.text)
+                    const sentence = sentences.join(" ")
+                    if (regexToSegementSentence.test(sentence.trim())) {
+                      turnColor = true
+                      sentences = []
+                    }
 
-                  const dstItem = dstObj.subtitle[index] ? dstObj.subtitle[index] : {
-                    ...item,
-                    text: ""
-                  }
+                    const dstItem = dstObj.subtitle[index] ? dstObj.subtitle[index] : {
+                      ...item,
+                      text: ""
+                    }
 
-                  const audioDataIndex = getAudioDataByIndex(index)
-                  const auData = audioData[audioDataIndex]
-                  const goodState = isGoogdAudioState(auData)
-                  const diffCharacters = auData ?
-                    Math.floor(((auData.textDuration > 0 ? auData.textDuration : 0) -
-                      (auData.audioDuration > 0 ? auData.audioDuration : 0))
-                      / auData.textDuration * auData.text.length)
-                    : 0
+                    const audioDataIndex = getAudioDataByIndex(index)
+                    const auData = audioData[audioDataIndex]
+                    const goodState = isGoogdAudioState(auData)
+                    const diffCharacters = auData ?
+                      Math.floor(((auData.textDuration > 0 ? auData.textDuration : 0) -
+                        (auData.audioDuration > 0 ? auData.audioDuration : 0))
+                        / auData.textDuration * auData.text.length)
+                      : 0
 
-                  return (
-                    <div
-                      key={`src-${index}`}
-                      className={`flex p-2 space-x-1 ${focusedIndex === index ? "border-red-100 border-2 rounded" : ""} ${gray ? "bg-gray-100 dark:bg-gray-900" : ""}`}>
-                      <div className="flex flex-col justify-between items-end pr-1">
-                        <div className="flex flex-col space-y-1">
-                          <Label className="text-xs text-slate-300">{timeFormat(item.from)}</Label>
-                          <Label className="text-xs text-slate-300">{timeFormat(item.to)}</Label>
+                    return (
+                      <div
+                        key={`src-${index}`}
+                        className={`flex p-2 space-x-1 ${focusedIndex === index ? "border-red-100 border-2 rounded" : ""} ${gray ? "bg-gray-100 dark:bg-gray-900" : ""}`}>
+                        <div className="flex flex-col justify-between items-end pr-1">
+                          <div className="flex flex-col space-y-1">
+                            <Label className="text-xs text-slate-300">{timeFormat(item.from)}</Label>
+                            <Label className="text-xs text-slate-300">{timeFormat(item.to)}</Label>
+                          </div>
+                          {
+                            auData && auData.audioDuration > 0 ?
+                              <div className="flex space-x-1 items-center">
+                                {
+                                  (focusedIndex === index && focusedAudioData && focusedAudioData.audioData.length > 0) &&
+                                  <>
+                                    <audio ref={singleAudioRef} className="hidden" key={focusedAudioData.from} controls>
+                                      <source src={focusedAudioData.audioData} type="audio/mpeg" />
+                                    </audio>
+                                    <PlayCircle onClick={async () => {
+                                      if (singleAudioRef.current) {
+                                        const ref = singleAudioRef.current as HTMLAudioElement
+                                        await ref.play()
+                                      }
+                                    }} className="cursor-pointer h-3 w-3 text-slate-500" />
+                                  </>
+                                }
+                                <p className={`text-xs ${goodState ? "text-green-500" : "text-red-500"}`}>
+                                  {audioDataIndex}) {!goodState && (diffCharacters > 0 ? `+${diffCharacters}c` : `${diffCharacters}c`)}
+                                </p>
+                              </div>
+                              :
+                              <p className="text-xs text-slate-300">{audioDataIndex})</p>
+                          }
                         </div>
-                        {
-                          auData && auData.audioDuration > 0 ?
-                            <div className="flex space-x-1 items-center">
-                              {
-                                (focusedIndex === index && focusedAudioData && focusedAudioData.audioData.length > 0) &&
-                                <>
-                                  <audio className="hidden" key={focusedAudioData.from} controls>
-                                    <source src={focusedAudioData.audioData} type="audio/mpeg" />
-                                  </audio>
-                                  <PlayCircle onClick={() => { console.log("clicked") }} className="h-3 w-3 text-slate-500" />
-                                </>
-                              }
-                              <p className={`text-xs ${goodState ? "text-green-500" : "text-red-500"}`}>
-                                {audioDataIndex}) {!goodState && (diffCharacters > 0 ? `+${diffCharacters}c` : `${diffCharacters}c`)}
-                              </p>
-                            </div>
-                            :
-                            <p className="text-xs text-slate-300">{audioDataIndex})</p>
-                        }
-                      </div>
-                      <Textarea
-                        disabled={!permission.srcWritable}
-                        id={`src.items.${index}`}
-                        value={item.text}
-                        className="overflow-hidden w-72"
-                        onChange={(event) => {
-                          const subtitles = [...srcObj.subtitle]
-                          const subtitle = subtitles[index]
-                          if (subtitle) {
-                            subtitle.text = event.target.value
-                            handleChange("src", { ...srcObj, subtitle: subtitles })
-                          }
-                        }}
-                        onFocus={() => {
-                          if (reactPlayerRef.current) {
-                            const duration = reactPlayerRef.current.getDuration()
-                            reactPlayerRef.current.seekTo(item.from / 1000 / duration, "fraction")
-                            setFocusedIndex(index)
-                          }
-                        }}
-                      />
-                      <Textarea
-                        disabled={!permission.dstWritable}
-                        id={`dst.items.${index}`}
-                        value={dstItem?.text}
-                        className="overflow-hidden w-72"
-                        onBlur={async () => {
-                          await synthesizeAudio()
-                        }}
-                        onChange={(event) => {
-                          const subtitles = [...dstObj.subtitle]
-                          const subtitle = subtitles[index]
-                          if (subtitle) {
-                            subtitle.text = event.target.value
-                          } else {
-                            subtitles[index] = {
-                              ...item,
-                              text: event.target.value
+                        <Textarea
+                          disabled={!permission.srcWritable}
+                          id={`src.items.${index}`}
+                          value={item.text}
+                          className="overflow-hidden w-72"
+                          onChange={(event) => {
+                            const subtitles = [...srcObj.subtitle]
+                            const subtitle = subtitles[index]
+                            if (subtitle) {
+                              subtitle.text = event.target.value
+                              handleChange("src", { ...srcObj, subtitle: subtitles })
                             }
-                          }
-                          handleChange("dst", { ...dstObj, subtitle: subtitles })
-                        }}
-                        onFocus={() => {
-                          if (reactPlayerRef.current) {
-                            const duration = reactPlayerRef.current.getDuration()
-                            reactPlayerRef.current.seekTo(item.from / 1000 / duration * 1.001, "fraction")
-                            setFocusedIndex(index)
-                          }
-                        }}
-                      />
-                    </div>
-                  )
+                          }}
+                          onFocus={() => {
+                            if (reactPlayerRef.current) {
+                              const duration = reactPlayerRef.current.getDuration()
+                              reactPlayerRef.current.seekTo(item.from / 1000 / duration, "fraction")
+                              setFocusedIndex(index)
+                            }
+                          }}
+                        />
+                        <Textarea
+                          disabled={!permission.dstWritable}
+                          id={`dst.items.${index}`}
+                          value={dstItem?.text}
+                          className="overflow-hidden w-72"
+                          onBlur={async () => {
+                            await synthesizeAudio()
+                          }}
+                          onChange={(event) => {
+                            const subtitles = [...dstObj.subtitle]
+                            const subtitle = subtitles[index]
+                            if (subtitle) {
+                              subtitle.text = event.target.value
+                            } else {
+                              subtitles[index] = {
+                                ...item,
+                                text: event.target.value
+                              }
+                            }
+                            handleChange("dst", { ...dstObj, subtitle: subtitles })
+                          }}
+                          onFocus={() => {
+                            if (reactPlayerRef.current) {
+                              const duration = reactPlayerRef.current.getDuration()
+                              reactPlayerRef.current.seekTo(item.from / 1000 / duration * 1.001, "fraction")
+                              setFocusedIndex(index)
+                            }
+                          }}
+                        />
+                      </div>
+                    )
+                  }
                 })
               }
             </div>
