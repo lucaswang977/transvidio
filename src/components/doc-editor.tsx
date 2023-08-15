@@ -51,6 +51,10 @@ export const handleTranslate = async (
     throw new Error(abortSignal.reason as string)
   }
 
+  if (text.length === 0) {
+    throw new Error("Empty request")
+  }
+
   const reqBody = JSON.stringify({
     translate: text,
     character: aiParams.character,
@@ -176,6 +180,9 @@ export const DocumentEditor = (props: DocumentEditorProps) => {
     if (handler) {
       setFilling(true)
       await handler(docInfo.projectAiParamters, abortCtrl.signal)
+        .then(() => {
+          toast({ title: "Filling completed." })
+        })
         .catch(err => {
           if ((err as Error).message === "UserClickedAbort") {
             toast({ title: "Filling canceled." })
@@ -183,7 +190,6 @@ export const DocumentEditor = (props: DocumentEditorProps) => {
         })
         .finally(() => {
           setFilling(false)
-          toast({ title: "Filling completed." })
         })
     }
   }
