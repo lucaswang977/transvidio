@@ -8,36 +8,39 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import Ffmpeg from 'fluent-ffmpeg'
 import * as fs from "fs"
 import { Readable } from 'stream'
+import type { AudioSynthesisParamsType } from '~/types';
 
 const LOG_RANGE = "SPEECH"
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getServerSession(req, res, authOptions)
 
-  if (req.method === "GET") {
-    const phrase = req.query.phrase as string
+  if (req.method === "POST") {
+    const { phrase, params } = JSON.parse(req.body as string) as { phrase: string, params?: AudioSynthesisParamsType }
     if (!phrase) {
-      return new Response(null, { status: 500 })
+      return res.end({ status: 500 })
     }
 
     await cLog(LogLevels.INFO, LOG_RANGE, session ? session.user.id : "unknown", `synthesis() called: ${phrase}.`)
 
     const speechConfig = sdk.SpeechConfig.fromSubscription(
       env.AZURE_SPEECH_KEY, env.AZURE_SPEECH_REGION);
-    speechConfig.speechSynthesisOutputFormat = 5; // mp3
-    const voiceLang = "zh-CN";
-    const voiceName = "zh-CN-YunjianNeural";
-    // const voiceName = "zh-CN-YunxiNeural";
-    const voiceRole = "SeniorMale"
-    const voiceStyle = "excited"
-    const voiceRate = "0%"
+    speechConfig.speechSynthesisOutputFormat = 5 // mp3
+    const voiceLang = params ? params.lang : "zh-CN"
+    const voiceName = params ? params.voice : "zh-CN-YunjianNeural"
+    const voiceRole = params && params.role ? params.role : undefined
+    const voiceStyle = params && params.style ? params.style : undefined
+    const voiceRate = params && params.rate ? params.rate : "0%"
 
     const synthesizer = new sdk.SpeechSynthesizer(speechConfig);
     synthesizer.synthesisCompleted = async function(_s, e) {
       await cLog(LogLevels.INFO, LOG_RANGE, session ? session.user.id : "unknown", `synthesis complete: ${e.result.audioData.byteLength}.`)
     };
 
-    const ssml = `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xmlns:mstts="https://www.w3.org/2001/mstts" xml:lang="${voiceLang}"> <voice name="${voiceName}"> <mstts:express-as role="${voiceRole}" style="${voiceStyle}"> <prosody rate="${voiceRate}">${phrase}</prosody></mstts:express-as></voice></speak>`
+    const voiceRoleStr = voiceRole ? `role="${voiceRole}"` : ""
+    const voiceStyleStr = voiceStyle ? `style="${voiceStyle}"` : ""
+    const ssml = `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xmlns:mstts="https://www.w3.org/2001/mstts" xml:lang="${voiceLang}"> <voice name="${voiceName}"> <mstts:express-as ${voiceRoleStr} ${voiceStyleStr}> <prosody rate="${voiceRate}">${phrase}</prosody></mstts:express-as></voice></speak>`
+    console.log(ssml)
 
     return new Promise<void>(resolve => {
       synthesizer.speakSsmlAsync(

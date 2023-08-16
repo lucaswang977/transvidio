@@ -52,15 +52,23 @@ export type SubtitleType = {
   audio: AudioSynthesisType[],
 }
 
-type AudioSynthesisType = {
+export type AudioSynthesisParamsType = {
+  lang: string,
+  voice: string,
+  rate?: string,
+  role?: string,
+  style?: string,
+}
+
+export type AudioSynthesisType = {
   subtitleItemIds: number[],
   from: number,
   to: number,
   text: string,
   textDuration: number,
-  audioSynced: boolean,
   audioData: string,
   audioDuration: number,
+  audioParams?: AudioSynthesisParamsType,
 }
 
 export type QuizPromptItem = {
