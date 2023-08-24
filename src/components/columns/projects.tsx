@@ -208,7 +208,8 @@ export const columns: ColumnDef<ProjectColumn>[] = [
       const data = row.original
       return (
         <div className="flex px-2 place-items-center space-x-2">
-          <span>{data.documentCount.OPEN ? data.documentCount.OPEN : 0}/
+          <span>{data.documentCount.OPEN !== undefined ? data.documentCount.OPEN : 0 +
+            (data.documentCount.WORKING !== undefined ? data.documentCount.WORKING : 0)}/
             {data.documentCount.ALL ? data.documentCount.ALL : 0}</span>
           <Link href={`/admin/documents?p=${data.id}`}>
             <ArrowRightCircle className="h-4 w-4" />

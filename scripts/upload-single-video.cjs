@@ -17,13 +17,6 @@ const parse = require('@plussub/srt-vtt-parser').parse;
 
 dotenv.config();
 
-// Check command-line arguments
-if (process.argv.length < 4) {
-  console.log('Please provide the target directory and local directory as command-line arguments!');
-  console.log('Usage: node your-script.js <project-id> <video-file>');
-  process.exit(1);
-}
-
 const argv = yargs
   .option("project-id", {
     alias: "p",
@@ -40,7 +33,6 @@ const argv = yargs
   .demandOption(["project-id", "video-file"])
   .help()
   .argv;
-
 
 // Get the target directory and local directory
 const targetDirectory = argv["project-id"];
@@ -125,7 +117,13 @@ async function processAndUploadFile() {
     const fileStat = fs.statSync(videoFile);
 
     if (fileStat.isFile()) {
+<<<<<<< Updated upstream
       const s3Key = path.join(targetDirectory, path.basename(videoFile));
+=======
+      const fileExtname = path.extname(videoFile)
+      const fileBasename = path.basename(videoFile, fileExtname)
+      const s3Key = path.join(targetDirectory, fileBasename + ".mp4");
+>>>>>>> Stashed changes
 
       if (path.extname(videoFile).toLowerCase() === '.mp4') {
         const convertedFilePath = path.join(path.dirname(videoFile), '/converted_' + path.basename(videoFile));
