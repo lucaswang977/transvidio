@@ -206,11 +206,12 @@ export const columns: ColumnDef<ProjectColumn>[] = [
     header: "Documents",
     cell: ({ row }) => {
       const data = row.original
+      const openDocs = data.documentCount.OPEN !== undefined ? data.documentCount.OPEN : 0
+      const workingDocs = data.documentCount.WORKING !== undefined ? data.documentCount.WORKING : 0
+      const allDocs = data.documentCount.ALL ? data.documentCount.ALL : 0
       return (
         <div className="flex px-2 place-items-center space-x-2">
-          <span>{data.documentCount.OPEN !== undefined ? data.documentCount.OPEN : 0 +
-            (data.documentCount.WORKING !== undefined ? data.documentCount.WORKING : 0)}/
-            {data.documentCount.ALL ? data.documentCount.ALL : 0}</span>
+          <span>{openDocs + workingDocs} / {allDocs}</span>
           <Link href={`/admin/documents?p=${data.id}`}>
             <ArrowRightCircle className="h-4 w-4" />
           </Link>
