@@ -8,6 +8,18 @@
 //       text: "wowowow",
 //     },
 //     ...
+//   ],
+//   ost: [
+//     {
+//       startTime: 11.22,
+//       endTime: 22.33,
+//       text: "On screen text",
+//       size: 12,
+//       style: bold,
+//       color: white,
+//       position: {x: "20%", y: "-20%"}
+//     },
+//     ...
 //   ]
 // }
 
@@ -151,6 +163,7 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
           <VideoPlayer
             url={srcObj.videoUrl}
             ref={reactPlayerRef}
+            caption={captions.dst}
             handleProgress={(playedSeconds: number) => {
               const index = srcObj.subtitle.findIndex(
                 (item) =>
@@ -167,8 +180,8 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
             }}
           >
           </VideoPlayer>
-          <p className="text-lg w-[500px] text-center">{captions.dst}</p>
-          <p className="text-sm w-[500px] text-center">{captions.src}</p>
+          <p className="hidden text-lg w-[500px] text-center">{captions.dst}</p>
+          <p className="hidden text-sm w-[500px] text-center">{captions.src}</p>
           {
             <Button className="hidden text-sm" variant="outline" onClick={async () => {
               if (focusedSentence.text.length > 0) {
