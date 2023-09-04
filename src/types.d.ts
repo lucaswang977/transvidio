@@ -49,6 +49,29 @@ export type SubtitleItem = {
 export type SubtitleType = {
   videoUrl: string,
   subtitle: SubtitleItem[],
+  ost?: OnScreenTextItem[],
+}
+
+export type OnScreenTextItem = {
+  from: number,
+  to: number,
+  text: string,
+  attr: OnScreenTextAttrType,
+}
+
+export type RelativePositionType = {
+  x_percent: number,
+  y_percent: number,
+}
+
+export type OnScreenTextAttrType = {
+  position: RelativePositionType,
+  color?: string,
+  bgColor?: string,
+  size?: number,
+  style?: "normal" | "bold" | "italic",
+  shadow?: boolean,
+  font?: string,
 }
 
 export type QuizPromptItem = {

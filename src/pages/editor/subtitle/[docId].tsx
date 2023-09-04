@@ -29,7 +29,7 @@ import { useRouter } from "next/router"
 import { VideoPlayer } from "~/components/ui/video-player"
 import { Label } from "~/components/ui/label"
 import { Textarea } from "~/components/ui/textarea"
-import type { SubtitleType, ProjectAiParamters } from "~/types"
+import type { SubtitleType, ProjectAiParamters, OnScreenTextAttrType } from "~/types"
 import { ScrollArea } from "~/components/ui/scroll-area"
 
 import { timeFormat } from "~/utils/helper"
@@ -46,6 +46,11 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
   ({ srcJson, dstJson, handleChange, permission, setAutoFillInit }, ref) => {
     const reactPlayerRef = React.useRef<ReactPlayer>(null);
     const [captions, setCaptions] = React.useState({ src: "", dst: "" })
+    const [dstOst, setDstOst] = React.useState<{
+      index: number,
+      text: string,
+      attr: OnScreenTextAttrType
+    }>()
     const [focusedIndex, setFocusedIndex] = React.useState<number | null>(null)
 
     React.useImperativeHandle(ref, () => {
@@ -58,13 +63,25 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
 
     const defaultValue: SubtitleType = {
       videoUrl: "",
-      subtitle: []
+      subtitle: [],
     }
 
     let srcObj = defaultValue
     let dstObj = defaultValue
     if (srcJson) srcObj = srcJson as SubtitleType
-    if (dstJson) dstObj = dstJson as SubtitleType
+    if (dstJson) {
+      dstObj = dstJson as SubtitleType
+      dstObj.ost = [
+        {
+          from: 2000,
+          to: 3000,
+          text: "On Screen Text",
+          attr: {
+            position: { x_percent: 0.5, y_percent: 0.5 }
+          }
+        },
+      ]
+    }
 
     const handleAutoFill = async (aiParams?: ProjectAiParamters, abortCtrl?: AbortSignal) => {
       const aip: ProjectAiParamters = aiParams ? aiParams : {
@@ -164,6 +181,7 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
             url={srcObj.videoUrl}
             ref={reactPlayerRef}
             caption={captions.dst}
+            ost={dstOst}
             handleProgress={(playedSeconds: number) => {
               const index = srcObj.subtitle.findIndex(
                 (item) =>
@@ -173,9 +191,30 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
                 const srcItem = srcObj.subtitle[index]
                 const dstItem = dstObj.subtitle[index]
                 setCaptions({
-                  src: srcItem?.text ? srcItem.text : "<empty>",
-                  dst: dstItem?.text ? dstItem.text : "<empty>"
+                  src: srcItem?.text ? srcItem.text : "",
+                  dst: dstItem?.text ? dstItem.text : ""
                 })
+              } else if (captions.src.length !== 0 || captions.dst.length !== 0) {
+                setCaptions({ src: "", dst: "" })
+              }
+
+              if (dstObj && dstObj.ost) {
+                const oi = dstObj.ost.findIndex(
+                  (item) =>
+                    (playedSeconds * 1000 >= item.from) &&
+                    (playedSeconds * 1000 <= item.to))
+                if (oi >= 0) {
+                  const ost = dstObj.ost[oi]
+                  if (ost) {
+                    setDstOst({
+                      index: oi,
+                      text: ost.text,
+                      attr: ost.attr
+                    })
+                  }
+                } else if (dstOst !== undefined) {
+                  setDstOst(undefined)
+                }
               }
             }}
           >

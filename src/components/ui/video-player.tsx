@@ -6,17 +6,23 @@ import { cn, timeFormat } from "~/utils/helper"
 import { Button } from "~/components/ui/button"
 import { Slider } from "~/components/ui/slider"
 import { ArrowBigLeftDash, ArrowBigRightDash, Pause, Play } from "lucide-react"
+import type { OnScreenTextAttrType, RelativePositionType } from "~/types"
+
 
 export interface VideoPlayerProps extends React.HTMLAttributes<HTMLVideoElement> {
   url: string,
   width?: string,
   height?: string,
   caption?: string,
+  ost?: { index: number, text: string, attr: OnScreenTextAttrType },
+  handleOstPositionChanged?: (index: number, position: RelativePositionType) => void
   handleProgress: (playedSeconds: number) => void,
 }
 
 const VideoPlayer = React.forwardRef<ReactPlayer, VideoPlayerProps & ReactPlayerProps>(
   ({ className, url, handleProgress, ...props }, ref) => {
+    const VIDEO_HEIGHT = 360
+    const VIDEO_WIDTH = 640
     const [playing, setPlaying] = React.useState(false)
     const [progress, setProgress] = React.useState(0)
     const [duration, setDuration] = React.useState(-1)
@@ -29,6 +35,8 @@ const VideoPlayer = React.forwardRef<ReactPlayer, VideoPlayerProps & ReactPlayer
             url={url}
             controls={false}
             style={{ border: 0, padding: 0 }}
+            height={VIDEO_HEIGHT}
+            width={VIDEO_WIDTH}
             playing={playing}
             progressInterval={100}
             onDuration={(duration) => { setDuration(duration) }}
@@ -42,7 +50,17 @@ const VideoPlayer = React.forwardRef<ReactPlayer, VideoPlayerProps & ReactPlayer
             {...props}
           >
           </ReactPlayer>
-          <div className="z-10 absolute inset-1 bg-black opacity-0"></div>
+          <div id="ost-layer" className="z-10 absolute inset-1 bg-black bg-opacity-0">
+            {
+              props.ost &&
+              <p
+                className={cn(props.ost.attr.color ?? "text-white")}
+                style={{
+                  transform: `translate(${props.ost.attr.position.x_percent * VIDEO_WIDTH}px, ${props.ost.attr.position.y_percent * VIDEO_HEIGHT}px)`,
+                }}
+              >{props.ost.text}</p>
+            }
+          </div>
           <div className="z-5 absolute inset-1 bg-opacity-0 flex justify-center items-end">
             {
               props.caption &&
@@ -52,8 +70,9 @@ const VideoPlayer = React.forwardRef<ReactPlayer, VideoPlayerProps & ReactPlayer
             }
           </div>
         </div>
-        <div className="p-1 border h-20 w-full rounded flex flex-col space-y-2">
-          <div className="flex">
+        <div className="p-1 border w-full rounded flex flex-col space-y-2">
+          <div className="flex space-x-2 p-2">
+            <p className="text-xs"> {timeFormat(progress * duration * 1000)} </p>
             <Slider
               className="px-4 cursor-pointer w-4/5"
               value={[progress]}
@@ -67,11 +86,9 @@ const VideoPlayer = React.forwardRef<ReactPlayer, VideoPlayerProps & ReactPlayer
               }}
               max={1}
               step={0.001} />
-            <p className="text-xs">
-              {timeFormat(progress * duration * 1000)} / {timeFormat(duration * 1000)}
-            </p>
+            <p className="text-xs"> {timeFormat(duration * 1000)} </p>
           </div>
-          <div className="flex space-x-1 items-center justify-center">
+          <div className="flex space-x-1 items-center justify-center pb-2">
             <Button
               onClick={() => {
                 let pos = duration * progress - 0.1
