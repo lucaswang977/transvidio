@@ -27,6 +27,7 @@ import * as React from "react"
 import { useRouter } from "next/router"
 
 import { VideoPlayer } from "~/components/ui/video-player"
+import type { VideoOstType } from "~/components/ui/video-player"
 import { Label } from "~/components/ui/label"
 import { Textarea } from "~/components/ui/textarea"
 import type { SubtitleType, ProjectAiParamters, OnScreenTextAttrType } from "~/types"
@@ -46,11 +47,7 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
   ({ srcJson, dstJson, handleChange, permission, setAutoFillInit }, ref) => {
     const reactPlayerRef = React.useRef<ReactPlayer>(null);
     const [captions, setCaptions] = React.useState({ src: "", dst: "" })
-    const [dstOst, setDstOst] = React.useState<{
-      index: number,
-      text: string,
-      attr: OnScreenTextAttrType
-    }>()
+    const [dstOst, setDstOst] = React.useState<VideoOstType[]>([])
     const [focusedIndex, setFocusedIndex] = React.useState<number | null>(null)
 
     React.useImperativeHandle(ref, () => {
@@ -74,12 +71,21 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
       dstObj.ost = [
         {
           from: 2000,
-          to: 3000,
-          text: "On Screen Text",
+          to: 5000,
+          text: "On Screen Text 1",
           attr: {
             position: { x_percent: 0.5, y_percent: 0.5 }
           }
         },
+        {
+          from: 3000,
+          to: 6000,
+          text: "On Screen Text 2",
+          attr: {
+            position: { x_percent: 0.29, y_percent: 0.26 }
+          }
+        },
+
       ]
     }
 
@@ -199,22 +205,18 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
               }
 
               if (dstObj && dstObj.ost) {
-                const oi = dstObj.ost.findIndex(
-                  (item) =>
-                    (playedSeconds * 1000 >= item.from) &&
-                    (playedSeconds * 1000 <= item.to))
-                if (oi >= 0) {
-                  const ost = dstObj.ost[oi]
-                  if (ost) {
-                    setDstOst({
-                      index: oi,
-                      text: ost.text,
-                      attr: ost.attr
-                    })
-                  }
-                } else if (dstOst !== undefined) {
-                  setDstOst(undefined)
-                }
+                const osts: VideoOstType[] = []
+                let i = 0
+                dstObj.ost.forEach(
+                  (item) => {
+                    if ((playedSeconds * 1000 >= item.from) &&
+                      (playedSeconds * 1000 <= item.to)) {
+                      osts.push({ index: i, text: item.text, attr: item.attr })
+                    }
+                    i++
+                  })
+                setDstOst(osts)
+
               }
             }}
           >

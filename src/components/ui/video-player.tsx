@@ -14,9 +14,13 @@ export interface VideoPlayerProps extends React.HTMLAttributes<HTMLVideoElement>
   width?: string,
   height?: string,
   caption?: string,
-  ost?: { index: number, text: string, attr: OnScreenTextAttrType },
+  ost?: VideoOstType[],
   handleOstPositionChanged?: (index: number, position: RelativePositionType) => void
   handleProgress: (playedSeconds: number) => void,
+}
+
+export type VideoOstType = {
+  index: number, text: string, attr: OnScreenTextAttrType
 }
 
 const VideoPlayer = React.forwardRef<ReactPlayer, VideoPlayerProps & ReactPlayerProps>(
@@ -52,13 +56,16 @@ const VideoPlayer = React.forwardRef<ReactPlayer, VideoPlayerProps & ReactPlayer
           </ReactPlayer>
           <div id="ost-layer" className="z-10 absolute inset-1 bg-black bg-opacity-0">
             {
-              props.ost &&
-              <p
-                className={cn(props.ost.attr.color ?? "text-white")}
-                style={{
-                  transform: `translate(${props.ost.attr.position.x_percent * VIDEO_WIDTH}px, ${props.ost.attr.position.y_percent * VIDEO_HEIGHT}px)`,
-                }}
-              >{props.ost.text}</p>
+              props.ost && props.ost.length > 0 &&
+              props.ost.map((item) => {
+                return (<p
+                  key={item.index}
+                  className={cn(item.attr.color ?? "text-white")}
+                  style={{
+                    transform: `translate(${item.attr.position.x_percent * VIDEO_WIDTH}px, ${item.attr.position.y_percent * VIDEO_HEIGHT}px)`,
+                  }}
+                >{item.text}</p>)
+              })
             }
           </div>
           <div className="z-5 absolute inset-1 bg-opacity-0 flex justify-center items-end">
