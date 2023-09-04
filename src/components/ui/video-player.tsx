@@ -27,44 +27,92 @@ const VideoPlayer = React.forwardRef<ReactPlayer, VideoPlayerProps & ReactPlayer
   ({ className, url, handleProgress, ...props }, ref) => {
     const VIDEO_HEIGHT = 360
     const VIDEO_WIDTH = 640
+    const ostWrapperRef = React.useRef<HTMLDivElement>(null)
     const [playing, setPlaying] = React.useState(false)
     const [progress, setProgress] = React.useState(0)
     const [duration, setDuration] = React.useState(-1)
+    const ostRefs: React.RefObject<HTMLDivElement>[] = []
+
+    if (props.ost && props.ost.length > 0) {
+      props.ost.forEach(() => {
+        ostRefs.push(React.createRef())
+        console.log(ostRefs)
+      })
+    }
+
+    const handleMouseUp = (ev: MouseEvent) => {
+      window.removeEventListener("mouseup", handleMouseUp);
+      window.removeEventListener("mousemove", handleMouseMove);
+      console.log("up: ", ev)
+    }
+
+    const handleMouseMove = (ev: MouseEvent) => {
+      console.log("move: ", ev)
+    }
+
+    const handleMouseDown = (ev: MouseEvent) => {
+      window.addEventListener("mouseup", handleMouseUp);
+      window.addEventListener("mousemove", handleMouseMove);
+      if (ostWrapperRef.current) {
+        const videoPos = ostWrapperRef.current.getBoundingClientRect()
+        ostRefs.forEach((item) => {
+          if (item && item.current) {
+            console.log("item: ", item.current.getBoundingClientRect())
+          }
+        })
+        console.log("down: ", ev, videoPos)
+      }
+    }
+
+    React.useEffect(() => {
+      if (!playing && props.ost && props.ost.length > 0) {
+        window.addEventListener("mousedown", handleMouseDown);
+        return () => {
+          window.removeEventListener("mousedown", handleMouseDown);
+        }
+      }
+    }, [playing])
 
     return (
       <div className={cn("flex flex-col space-y-1", className)}>
         <div className="relative p-1 border rounded">
-          <ReactPlayer
-            ref={ref}
-            url={url}
-            controls={false}
-            style={{ border: 0, padding: 0 }}
-            height={VIDEO_HEIGHT}
-            width={VIDEO_WIDTH}
-            playing={playing}
-            progressInterval={100}
-            onDuration={(duration) => { setDuration(duration) }}
-            onProgress={(state) => {
-              const p = state.playedSeconds / duration
-              setProgress(p >= 0 ? p : 0)
-              handleProgress(state.playedSeconds)
-            }}
-            onPlay={() => { setPlaying(true) }}
-            onPause={() => { setPlaying(false) }}
-            {...props}
-          >
-          </ReactPlayer>
+          <div ref={ostWrapperRef}>
+            <ReactPlayer
+              ref={ref}
+              url={url}
+              controls={false}
+              style={{ border: 0, padding: 0 }}
+              height={VIDEO_HEIGHT}
+              width={VIDEO_WIDTH}
+              playing={playing}
+              progressInterval={100}
+              onDuration={(duration) => { setDuration(duration) }}
+              onProgress={(state) => {
+                const p = state.playedSeconds / duration
+                setProgress(p >= 0 ? p : 0)
+                handleProgress(state.playedSeconds)
+              }}
+              onPlay={() => { setPlaying(true) }}
+              onPause={() => { setPlaying(false) }}
+              {...props}
+            >
+            </ReactPlayer>
+          </div>
           <div id="ost-layer" className="z-10 absolute inset-1 bg-black bg-opacity-0">
             {
               props.ost && props.ost.length > 0 &&
-              props.ost.map((item) => {
-                return (<p
-                  key={item.index}
-                  className={cn(item.attr.color ?? "text-white")}
+              props.ost.map((item, i) => {
+                return (<div
+                  key={i}
+                  ref={ostRefs[i]}
+                  className={cn(
+                    "absolute",
+                    item.attr.color ?? "text-white",
+                    !playing ? "cursor-pointer" : "cursor-default")}
                   style={{
                     transform: `translate(${item.attr.position.x_percent * VIDEO_WIDTH}px, ${item.attr.position.y_percent * VIDEO_HEIGHT}px)`,
                   }}
-                >{item.text}</p>)
+                >{item.text}</div>)
               })
             }
           </div>

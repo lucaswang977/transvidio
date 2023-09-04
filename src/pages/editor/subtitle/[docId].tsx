@@ -30,7 +30,7 @@ import { VideoPlayer } from "~/components/ui/video-player"
 import type { VideoOstType } from "~/components/ui/video-player"
 import { Label } from "~/components/ui/label"
 import { Textarea } from "~/components/ui/textarea"
-import type { SubtitleType, ProjectAiParamters, OnScreenTextAttrType } from "~/types"
+import type { SubtitleType, ProjectAiParamters } from "~/types"
 import { ScrollArea } from "~/components/ui/scroll-area"
 
 import { timeFormat } from "~/utils/helper"
