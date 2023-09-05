@@ -30,7 +30,7 @@ import { VideoPlayer } from "~/components/ui/video-player"
 import type { VideoOstType } from "~/components/ui/video-player"
 import { Label } from "~/components/ui/label"
 import { Textarea } from "~/components/ui/textarea"
-import type { SubtitleType, ProjectAiParamters } from "~/types"
+import type { SubtitleType, ProjectAiParamters, RelativePositionType } from "~/types"
 import { ScrollArea } from "~/components/ui/scroll-area"
 
 import { timeFormat } from "~/utils/helper"
@@ -47,7 +47,7 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
   ({ srcJson, dstJson, handleChange, permission, setAutoFillInit }, ref) => {
     const reactPlayerRef = React.useRef<ReactPlayer>(null);
     const [captions, setCaptions] = React.useState({ src: "", dst: "" })
-    const [dstOst, setDstOst] = React.useState<VideoOstType[]>([])
+    const [ostIndexes, setOstIndexes] = React.useState<number[]>([])
     const [focusedIndex, setFocusedIndex] = React.useState<number | null>(null)
 
     React.useImperativeHandle(ref, () => {
@@ -66,28 +66,32 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
     let srcObj = defaultValue
     let dstObj = defaultValue
     if (srcJson) srcObj = srcJson as SubtitleType
-    if (dstJson) {
-      dstObj = dstJson as SubtitleType
-      dstObj.ost = [
-        {
-          from: 2000,
-          to: 5000,
-          text: "On Screen Text 1",
-          attr: {
-            position: { x_percent: 0.5, y_percent: 0.5 }
-          }
-        },
-        {
-          from: 3000,
-          to: 6000,
-          text: "On Screen Text 2",
-          attr: {
-            position: { x_percent: 0.29, y_percent: 0.26 }
-          }
-        },
-
-      ]
-    }
+    if (dstJson) dstObj = dstJson as SubtitleType
+    //
+    // React.useEffect(() => {
+    //   handleChange("dst", o => {
+    //     const d = clone(o ? (o as SubtitleType) : defaultValue)
+    //     d.ost = [
+    //       {
+    //         from: 2000,
+    //         to: 5000,
+    //         text: "On Screen Text 1",
+    //         attr: {
+    //           position: { x_percent: 0.5, y_percent: 0.5 }
+    //         }
+    //       },
+    //       {
+    //         from: 3000,
+    //         to: 6000,
+    //         text: "On Screen Text 2",
+    //         attr: {
+    //           position: { x_percent: 0.29, y_percent: 0.26 }
+    //         }
+    //       },
+    //     ]
+    //     return d
+    //   })
+    // }, [])
 
     const handleAutoFill = async (aiParams?: ProjectAiParamters, abortCtrl?: AbortSignal) => {
       const aip: ProjectAiParamters = aiParams ? aiParams : {
@@ -180,6 +184,67 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
     let gray = false
     let turnColor = false
     const focusedSentence = getWholeSentenceOnFocus()
+    const osts: VideoOstType[] = []
+    const dstObjOst = dstObj.ost
+    if (dstObjOst) {
+      ostIndexes.forEach(k => {
+        const ost = dstObjOst[k]
+        if (ost) {
+          osts.push({
+            index: k,
+            text: ost.text,
+            attr: ost.attr
+          })
+        }
+      })
+    }
+
+    const handleOstPosChanged = (index: number, position: RelativePositionType) => {
+      handleChange("dst", o => {
+        const d = clone(o ? (o as SubtitleType) : defaultValue)
+        const ost = d.ost
+        if (ost) {
+          const t = ost[index]
+          if (t) {
+            t.attr.position = position
+            return d
+          }
+        }
+        return d
+      })
+    }
+
+    const handleVideoProgress = (playedSeconds: number) => {
+      const index = srcObj.subtitle.findIndex(
+        (item) =>
+          (playedSeconds * 1000 >= item.from) &&
+          (playedSeconds * 1000 <= item.to))
+      if (index >= 0) {
+        const srcItem = srcObj.subtitle[index]
+        const dstItem = dstObj.subtitle[index]
+        setCaptions({
+          src: srcItem?.text ? srcItem.text : "",
+          dst: dstItem?.text ? dstItem.text : ""
+        })
+      } else if (captions.src.length !== 0 || captions.dst.length !== 0) {
+        setCaptions({ src: "", dst: "" })
+      }
+
+      if (dstObj && dstObj.ost) {
+        const osts: number[] = []
+        let i = 0
+        dstObj.ost.forEach(
+          (item) => {
+            if ((playedSeconds * 1000 >= item.from) &&
+              (playedSeconds * 1000 <= item.to)) {
+              osts.push(i)
+            }
+            i++
+          })
+        setOstIndexes(osts)
+      }
+    }
+
     return (
       <div className="pt-8 flex flex-col items-center lg:items-start lg:flex-row lg:space-x-2">
         <div className="flex flex-col items-center space-y-2 mb-4 lg:order-last lg:mx-4">
@@ -187,38 +252,9 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
             url={srcObj.videoUrl}
             ref={reactPlayerRef}
             caption={captions.dst}
-            ost={dstOst}
-            handleProgress={(playedSeconds: number) => {
-              const index = srcObj.subtitle.findIndex(
-                (item) =>
-                  (playedSeconds * 1000 >= item.from) &&
-                  (playedSeconds * 1000 <= item.to))
-              if (index >= 0) {
-                const srcItem = srcObj.subtitle[index]
-                const dstItem = dstObj.subtitle[index]
-                setCaptions({
-                  src: srcItem?.text ? srcItem.text : "",
-                  dst: dstItem?.text ? dstItem.text : ""
-                })
-              } else if (captions.src.length !== 0 || captions.dst.length !== 0) {
-                setCaptions({ src: "", dst: "" })
-              }
-
-              if (dstObj && dstObj.ost) {
-                const osts: VideoOstType[] = []
-                let i = 0
-                dstObj.ost.forEach(
-                  (item) => {
-                    if ((playedSeconds * 1000 >= item.from) &&
-                      (playedSeconds * 1000 <= item.to)) {
-                      osts.push({ index: i, text: item.text, attr: item.attr })
-                    }
-                    i++
-                  })
-                setDstOst(osts)
-
-              }
-            }}
+            ost={osts}
+            handleOstPosChanged={handleOstPosChanged}
+            handleProgress={handleVideoProgress}
           >
           </VideoPlayer>
           <p className="hidden text-lg w-[500px] text-center">{captions.dst}</p>

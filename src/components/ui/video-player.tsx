@@ -7,6 +7,7 @@ import { Button } from "~/components/ui/button"
 import { Slider } from "~/components/ui/slider"
 import { ArrowBigLeftDash, ArrowBigRightDash, Pause, Play } from "lucide-react"
 import type { OnScreenTextAttrType, RelativePositionType } from "~/types"
+import { clone } from "ramda"
 
 
 export interface VideoPlayerProps extends React.HTMLAttributes<HTMLVideoElement> {
@@ -15,7 +16,7 @@ export interface VideoPlayerProps extends React.HTMLAttributes<HTMLVideoElement>
   height?: string,
   caption?: string,
   ost?: VideoOstType[],
-  handleOstPositionChanged?: (index: number, position: RelativePositionType) => void
+  handleOstPosChanged?: (index: number, position: RelativePositionType) => void,
   handleProgress: (playedSeconds: number) => void,
 }
 
@@ -23,45 +24,81 @@ export type VideoOstType = {
   index: number, text: string, attr: OnScreenTextAttrType
 }
 
+const isInBound = (clientX: number, clientY: number, componentRect: DOMRect) => {
+  return (
+    clientX >= componentRect.left &&
+    clientX <= componentRect.right &&
+    clientY >= componentRect.top &&
+    clientY <= componentRect.bottom
+  )
+}
+
+type DndStateType = {
+  state: "idle" | "dragging",
+  index: number,
+  initDPos: { x: number, y: number }
+}
+
+const defaultDndStateValue: DndStateType = {
+  state: "idle",
+  index: 0,
+  initDPos: { x: 0, y: 0 }
+}
+
 const VideoPlayer = React.forwardRef<ReactPlayer, VideoPlayerProps & ReactPlayerProps>(
-  ({ className, url, handleProgress, ...props }, ref) => {
+  ({ className, url, handleProgress, handleOstPosChanged, ...props }, ref) => {
     const VIDEO_HEIGHT = 360
     const VIDEO_WIDTH = 640
     const ostWrapperRef = React.useRef<HTMLDivElement>(null)
+    const dndState = React.useRef<DndStateType>(clone(defaultDndStateValue))
     const [playing, setPlaying] = React.useState(false)
     const [progress, setProgress] = React.useState(0)
     const [duration, setDuration] = React.useState(-1)
-    const ostRefs: React.RefObject<HTMLDivElement>[] = []
 
-    if (props.ost && props.ost.length > 0) {
-      props.ost.forEach(() => {
-        ostRefs.push(React.createRef())
-        console.log(ostRefs)
-      })
-    }
-
-    const handleMouseUp = (ev: MouseEvent) => {
+    const handleMouseUp = (_ev: MouseEvent) => {
+      dndState.current = clone(defaultDndStateValue)
       window.removeEventListener("mouseup", handleMouseUp);
       window.removeEventListener("mousemove", handleMouseMove);
-      console.log("up: ", ev)
+      console.log(dndState.current)
     }
 
     const handleMouseMove = (ev: MouseEvent) => {
-      console.log("move: ", ev)
+      const normToPercent = (n: number) => {
+        if (n < 0) return 0
+        if (n > 1) return 1
+
+        return n
+      }
+      if (dndState.current.state === "dragging") {
+        if (handleOstPosChanged && ostWrapperRef.current) {
+          const rect = ostWrapperRef.current.getBoundingClientRect()
+
+          handleOstPosChanged(dndState.current.index,
+            {
+              x_percent: normToPercent((ev.clientX - dndState.current.initDPos.x - rect.x) / VIDEO_WIDTH),
+              y_percent: normToPercent((ev.clientY - dndState.current.initDPos.y - rect.y) / VIDEO_HEIGHT)
+            })
+        }
+      }
     }
 
     const handleMouseDown = (ev: MouseEvent) => {
       window.addEventListener("mouseup", handleMouseUp);
       window.addEventListener("mousemove", handleMouseMove);
-      if (ostWrapperRef.current) {
-        const videoPos = ostWrapperRef.current.getBoundingClientRect()
-        ostRefs.forEach((item) => {
-          if (item && item.current) {
-            console.log("item: ", item.current.getBoundingClientRect())
+
+      if (ostWrapperRef.current && dndState.current.state === "idle") {
+        const nodes = ostWrapperRef.current.querySelectorAll("div.ost")
+        console.log(nodes)
+        nodes.forEach(item => {
+          const rect = item.getBoundingClientRect()
+          if (isInBound(ev.clientX, ev.clientY, rect)) {
+            dndState.current.state = "dragging"
+            dndState.current.index = parseInt(item.id)
+            dndState.current.initDPos = { x: ev.clientX - rect.x, y: ev.clientY - rect.y }
           }
         })
-        console.log("down: ", ev, videoPos)
       }
+      console.log(dndState.current)
     }
 
     React.useEffect(() => {
@@ -76,7 +113,7 @@ const VideoPlayer = React.forwardRef<ReactPlayer, VideoPlayerProps & ReactPlayer
     return (
       <div className={cn("flex flex-col space-y-1", className)}>
         <div className="relative p-1 border rounded">
-          <div ref={ostWrapperRef}>
+          <div>
             <ReactPlayer
               ref={ref}
               url={url}
@@ -98,15 +135,16 @@ const VideoPlayer = React.forwardRef<ReactPlayer, VideoPlayerProps & ReactPlayer
             >
             </ReactPlayer>
           </div>
-          <div id="ost-layer" className="z-10 absolute inset-1 bg-black bg-opacity-0">
+          <div ref={ostWrapperRef} className="z-10 absolute inset-1 bg-black bg-opacity-0">
             {
               props.ost && props.ost.length > 0 &&
               props.ost.map((item, i) => {
                 return (<div
                   key={i}
-                  ref={ostRefs[i]}
+                  id={`${item.index}`}
                   className={cn(
-                    "absolute",
+                    "ost",
+                    "absolute select-none",
                     item.attr.color ?? "text-white",
                     !playing ? "cursor-pointer" : "cursor-default")}
                   style={{
