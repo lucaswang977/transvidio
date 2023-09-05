@@ -144,7 +144,7 @@ const VideoPlayer = React.forwardRef<ReactPlayer, VideoPlayerProps & ReactPlayer
                   id={`${item.index}`}
                   className={cn(
                     "ost",
-                    "absolute select-none",
+                    "absolute select-none whitespace-pre",
                     item.attr.color ?? "text-white",
                     !playing ? "cursor-pointer" : "cursor-default")}
                   style={{

@@ -30,7 +30,7 @@ import { VideoPlayer } from "~/components/ui/video-player"
 import type { VideoOstType } from "~/components/ui/video-player"
 import { Label } from "~/components/ui/label"
 import { Textarea } from "~/components/ui/textarea"
-import type { SubtitleType, ProjectAiParamters, RelativePositionType } from "~/types"
+import type { SubtitleType, ProjectAiParamters, RelativePositionType, OnScreenTextItem } from "~/types"
 import { ScrollArea } from "~/components/ui/scroll-area"
 
 import { timeFormat } from "~/utils/helper"
@@ -40,6 +40,12 @@ import { clone } from "ramda";
 import type { AutofillHandler, EditorComponentProps } from "~/components/doc-editor";
 import { DocumentEditor, handleTranslate, } from "~/components/doc-editor";
 import { Button } from "~/components/ui/button"
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "~/components/ui/tabs"
 
 const regexToSegementSentence = /[.!?)'"“”]+$/
 
@@ -67,31 +73,6 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
     let dstObj = defaultValue
     if (srcJson) srcObj = srcJson as SubtitleType
     if (dstJson) dstObj = dstJson as SubtitleType
-    //
-    // React.useEffect(() => {
-    //   handleChange("dst", o => {
-    //     const d = clone(o ? (o as SubtitleType) : defaultValue)
-    //     d.ost = [
-    //       {
-    //         from: 2000,
-    //         to: 5000,
-    //         text: "On Screen Text 1",
-    //         attr: {
-    //           position: { x_percent: 0.5, y_percent: 0.5 }
-    //         }
-    //       },
-    //       {
-    //         from: 3000,
-    //         to: 6000,
-    //         text: "On Screen Text 2",
-    //         attr: {
-    //           position: { x_percent: 0.29, y_percent: 0.26 }
-    //         }
-    //       },
-    //     ]
-    //     return d
-    //   })
-    // }, [])
 
     const handleAutoFill = async (aiParams?: ProjectAiParamters, abortCtrl?: AbortSignal) => {
       const aip: ProjectAiParamters = aiParams ? aiParams : {
@@ -275,88 +256,200 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
           }
         </div>
 
-        <ScrollArea className="h-[60vh] lg:h-[90vh]">
-          <div className="flex space-x-2 p-2">
-            <div className="flex flex-col">
-              {
-                srcObj.subtitle.map((item, index) => {
-                  if (turnColor) {
-                    gray = !gray
-                    turnColor = false
-                  }
-                  sentences.push(item.text)
-                  const sentence = sentences.join(" ")
-                  if (regexToSegementSentence.test(sentence.trim())) {
-                    turnColor = true
-                    sentences = []
-                  }
+        <Tabs defaultValue="subtitle">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="subtitle">Subtitle</TabsTrigger>
+            <TabsTrigger value="ost">On-screen-text</TabsTrigger>
+          </TabsList>
+          <TabsContent value="subtitle">
+            <ScrollArea className="h-[60vh] lg:h-[90vh]">
+              <div className="flex space-x-2 p-2">
+                <div className="flex flex-col">
+                  {
+                    srcObj.subtitle.map((item, index) => {
+                      if (turnColor) {
+                        gray = !gray
+                        turnColor = false
+                      }
+                      sentences.push(item.text)
+                      const sentence = sentences.join(" ")
+                      if (regexToSegementSentence.test(sentence.trim())) {
+                        turnColor = true
+                        sentences = []
+                      }
 
-                  const dstItem = dstObj.subtitle[index] ? dstObj.subtitle[index] : {
-                    ...item,
-                    text: ""
-                  }
+                      const dstItem = dstObj.subtitle[index] ? dstObj.subtitle[index] : {
+                        ...item,
+                        text: ""
+                      }
 
-                  return (
-                    <div key={`src-${index}`} className={`flex p-2 space-x-1 ${gray ? "bg-gray-100 dark:bg-gray-900" : ""}`}>
-                      <div className="flex flex-col text-slate-300">
-                        <Label className="text-xs">{timeFormat(item.from)}</Label>
-                        <Label className="text-xs">{timeFormat(item.to)}</Label>
-                      </div>
-                      <Textarea
-                        disabled={!permission.srcWritable}
-                        id={`src.items.${index}`}
-                        value={item.text}
-                        className="overflow-hidden w-72"
-                        onChange={(event) => {
-                          const subtitles = [...srcObj.subtitle]
-                          const subtitle = subtitles[index]
-                          if (subtitle) {
-                            subtitle.text = event.target.value
-                            handleChange("src", { ...srcObj, subtitle: subtitles })
-                          }
-                        }}
-                        onFocus={() => {
-                          if (reactPlayerRef.current) {
-                            const duration = reactPlayerRef.current.getDuration()
-                            reactPlayerRef.current.seekTo(item.from / 1000 / duration, "fraction")
-                            setFocusedIndex(index)
-                          }
-                        }}
-                      />
-                      <Textarea
-                        disabled={!permission.dstWritable}
-                        id={`dst.items.${index}`}
-                        value={dstItem?.text}
-                        className="overflow-hidden w-72"
-                        onChange={(event) => {
-                          const subtitles = [...dstObj.subtitle]
-                          const subtitle = subtitles[index]
-                          if (subtitle) {
-                            subtitle.text = event.target.value
-                          } else {
-                            subtitles[index] = {
-                              ...item,
-                              text: event.target.value
+                      return (
+                        <div key={`src-${index}`} className={`flex p-2 space-x-1 ${gray ? "bg-gray-100 dark:bg-gray-900" : ""}`}>
+                          <div className="flex flex-col text-slate-300">
+                            <Label className="text-xs">{timeFormat(item.from)}</Label>
+                            <Label className="text-xs">{timeFormat(item.to)}</Label>
+                          </div>
+                          <Textarea
+                            disabled={!permission.srcWritable}
+                            id={`src.items.${index}`}
+                            value={item.text}
+                            className="overflow-hidden w-72"
+                            onChange={(event) => {
+                              const subtitles = [...srcObj.subtitle]
+                              const subtitle = subtitles[index]
+                              if (subtitle) {
+                                subtitle.text = event.target.value
+                                handleChange("src", { ...srcObj, subtitle: subtitles })
+                              }
+                            }}
+                            onFocus={() => {
+                              if (reactPlayerRef.current) {
+                                const duration = reactPlayerRef.current.getDuration()
+                                reactPlayerRef.current.seekTo(item.from / 1000 / duration, "fraction")
+                                setFocusedIndex(index)
+                              }
+                            }}
+                          />
+                          <Textarea
+                            disabled={!permission.dstWritable}
+                            id={`dst.items.${index}`}
+                            value={dstItem?.text}
+                            className="overflow-hidden w-72"
+                            onChange={(event) => {
+                              const subtitles = [...dstObj.subtitle]
+                              const subtitle = subtitles[index]
+                              if (subtitle) {
+                                subtitle.text = event.target.value
+                              } else {
+                                subtitles[index] = {
+                                  ...item,
+                                  text: event.target.value
+                                }
+                              }
+                              handleChange("dst", { ...dstObj, subtitle: subtitles })
+                            }}
+                            onFocus={() => {
+                              if (reactPlayerRef.current) {
+                                const duration = reactPlayerRef.current.getDuration()
+                                reactPlayerRef.current.seekTo(item.from / 1000 / duration * 1.001, "fraction")
+                                setFocusedIndex(index)
+                              }
+                            }}
+                          />
+
+                        </div>
+                      )
+                    })
+                  }
+                </div>
+              </div>
+            </ScrollArea>
+          </TabsContent>
+
+          <TabsContent value="ost">
+            <ScrollArea className="h-[60vh] lg:h-[90vh]">
+              <div className="flex flex-col space-y-2 p-2">
+                {
+                  dstObj.ost && dstObj.ost.map((ost, index) => {
+                    return (
+                      <div
+                        key={`ost.${index}`}
+                        className="flex"
+                      >
+                        <div className="flex flex-col space-y-2">
+                          <Button variant="ghost" onClick={() => {
+                            handleChange("dst", o => {
+                              const d = clone(o ? (o as SubtitleType) : defaultValue)
+                              const ost = d.ost
+                              if (ost) {
+                                const t = ost[index]
+                                if (t && reactPlayerRef.current) {
+                                  t.from = reactPlayerRef.current.getCurrentTime() * 1000
+                                  if (t.to - t.from < 100) t.to = t.from + 1000
+                                  return d
+                                }
+                              }
+                              return d
+                            })
+                          }}>{timeFormat(ost.from)}</Button>
+                          <Button variant="ghost" onClick={() => {
+                            handleChange("dst", o => {
+                              const d = clone(o ? (o as SubtitleType) : defaultValue)
+                              const ost = d.ost
+                              if (ost) {
+                                const t = ost[index]
+                                if (t && reactPlayerRef.current) {
+                                  t.to = reactPlayerRef.current.getCurrentTime() * 1000
+                                  if (t.to - t.from < 100) t.to = t.from + 1000
+                                  return d
+                                }
+                              }
+                              return d
+                            })
+                          }}>{timeFormat(ost.to)}</Button>
+                        </div>
+                        <Textarea
+                          disabled={!permission.dstWritable}
+                          value={ost.text}
+                          className="overflow-hidden w-72"
+                          onChange={(v) => {
+                            handleChange("dst", o => {
+                              const d = clone(o ? (o as SubtitleType) : defaultValue)
+                              const ost = d.ost
+                              if (ost) {
+                                const t = ost[index]
+                                if (t) {
+                                  t.text = v.currentTarget.value
+                                  return d
+                                }
+                              }
+                              return d
+                            })
+                          }}
+                          onFocus={() => {
+                            if (reactPlayerRef.current) {
+                              const duration = reactPlayerRef.current.getDuration()
+                              reactPlayerRef.current.seekTo(ost.from / 1000 / duration * 1.001, "fraction")
+                              setFocusedIndex(index)
                             }
-                          }
-                          handleChange("dst", { ...dstObj, subtitle: subtitles })
-                        }}
-                        onFocus={() => {
-                          if (reactPlayerRef.current) {
-                            const duration = reactPlayerRef.current.getDuration()
-                            reactPlayerRef.current.seekTo(item.from / 1000 / duration * 1.001, "fraction")
-                            setFocusedIndex(index)
-                          }
-                        }}
-                      />
+                          }}
+                        />
 
-                    </div>
-                  )
-                })
-              }
-            </div>
-          </div>
-        </ScrollArea>
+                      </div>
+                    )
+                  })
+                }
+                <Button onClick={() => {
+                  handleChange("dst", o => {
+                    const d = clone(o ? (o as SubtitleType) : defaultValue)
+                    const osts = d.ost
+                    if (reactPlayerRef.current) {
+                      const from = reactPlayerRef.current.getCurrentTime() * 1000
+                      const to = from + 1000
+                      const o: OnScreenTextItem = {
+                        from: from,
+                        to: to,
+                        text: "",
+                        attr: {
+                          position: { x_percent: 0.1, y_percent: 0.1 }
+                        }
+                      }
+                      if (osts) {
+                        osts.push(o)
+                      } else {
+                        d.ost = [o]
+                      }
+                    }
+                    return d
+                  })
+
+                }}>
+                  Add one at current position.
+                </Button>
+              </div>
+            </ScrollArea>
+          </TabsContent>
+        </Tabs>
       </div >
     )
   })
