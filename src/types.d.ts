@@ -67,10 +67,10 @@ export type RelativePositionType = {
 export type OnScreenTextAttrType = {
   position: RelativePositionType,
   color?: string,
+  opacity?: string,
   bgColor?: string,
-  size?: number,
-  style?: "normal" | "bold" | "italic",
-  shadow?: boolean,
+  size?: string,
+  style?: "bold" | "italic",
   font?: string,
 }
 

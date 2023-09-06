@@ -144,8 +144,11 @@ const VideoPlayer = React.forwardRef<ReactPlayer, VideoPlayerProps & ReactPlayer
                   id={`${item.index}`}
                   className={cn(
                     "ost",
-                    "absolute select-none whitespace-pre",
+                    "absolute select-none whitespace-pre leading-snug",
                     item.attr.color ?? "text-white",
+                    item.attr.size ?? "text-[14px]",
+                    item.attr.style ?? "",
+                    "opacity-100",
                     !playing ? "cursor-pointer" : "cursor-default")}
                   style={{
                     transform: `translate(${item.attr.position.x_percent * VIDEO_WIDTH}px, ${item.attr.position.y_percent * VIDEO_HEIGHT}px)`,

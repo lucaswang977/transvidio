@@ -11,10 +11,11 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export function timeFormat(milliseconds: number, hasHour?: boolean, point?: string) {
+export function timeFormat(milliseconds: number, hasHour?: boolean, point?: string, msPad?: number) {
+  const msPadConfirm = msPad ?? 2
   const minutes = Math.floor(milliseconds / 1000 / 60).toString().padStart(2, '0')
   const seconds = Math.floor(milliseconds / 1000 % 60).toString().padStart(2, '0')
-  const millisecondsFormatted = Math.floor(milliseconds % 1000).toString().padStart(3, '0')
+  const millisecondsFormatted = Math.floor(milliseconds % 1000 / ((msPadConfirm === 2) ? 10 : 1)).toString().padStart(msPadConfirm, '0')
 
   if (hasHour && hasHour === true) {
     const hour = Math.floor(milliseconds / 1000 / 60 / 60).toString().padStart(2, '0')

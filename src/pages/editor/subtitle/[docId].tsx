@@ -11,13 +11,15 @@
 //   ],
 //   ost: [
 //     {
-//       startTime: 11.22,
-//       endTime: 22.33,
+//       from: 11.22,
+//       to: 22.33,
 //       text: "On screen text",
-//       size: 12,
-//       style: bold,
-//       color: white,
-//       position: {x: "20%", y: "-20%"}
+//       attr: {
+//         position: {x_percent: "0.2", y_percent: "0.2"}
+//         size: 12,
+//         style: bold,
+//         color: white,
+//       }
 //     },
 //     ...
 //   ]
@@ -259,7 +261,7 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
         <Tabs defaultValue="subtitle">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="subtitle">Subtitle</TabsTrigger>
-            <TabsTrigger value="ost">On-screen-text</TabsTrigger>
+            <TabsTrigger value="ost">On Screen Text</TabsTrigger>
           </TabsList>
           <TabsContent value="subtitle">
             <ScrollArea className="h-[60vh] lg:h-[90vh]">
@@ -356,37 +358,43 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
                         key={`ost.${index}`}
                         className="flex"
                       >
-                        <div className="flex flex-col space-y-2">
-                          <Button variant="ghost" onClick={() => {
-                            handleChange("dst", o => {
-                              const d = clone(o ? (o as SubtitleType) : defaultValue)
-                              const ost = d.ost
-                              if (ost) {
-                                const t = ost[index]
-                                if (t && reactPlayerRef.current) {
-                                  t.from = reactPlayerRef.current.getCurrentTime() * 1000
-                                  if (t.to - t.from < 100) t.to = t.from + 1000
-                                  return d
+                        <div className="flex flex-col space-y-2 px-2">
+                          <Button
+                            size="sm"
+                            className="text-xs text-gray-300"
+                            variant="ghost" onClick={() => {
+                              handleChange("dst", o => {
+                                const d = clone(o ? (o as SubtitleType) : defaultValue)
+                                const ost = d.ost
+                                if (ost) {
+                                  const t = ost[index]
+                                  if (t && reactPlayerRef.current) {
+                                    t.from = reactPlayerRef.current.getCurrentTime() * 1000
+                                    if (t.to - t.from < 100) t.to = t.from + 1000
+                                    return d
+                                  }
                                 }
-                              }
-                              return d
-                            })
-                          }}>{timeFormat(ost.from)}</Button>
-                          <Button variant="ghost" onClick={() => {
-                            handleChange("dst", o => {
-                              const d = clone(o ? (o as SubtitleType) : defaultValue)
-                              const ost = d.ost
-                              if (ost) {
-                                const t = ost[index]
-                                if (t && reactPlayerRef.current) {
-                                  t.to = reactPlayerRef.current.getCurrentTime() * 1000
-                                  if (t.to - t.from < 100) t.to = t.from + 1000
-                                  return d
+                                return d
+                              })
+                            }}>{timeFormat(ost.from)}</Button>
+                          <Button
+                            size="sm"
+                            className="text-xs text-gray-300"
+                            variant="ghost" onClick={() => {
+                              handleChange("dst", o => {
+                                const d = clone(o ? (o as SubtitleType) : defaultValue)
+                                const ost = d.ost
+                                if (ost) {
+                                  const t = ost[index]
+                                  if (t && reactPlayerRef.current) {
+                                    t.to = reactPlayerRef.current.getCurrentTime() * 1000
+                                    if (t.to - t.from < 100) t.to = t.from + 1000
+                                    return d
+                                  }
                                 }
-                              }
-                              return d
-                            })
-                          }}>{timeFormat(ost.to)}</Button>
+                                return d
+                              })
+                            }}>{timeFormat(ost.to)}</Button>
                         </div>
                         <Textarea
                           disabled={!permission.dstWritable}
@@ -414,37 +422,41 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
                             }
                           }}
                         />
+                        <div className="flex flex-col">
 
+                        </div>
                       </div>
                     )
                   })
                 }
-                <Button onClick={() => {
-                  handleChange("dst", o => {
-                    const d = clone(o ? (o as SubtitleType) : defaultValue)
-                    const osts = d.ost
-                    if (reactPlayerRef.current) {
-                      const from = reactPlayerRef.current.getCurrentTime() * 1000
-                      const to = from + 1000
-                      const o: OnScreenTextItem = {
-                        from: from,
-                        to: to,
-                        text: "",
-                        attr: {
-                          position: { x_percent: 0.1, y_percent: 0.1 }
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    handleChange("dst", o => {
+                      const d = clone(o ? (o as SubtitleType) : defaultValue)
+                      const osts = d.ost
+                      if (reactPlayerRef.current) {
+                        const from = reactPlayerRef.current.getCurrentTime() * 1000
+                        const to = from + 1000
+                        const o: OnScreenTextItem = {
+                          from: from,
+                          to: to,
+                          text: "",
+                          attr: {
+                            position: { x_percent: 0.1, y_percent: 0.1 }
+                          }
+                        }
+                        if (osts) {
+                          osts.push(o)
+                        } else {
+                          d.ost = [o]
                         }
                       }
-                      if (osts) {
-                        osts.push(o)
-                      } else {
-                        d.ost = [o]
-                      }
-                    }
-                    return d
-                  })
+                      return d
+                    })
 
-                }}>
-                  Add one at current position.
+                  }}>
+                  New OST
                 </Button>
               </div>
             </ScrollArea>
