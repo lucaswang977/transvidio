@@ -48,6 +48,18 @@ import {
   TabsList,
   TabsTrigger,
 } from "~/components/ui/tabs"
+import { Palette, Settings, TimerReset } from "lucide-react"
+
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "~/components/ui/dialog"
+import { Input } from "~/components/ui/input"
 
 const regexToSegementSentence = /[.!?)'"“”]+$/
 
@@ -350,7 +362,7 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
 
           <TabsContent value="ost">
             <ScrollArea className="h-[60vh] lg:h-[90vh]">
-              <div className="flex flex-col space-y-2 p-2">
+              <div className="flex flex-col space-y-2 pt-2 pr-1">
                 {
                   dstObj.ost && dstObj.ost.map((ost, index) => {
                     return (
@@ -358,7 +370,7 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
                         key={`ost.${index}`}
                         className="flex"
                       >
-                        <div className="flex flex-col space-y-2 px-2">
+                        <div className="flex flex-col space-y-2">
                           <Button
                             size="sm"
                             className="text-xs text-gray-300"
@@ -376,7 +388,10 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
                                 }
                                 return d
                               })
-                            }}>{timeFormat(ost.from)}</Button>
+                            }}>
+                            {timeFormat(ost.from)}
+                            <TimerReset className="h-3 w-3 ml-1" />
+                          </Button>
                           <Button
                             size="sm"
                             className="text-xs text-gray-300"
@@ -394,36 +409,113 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
                                 }
                                 return d
                               })
-                            }}>{timeFormat(ost.to)}</Button>
+                            }}>
+                            {timeFormat(ost.to)}
+                            <TimerReset className="h-3 w-3 ml-1" />
+                          </Button>
                         </div>
-                        <Textarea
-                          disabled={!permission.dstWritable}
-                          value={ost.text}
-                          className="overflow-hidden w-72"
-                          onChange={(v) => {
-                            handleChange("dst", o => {
-                              const d = clone(o ? (o as SubtitleType) : defaultValue)
-                              const ost = d.ost
-                              if (ost) {
-                                const t = ost[index]
-                                if (t) {
-                                  t.text = v.currentTarget.value
-                                  return d
+                        <div className="relative">
+                          <Textarea
+                            disabled={!permission.dstWritable}
+                            value={ost.text}
+                            className="overflow-hidden w-[500px]"
+                            onChange={(v) => {
+                              handleChange("dst", o => {
+                                const d = clone(o ? (o as SubtitleType) : defaultValue)
+                                const ost = d.ost
+                                if (ost) {
+                                  const t = ost[index]
+                                  if (t) {
+                                    t.text = v.currentTarget.value
+                                    return d
+                                  }
                                 }
+                                return d
+                              })
+                            }}
+                            onFocus={() => {
+                              if (reactPlayerRef.current) {
+                                const duration = reactPlayerRef.current.getDuration()
+                                reactPlayerRef.current.seekTo(ost.from / 1000 / duration * 1.001, "fraction")
+                                setFocusedIndex(index)
                               }
-                              return d
-                            })
-                          }}
-                          onFocus={() => {
-                            if (reactPlayerRef.current) {
-                              const duration = reactPlayerRef.current.getDuration()
-                              reactPlayerRef.current.seekTo(ost.from / 1000 / duration * 1.001, "fraction")
-                              setFocusedIndex(index)
-                            }
-                          }}
-                        />
-                        <div className="flex flex-col">
+                            }}
+                          />
+                          <div className="flex space-x-2 absolute bottom-2 right-3">
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="w-3 h-3 text-gray-300">
+                                  <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                                    <rect x="2" y="2" width="96" height="96" stroke="rgb(0,0,0)" stroke-width="2" fill="rgb(255,255,255)" />
+                                  </svg>
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent className="sm:max-w-[425px]">
+                                <DialogHeader>
+                                  <DialogTitle>On Screen Text Settings</DialogTitle>
+                                  <DialogDescription>
+                                    Make changes to your profile here. Click save when youre done.
+                                  </DialogDescription>
+                                </DialogHeader>
+                                <div className="grid gap-4 py-4">
+                                  <div className="grid grid-cols-4 items-center gap-4">
+                                    <Label htmlFor="name" className="text-right">
+                                      Name
+                                    </Label>
+                                    <Input id="name" value="Pedro Duarte" className="col-span-3" />
+                                  </div>
+                                  <div className="grid grid-cols-4 items-center gap-4">
+                                    <Label htmlFor="username" className="text-right">
+                                      Username
+                                    </Label>
+                                    <Input id="username" value="@peduarte" className="col-span-3" />
+                                  </div>
+                                </div>
+                                <DialogFooter>
+                                  <Button type="submit">Save changes</Button>
+                                </DialogFooter>
+                              </DialogContent>
+                            </Dialog>
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="w-3 h-3 text-gray-300 text-xs">
+                                  14
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent className="sm:max-w-[425px]">
+                                <DialogHeader>
+                                  <DialogTitle>On Screen Text Settings</DialogTitle>
+                                  <DialogDescription>
+                                    Make changes to your profile here. Click save when youre done.
+                                  </DialogDescription>
+                                </DialogHeader>
+                                <div className="grid gap-4 py-4">
+                                  <div className="grid grid-cols-4 items-center gap-4">
+                                    <Label htmlFor="name" className="text-right">
+                                      Name
+                                    </Label>
+                                    <Input id="name" value="Pedro Duarte" className="col-span-3" />
+                                  </div>
+                                  <div className="grid grid-cols-4 items-center gap-4">
+                                    <Label htmlFor="username" className="text-right">
+                                      Username
+                                    </Label>
+                                    <Input id="username" value="@peduarte" className="col-span-3" />
+                                  </div>
+                                </div>
+                                <DialogFooter>
+                                  <Button type="submit">Save changes</Button>
+                                </DialogFooter>
+                              </DialogContent>
+                            </Dialog>
 
+                          </div>
                         </div>
                       </div>
                     )
@@ -431,6 +523,7 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
                 }
                 <Button
                   variant="outline"
+                  className="w-[600px]"
                   onClick={() => {
                     handleChange("dst", o => {
                       const d = clone(o ? (o as SubtitleType) : defaultValue)
