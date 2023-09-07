@@ -157,25 +157,44 @@ export const getAllConfigs = async () => {
 }
 
 export const convertToColorCode = (twColor?: string, opacity?: string) => {
+  const colors = {
+    primaryColorCode: "",
+    borderColorCode: "FF000000",
+    shadowColorCode: "FF000000",
+  }
+
   let alphaColorCode = ""
 
   if (opacity) {
     const s = opacity.split("-")[1]
     if (s) alphaColorCode = s
   }
+
   if (twColor) {
     switch (twColor) {
-      case "text-red-500": alphaColorCode = `${alphaColorCode}EF4444`
-      case "text-green-500": alphaColorCode = `${alphaColorCode}22C55E`
-      case "text-blue-500": alphaColorCode = `${alphaColorCode}3B82F6`
-      case "text-yellow-500": alphaColorCode = `${alphaColorCode}EAB308`
-      case "text-white": alphaColorCode = `${alphaColorCode}FFFFFF`
-      case "text-black": alphaColorCode = `${alphaColorCode}000000`
+      case "text-red-500":
+        colors.primaryColorCode = `${alphaColorCode}4444EF`
+        break
+      case "text-green-500":
+        colors.primaryColorCode = `${alphaColorCode}5EC522`
+        break
+      case "text-blue-500":
+        colors.primaryColorCode = `${alphaColorCode}F6823B`
+        break
+      case "text-yellow-500":
+        colors.primaryColorCode = `${alphaColorCode}08B3EA`
+        break
+      case "text-white":
+        colors.primaryColorCode = `${alphaColorCode}FFFFFF`
+        break
+      case "text-black":
+        colors.primaryColorCode = `${alphaColorCode}000000`
+        break
     }
   } else {
-    alphaColorCode = `${alphaColorCode}FFFFFF`
+    colors.primaryColorCode = `${alphaColorCode}FFFFFF`
   }
 
-  return alphaColorCode
+  return colors
 }
 

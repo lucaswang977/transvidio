@@ -67,7 +67,7 @@ const generateAssString = (obj: SubtitleType, main: boolean) => {
     return text.replaceAll("\n", "\\N").replaceAll(" ", "\\h")
   }
 
-  const assHeader = `[Script Info]\n Title: Subtitle Example\n ScriptType: v4.00+\n Collisions: Normal\n PlayResX: 1920\n PlayResY: 1080\n Timer: 100.0000\n\n [V4+ Styles]\n Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\n Style: Default,Noto Sans CJK SC,56,&H00FFFFFF,&H00000000,&H00000000,&H80000000,-1,0,0,0,100,100,0,0,1,2,2,2,10,10,10,1\n\n [Events]\n Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text`
+  const assHeader = `[Script Info]\n Title: Subtitle Example\n ScriptType: v4.00+\n Collisions: Normal\n PlayResX: 1920\n PlayResY: 1080\n Timer: 100.0000\n\n [V4+ Styles]\n Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\n Style: Default,Noto Sans CJK SC,56,&H00FFFFFF,&H00000000,&HFF000000,&HFF000000,-1,0,0,0,100,100,0,0,1,2,2,2,10,10,10,1\n\n [Events]\n Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text`
   const assOnScreenText = obj.ost ? obj.ost.map((item) => {
     let style = `\\an7\\pos(${Math.floor(item.attr.position.x_percent * 1920)},${Math.floor(item.attr.position.y_percent * 1080)})`
 
@@ -76,7 +76,8 @@ const generateAssString = (obj: SubtitleType, main: boolean) => {
     }
 
     if (item.attr.color || item.attr.opacity) {
-      style = `${style}\\c&H${convertToColorCode(item.attr.color, item.attr.opacity)}&`
+      const colors = convertToColorCode(item.attr.color, item.attr.opacity)
+      style = `${style}\\1c&H${colors.primaryColorCode}&\\3c&H${colors.borderColorCode}&\\4c&H${colors.shadowColorCode}&`
     }
 
     return `Dialogue: 0,${timeFormat(item.from, true)},${timeFormat(item.to, true)},Default,,0,0,0,,{${style}}${escapeText(item.text)}`
