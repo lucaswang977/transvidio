@@ -51,6 +51,7 @@ const VideoPlayer = React.forwardRef<ReactPlayer, VideoPlayerProps & ReactPlayer
     const VIDEO_WIDTH = 640
     const ostWrapperRef = React.useRef<HTMLDivElement>(null)
     const dndState = React.useRef<DndStateType>(clone(defaultDndStateValue))
+    const [ready, setReady] = React.useState(false)
     const [playing, setPlaying] = React.useState(false)
     const [progress, setProgress] = React.useState(0)
     const [duration, setDuration] = React.useState(-1)
@@ -59,7 +60,6 @@ const VideoPlayer = React.forwardRef<ReactPlayer, VideoPlayerProps & ReactPlayer
       dndState.current = clone(defaultDndStateValue)
       window.removeEventListener("mouseup", handleMouseUp);
       window.removeEventListener("mousemove", handleMouseMove);
-      console.log(dndState.current)
     }
 
     const handleMouseMove = (ev: MouseEvent) => {
@@ -88,7 +88,6 @@ const VideoPlayer = React.forwardRef<ReactPlayer, VideoPlayerProps & ReactPlayer
 
       if (ostWrapperRef.current && dndState.current.state === "idle") {
         const nodes = ostWrapperRef.current.querySelectorAll("div.ost")
-        console.log(nodes)
         nodes.forEach(item => {
           const rect = item.getBoundingClientRect()
           if (isInBound(ev.clientX, ev.clientY, rect)) {
@@ -98,7 +97,6 @@ const VideoPlayer = React.forwardRef<ReactPlayer, VideoPlayerProps & ReactPlayer
           }
         })
       }
-      console.log(dndState.current)
     }
 
     React.useEffect(() => {
@@ -108,7 +106,7 @@ const VideoPlayer = React.forwardRef<ReactPlayer, VideoPlayerProps & ReactPlayer
           window.removeEventListener("mousedown", handleMouseDown);
         }
       }
-    }, [playing])
+    }, [playing, props.ost])
 
     return (
       <div className={cn("flex flex-col space-y-1", className)}>
@@ -123,6 +121,7 @@ const VideoPlayer = React.forwardRef<ReactPlayer, VideoPlayerProps & ReactPlayer
               width={VIDEO_WIDTH}
               playing={playing}
               progressInterval={100}
+              onReady={() => { setReady(true) }}
               onDuration={(duration) => { setDuration(duration) }}
               onProgress={(state) => {
                 const p = state.playedSeconds / duration
@@ -167,10 +166,11 @@ const VideoPlayer = React.forwardRef<ReactPlayer, VideoPlayerProps & ReactPlayer
           </div>
         </div>
         <div className="p-1 border w-full rounded flex flex-col space-y-2">
-          <div className="flex space-x-2 p-2">
-            <p className="text-xs"> {timeFormat(progress * duration * 1000)} </p>
+          <div className="flex p-2 items-center">
+            <p className="text-xs w-fit grow-0 pr-2"> {ready ? timeFormat(progress * duration * 1000) : "..."} </p>
             <Slider
-              className="px-4 cursor-pointer w-4/5"
+              disabled={!ready}
+              className="px-4 cursor-pointer grow"
               value={[progress]}
               onValueChange={(v) => {
                 if (v[0]) {
@@ -181,17 +181,19 @@ const VideoPlayer = React.forwardRef<ReactPlayer, VideoPlayerProps & ReactPlayer
                 }
               }}
               max={1}
+              min={0}
               step={0.001} />
-            <p className="text-xs"> {timeFormat(duration * 1000)} </p>
+            <p className="text-xs w-fit grow-0"> {ready ? timeFormat(duration * 1000) : "..."} </p>
           </div>
           <div className="flex space-x-1 items-center justify-center pb-2">
             <Button
+              disabled={!ready}
               onClick={() => {
                 let pos = duration * progress - 0.1
                 if (pos < 0) pos = 0
                 else if (pos > duration) pos = duration
                 if (ref) {
-                  (ref as { current: ReactPlayer }).current.seekTo(pos)
+                  (ref as { current: ReactPlayer }).current.seekTo(pos, "seconds")
                 }
               }}
               size="icon"
@@ -201,17 +203,19 @@ const VideoPlayer = React.forwardRef<ReactPlayer, VideoPlayerProps & ReactPlayer
 
             <Button
               onClick={() => { setPlaying(!playing) }}
+              disabled={!ready}
               size="icon"
               variant="outline">
               {!playing ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
             </Button>
             <Button
+              disabled={!ready}
               onClick={() => {
                 let pos = duration * progress + 0.1
                 if (pos < 0) pos = 0
                 else if (pos > duration) pos = duration
                 if (ref) {
-                  (ref as { current: ReactPlayer }).current.seekTo(pos)
+                  (ref as { current: ReactPlayer }).current.seekTo(pos, "seconds")
                 }
               }}
               size="icon"

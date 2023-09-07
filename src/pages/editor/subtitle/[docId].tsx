@@ -35,7 +35,7 @@ import { Textarea } from "~/components/ui/textarea"
 import type { SubtitleType, ProjectAiParamters, RelativePositionType, OnScreenTextItem } from "~/types"
 import { ScrollArea } from "~/components/ui/scroll-area"
 
-import { timeFormat } from "~/utils/helper"
+import { cn, timeFormat } from "~/utils/helper"
 import type { NextPageWithLayout } from "~/pages/_app"
 import type ReactPlayer from "react-player";
 import { clone } from "ramda";
@@ -48,18 +48,28 @@ import {
   TabsList,
   TabsTrigger,
 } from "~/components/ui/tabs"
-import { Palette, Settings, TimerReset } from "lucide-react"
+import { MoreHorizontal, PlusCircle, TimerReset, Trash, } from "lucide-react"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "~/components/ui/dropdown-menu"
 
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "~/components/ui/dialog"
-import { Input } from "~/components/ui/input"
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "~/components/ui/popover"
+
+import { Icons } from "~/components/ui/icons"
+import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "~/components/ui/tooltip"
 
 const regexToSegementSentence = /[.!?)'"“”]+$/
 
@@ -307,7 +317,7 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
                             disabled={!permission.srcWritable}
                             id={`src.items.${index}`}
                             value={item.text}
-                            className="overflow-hidden w-72"
+                            className="overflow-hidden w-72 resize-none"
                             onChange={(event) => {
                               const subtitles = [...srcObj.subtitle]
                               const subtitle = subtitles[index]
@@ -328,7 +338,7 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
                             disabled={!permission.dstWritable}
                             id={`dst.items.${index}`}
                             value={dstItem?.text}
-                            className="overflow-hidden w-72"
+                            className="overflow-hidden w-72 resize-none"
                             onChange={(event) => {
                               const subtitles = [...dstObj.subtitle]
                               const subtitle = subtitles[index]
@@ -389,8 +399,19 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
                                 return d
                               })
                             }}>
-                            {timeFormat(ost.from)}
-                            <TimerReset className="h-3 w-3 ml-1" />
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger>
+                                  <div className="flex space-x-1 items-center">
+                                    <TimerReset className="h-3 w-3" />
+                                    <p>{timeFormat(ost.from)}</p>
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Use video position as the timestamp</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
                           </Button>
                           <Button
                             size="sm"
@@ -410,15 +431,26 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
                                 return d
                               })
                             }}>
-                            {timeFormat(ost.to)}
-                            <TimerReset className="h-3 w-3 ml-1" />
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger>
+                                  <div className="flex space-x-1 items-center">
+                                    <TimerReset className="h-3 w-3" />
+                                    <p>{timeFormat(ost.to)}</p>
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Use video position as the timestamp</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
                           </Button>
                         </div>
                         <div className="relative">
                           <Textarea
                             disabled={!permission.dstWritable}
                             value={ost.text}
-                            className="overflow-hidden w-[500px]"
+                            className="overflow-hidden w-[500px] resize-none"
                             onChange={(v) => {
                               handleChange("dst", o => {
                                 const d = clone(o ? (o as SubtitleType) : defaultValue)
@@ -442,79 +474,140 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
                             }}
                           />
                           <div className="flex space-x-2 absolute bottom-2 right-3">
-                            <Dialog>
-                              <DialogTrigger asChild>
+                            <Popover>
+                              <PopoverTrigger asChild>
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  className="w-3 h-3 text-gray-300">
-                                  <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                                    <rect x="2" y="2" width="96" height="96" stroke="rgb(0,0,0)" stroke-width="2" fill="rgb(255,255,255)" />
-                                  </svg>
+                                  className={cn("w-3 h-3", ost.attr.color ?? "text-white")}>
+                                  <Icons.rect
+                                    fillOpacity={ost.attr.opacity ? parseInt(ost.attr.opacity) / 100 : 100}
+                                  />
                                 </Button>
-                              </DialogTrigger>
-                              <DialogContent className="sm:max-w-[425px]">
-                                <DialogHeader>
-                                  <DialogTitle>On Screen Text Settings</DialogTitle>
-                                  <DialogDescription>
-                                    Make changes to your profile here. Click save when youre done.
-                                  </DialogDescription>
-                                </DialogHeader>
-                                <div className="grid gap-4 py-4">
-                                  <div className="grid grid-cols-4 items-center gap-4">
-                                    <Label htmlFor="name" className="text-right">
-                                      Name
-                                    </Label>
-                                    <Input id="name" value="Pedro Duarte" className="col-span-3" />
-                                  </div>
-                                  <div className="grid grid-cols-4 items-center gap-4">
-                                    <Label htmlFor="username" className="text-right">
-                                      Username
-                                    </Label>
-                                    <Input id="username" value="@peduarte" className="col-span-3" />
-                                  </div>
-                                </div>
-                                <DialogFooter>
-                                  <Button type="submit">Save changes</Button>
-                                </DialogFooter>
-                              </DialogContent>
-                            </Dialog>
-                            <Dialog>
-                              <DialogTrigger asChild>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-fit text-sm text-gray-600">
+                                <RadioGroup
+                                  defaultValue={ost.attr.color ?? "text-white"}
+                                  onValueChange={(v) => {
+                                    handleChange("dst", o => {
+                                      const d = clone(o ? (o as SubtitleType) : defaultValue)
+                                      const ost = d.ost
+                                      if (ost) {
+                                        const t = ost[index]
+                                        if (t) {
+                                          t.attr.color = v
+                                          return d
+                                        }
+                                      }
+                                      return d
+                                    })
+                                  }}
+                                >
+                                  {
+                                    [
+                                      "text-white",
+                                      "text-black",
+                                      "text-red-500",
+                                      "text-green-500",
+                                      "text-blue-500",
+                                      "text-yellow-500"
+                                    ].map(item => {
+                                      return (
+                                        <div key={item} className="flex items-center space-x-1">
+                                          <RadioGroupItem value={item} />
+                                          <Icons.rect className={`h-3 w-3 ${item}`}
+                                          />
+                                          <p className="ml-2">{item}</p>
+                                        </div>
+                                      )
+                                    })
+                                  }
+                                </RadioGroup>
+                              </PopoverContent>
+                            </Popover>
+                            <Popover>
+                              <PopoverTrigger asChild>
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  className="w-3 h-3 text-gray-300 text-xs">
+                                  className="w-3 h-3 text-gray-500 text-[11px]">
                                   14
                                 </Button>
-                              </DialogTrigger>
-                              <DialogContent className="sm:max-w-[425px]">
-                                <DialogHeader>
-                                  <DialogTitle>On Screen Text Settings</DialogTitle>
-                                  <DialogDescription>
-                                    Make changes to your profile here. Click save when youre done.
-                                  </DialogDescription>
-                                </DialogHeader>
-                                <div className="grid gap-4 py-4">
-                                  <div className="grid grid-cols-4 items-center gap-4">
-                                    <Label htmlFor="name" className="text-right">
-                                      Name
-                                    </Label>
-                                    <Input id="name" value="Pedro Duarte" className="col-span-3" />
-                                  </div>
-                                  <div className="grid grid-cols-4 items-center gap-4">
-                                    <Label htmlFor="username" className="text-right">
-                                      Username
-                                    </Label>
-                                    <Input id="username" value="@peduarte" className="col-span-3" />
-                                  </div>
-                                </div>
-                                <DialogFooter>
-                                  <Button type="submit">Save changes</Button>
-                                </DialogFooter>
-                              </DialogContent>
-                            </Dialog>
-
+                              </PopoverTrigger>
+                              <PopoverContent className="w-fit text-sm">
+                                <RadioGroup
+                                  defaultValue={ost.attr.size ?? "text-[14px]"}
+                                  onValueChange={(v) => {
+                                    handleChange("dst", o => {
+                                      const d = clone(o ? (o as SubtitleType) : defaultValue)
+                                      const ost = d.ost
+                                      if (ost) {
+                                        const t = ost[index]
+                                        if (t) {
+                                          t.attr.size = v
+                                          return d
+                                        }
+                                      }
+                                      return d
+                                    })
+                                  }}
+                                >
+                                  {
+                                    [
+                                      "text-[10px]",
+                                      "text-[11px]",
+                                      "text-[12px]",
+                                      "text-[13px]",
+                                      "text-[14px]",
+                                      "text-[15px]",
+                                      "text-[16px]",
+                                      "text-[17px]",
+                                      "text-[18px]",
+                                      "text-[19px]",
+                                      "text-[20px]",
+                                    ].map(item => {
+                                      return (
+                                        <div key={item} className="flex items-center space-x-1">
+                                          <RadioGroupItem value={item} />
+                                          <p className="ml-2">{item}</p>
+                                        </div>
+                                      )
+                                    })
+                                  }
+                                </RadioGroup>
+                              </PopoverContent>
+                            </Popover>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className={cn("w-3 h-3", "text-gray-500")}>
+                                  <MoreHorizontal />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent>
+                                <DropdownMenuItem
+                                  className="flex space-x-2 text-sm"
+                                  onSelect={() => {
+                                    handleChange("dst", o => {
+                                      const d = clone(o ? (o as SubtitleType) : defaultValue)
+                                      const ost = d.ost
+                                      if (ost) {
+                                        const t = ost[index]
+                                        if (t) {
+                                          ost.splice(index, 1)
+                                          return d
+                                        }
+                                      }
+                                      return d
+                                    })
+                                  }}
+                                >
+                                  <Trash className="h-3 w-3" /><p>Remove</p>
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </div>
                         </div>
                       </div>
@@ -523,7 +616,7 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
                 }
                 <Button
                   variant="outline"
-                  className="w-[600px]"
+                  className="w-[600px] flex text-gray-600"
                   onClick={() => {
                     handleChange("dst", o => {
                       const d = clone(o ? (o as SubtitleType) : defaultValue)
@@ -549,7 +642,8 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
                     })
 
                   }}>
-                  New OST
+                  <PlusCircle className="h-4 w-4 mr-1" />
+                  New
                 </Button>
               </div>
             </ScrollArea>

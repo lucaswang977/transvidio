@@ -157,4 +157,14 @@ export const Icons = {
       />
     </svg>
   ),
+  rect: (props: LucideProps) => (
+    <svg role="img" viewBox="0 0 100 100" {...props} >
+      <rect
+        fill="currentColor"
+        x="2" y="2"
+        width="96" height="96"
+        stroke="rgb(0,0,0)" strokeWidth="2" />
+    </svg>
+  )
+
 }

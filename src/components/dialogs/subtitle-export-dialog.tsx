@@ -3,7 +3,7 @@ import { DialogHeader, DialogTitle } from "~/components/ui/dialog"
 import { Separator } from "~/components/ui/separator";
 import { Button } from "~/components/ui/button";
 import { Download } from "lucide-react";
-import { timeFormat } from "~/utils/helper"
+import { convertToColorCode, timeFormat } from "~/utils/helper"
 import type { SubtitleType } from "~/types";
 
 type SubtitleExportDialogProps = {
@@ -55,31 +55,12 @@ const generateAssString = (obj: SubtitleType, main: boolean) => {
       case "text-[14px]": return "56"
       case "text-[15px]": return "60"
       case "text-[16px]": return "64"
+      case "text-[17px]": return "68"
+      case "text-[18px]": return "72"
+      case "text-[19px]": return "76"
+      case "text-[20px]": return "80"
       default: return "56"
     }
-  }
-
-  const convertColor = (color?: string, opacity?: string) => {
-    let alphaColorCode = ""
-
-    if (opacity) {
-      const s = opacity.split("-")[1]
-      if (s) alphaColorCode = s
-    }
-    if (color) {
-      switch (color) {
-        case "text-red-500": alphaColorCode = `${alphaColorCode}EF4444`
-        case "text-green-500": alphaColorCode = `${alphaColorCode}22C55E`
-        case "text-blue-500": alphaColorCode = `${alphaColorCode}3B82F6`
-        case "text-yellow-500": alphaColorCode = `${alphaColorCode}EAB308`
-        case "text-white": alphaColorCode = `${alphaColorCode}FFFFFF`
-        case "text-black": alphaColorCode = `${alphaColorCode}000000`
-      }
-    } else {
-      alphaColorCode = `${alphaColorCode}FFFFFF`
-    }
-
-    return alphaColorCode
   }
 
   const escapeText = (text: string) => {
@@ -95,7 +76,7 @@ const generateAssString = (obj: SubtitleType, main: boolean) => {
     }
 
     if (item.attr.color || item.attr.opacity) {
-      style = `${style}\\c&H${convertColor(item.attr.color, item.attr.opacity)}&`
+      style = `${style}\\c&H${convertToColorCode(item.attr.color, item.attr.opacity)}&`
     }
 
     return `Dialogue: 0,${timeFormat(item.from, true)},${timeFormat(item.to, true)},Default,,0,0,0,,{${style}}${escapeText(item.text)}`

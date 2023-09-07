@@ -156,4 +156,26 @@ export const getAllConfigs = async () => {
   return allConfigs
 }
 
+export const convertToColorCode = (twColor?: string, opacity?: string) => {
+  let alphaColorCode = ""
+
+  if (opacity) {
+    const s = opacity.split("-")[1]
+    if (s) alphaColorCode = s
+  }
+  if (twColor) {
+    switch (twColor) {
+      case "text-red-500": alphaColorCode = `${alphaColorCode}EF4444`
+      case "text-green-500": alphaColorCode = `${alphaColorCode}22C55E`
+      case "text-blue-500": alphaColorCode = `${alphaColorCode}3B82F6`
+      case "text-yellow-500": alphaColorCode = `${alphaColorCode}EAB308`
+      case "text-white": alphaColorCode = `${alphaColorCode}FFFFFF`
+      case "text-black": alphaColorCode = `${alphaColorCode}000000`
+    }
+  } else {
+    alphaColorCode = `${alphaColorCode}FFFFFF`
+  }
+
+  return alphaColorCode
+}
 
