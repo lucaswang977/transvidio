@@ -531,7 +531,9 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
                                   variant="ghost"
                                   size="icon"
                                   className="w-3 h-3 text-gray-500 text-[11px]">
-                                  14
+                                  {
+                                    ost.attr.size ? (ost.attr.size.match(/\[(\d+)px\]/)?.[1] || "14") : "14"
+                                  }
                                 </Button>
                               </PopoverTrigger>
                               <PopoverContent className="w-fit text-sm">
