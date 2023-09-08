@@ -48,7 +48,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "~/components/ui/tabs"
-import { MoreHorizontal, PlusCircle, TimerReset, Trash, } from "lucide-react"
+import { AlertTriangle, Copy, MoreHorizontal, PlusCircle, TimerReset, Trash } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -401,7 +401,7 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
                             }}>
                             <TooltipProvider>
                               <Tooltip>
-                                <TooltipTrigger>
+                                <TooltipTrigger asChild>
                                   <div className="flex space-x-1 items-center">
                                     <TimerReset className="h-3 w-3" />
                                     <p>{timeFormat(ost.from)}</p>
@@ -433,7 +433,7 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
                             }}>
                             <TooltipProvider>
                               <Tooltip>
-                                <TooltipTrigger>
+                                <TooltipTrigger asChild>
                                   <div className="flex space-x-1 items-center">
                                     <TimerReset className="h-3 w-3" />
                                     <p>{timeFormat(ost.to)}</p>
@@ -474,6 +474,21 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
                             }}
                           />
                           <div className="flex space-x-2 absolute bottom-2 right-3">
+                            {
+                              /\n{2,}/.test(ost.text) &&
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <AlertTriangle className="h-3 w-3 text-red-400 mr-2" />
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Do not use consecutive line breaks for text layout,</p>
+                                    <p>create multiple On Screen Texts instead.</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+
+                            }
                             <Popover>
                               <PopoverTrigger asChild>
                                 <Button
@@ -589,6 +604,26 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent>
+                                <DropdownMenuItem
+                                  className="flex space-x-2 text-sm"
+                                  onSelect={() => {
+                                    handleChange("dst", o => {
+                                      const d = clone(o ? (o as SubtitleType) : defaultValue)
+                                      const ost = d.ost
+                                      if (ost) {
+                                        const t = ost[index]
+                                        if (t) {
+                                          ost.splice(index, 0, clone(t))
+                                          return d
+                                        }
+                                      }
+                                      return d
+                                    })
+                                  }}
+                                >
+                                  <Copy className="h-3 w-3" /><p>Duplicate</p>
+                                </DropdownMenuItem>
+
                                 <DropdownMenuItem
                                   className="flex space-x-2 text-sm"
                                   onSelect={() => {
