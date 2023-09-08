@@ -151,7 +151,7 @@ const VideoPlayer = React.forwardRef<ReactPlayer, VideoPlayerProps & ReactPlayer
                     !playing ? "cursor-pointer" : "cursor-default")}
                   style={{
                     transform: `translate(${item.attr.position.x_percent * VIDEO_WIDTH}px, ${item.attr.position.y_percent * VIDEO_HEIGHT}px)`,
-                    lineHeight: "0.85",
+                    lineHeight: "1.3",
                   }}
                 >{item.text}</div>)
               })
