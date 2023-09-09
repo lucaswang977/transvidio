@@ -144,7 +144,7 @@ export function UserProfileDialog(props: UserProfileDialogProps) {
                 </Select >
                 {
                   data.paymentCurrency &&
-                  <p className="text-xs text-gray-500">* Your incoming will be paid in {data.paymentCurrency}.</p>
+                  <p className="text-xs text-gray-500">* Your earnings will be paid in {data.paymentCurrency}.</p>
                 }
 
               </div>
