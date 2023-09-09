@@ -8,6 +8,8 @@ import { Slider } from "~/components/ui/slider"
 import { ArrowBigLeftDash, ArrowBigRightDash, Pause, Play } from "lucide-react"
 import type { OnScreenTextAttrType, RelativePositionType } from "~/types"
 import { clone } from "ramda"
+import { tooltipWrapped } from "~/components/ui/tooltip"
+import { Select, SelectTrigger, SelectItem, SelectContent, SelectValue, SelectLabel } from "~/components/ui/select"
 
 
 export interface VideoPlayerProps extends React.HTMLAttributes<HTMLVideoElement> {
@@ -55,6 +57,7 @@ const VideoPlayer = React.forwardRef<ReactPlayer, VideoPlayerProps & ReactPlayer
     const [playing, setPlaying] = React.useState(false)
     const [progress, setProgress] = React.useState(0)
     const [duration, setDuration] = React.useState(-1)
+    const [playbackRate, setPlaybackRate] = React.useState(1)
 
     const handleMouseUp = (_ev: MouseEvent) => {
       dndState.current = clone(defaultDndStateValue)
@@ -120,6 +123,7 @@ const VideoPlayer = React.forwardRef<ReactPlayer, VideoPlayerProps & ReactPlayer
               height={VIDEO_HEIGHT}
               width={VIDEO_WIDTH}
               playing={playing}
+              playbackRate={playbackRate}
               progressInterval={100}
               onReady={() => { setReady(true) }}
               onDuration={(duration) => { setDuration(duration) }}
@@ -186,43 +190,81 @@ const VideoPlayer = React.forwardRef<ReactPlayer, VideoPlayerProps & ReactPlayer
               step={0.001} />
             <p className="text-xs w-fit grow-0"> {ready ? timeFormat(duration * 1000) : "..."} </p>
           </div>
-          <div className="flex space-x-1 items-center justify-center pb-2">
-            <Button
-              disabled={!ready}
-              onClick={() => {
-                let pos = duration * progress - 0.1
-                if (pos < 0) pos = 0
-                else if (pos > duration) pos = duration
-                if (ref) {
-                  (ref as { current: ReactPlayer }).current.seekTo(pos, "seconds")
-                }
-              }}
-              size="icon"
-              variant="outline">
-              <ArrowBigLeftDash className="w-4 h-4" />
-            </Button>
-
-            <Button
-              onClick={() => { setPlaying(!playing) }}
-              disabled={!ready}
-              size="icon"
-              variant="outline">
-              {!playing ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
-            </Button>
-            <Button
-              disabled={!ready}
-              onClick={() => {
-                let pos = duration * progress + 0.1
-                if (pos < 0) pos = 0
-                else if (pos > duration) pos = duration
-                if (ref) {
-                  (ref as { current: ReactPlayer }).current.seekTo(pos, "seconds")
-                }
-              }}
-              size="icon"
-              variant="outline">
-              <ArrowBigRightDash className="w-4 h-4" />
-            </Button>
+          <div className="grid grid-cols-[1fr_auto_1fr] pb-2">
+            <div />
+            <div className="flex space-x-1">
+              {
+                tooltipWrapped(
+                  <Button
+                    disabled={!ready}
+                    onClick={() => {
+                      let pos = duration * progress - 0.1
+                      if (pos < 0) pos = 0
+                      else if (pos > duration) pos = duration
+                      if (ref) {
+                        (ref as { current: ReactPlayer }).current.seekTo(pos, "seconds")
+                      }
+                    }}
+                    size="icon"
+                    variant="outline">
+                    <ArrowBigLeftDash className="w-4 h-4" />
+                  </Button>
+                  ,
+                  <p>Backward 0.1 second</p>
+                )
+              }
+              {
+                tooltipWrapped(
+                  <Button
+                    onClick={() => { setPlaying(!playing) }}
+                    disabled={!ready}
+                    size="icon"
+                    variant="outline">
+                    {!playing ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
+                  </Button>,
+                  <p>{!playing ? "Play" : "Pause"}</p>
+                )
+              }
+              {
+                tooltipWrapped(
+                  <Button
+                    disabled={!ready}
+                    onClick={() => {
+                      let pos = duration * progress + 0.1
+                      if (pos < 0) pos = 0
+                      else if (pos > duration) pos = duration
+                      if (ref) {
+                        (ref as { current: ReactPlayer }).current.seekTo(pos, "seconds")
+                      }
+                    }}
+                    size="icon"
+                    variant="outline">
+                    <ArrowBigRightDash className="w-4 h-4" />
+                  </Button>
+                  ,
+                  <p>Forward 0.1 second</p>
+                )
+              }
+            </div>
+            <div className="flex justify-end pr-2">
+              <div className="w-fit">
+                <Select
+                  onValueChange={(v) => {
+                    setPlaybackRate(parseFloat(v))
+                  }}
+                  defaultValue={playbackRate.toString()}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="1x" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem key="1x" value="1">1x</SelectItem>
+                    <SelectItem key="1.5x" value="1.5">1.5x</SelectItem>
+                    <SelectItem key="2x" value="2">2x</SelectItem>
+                    <SelectItem key="3x" value="3">3x</SelectItem>
+                  </SelectContent>
+                </Select >
+              </div>
+            </div>
           </div>
         </div>
       </div>
