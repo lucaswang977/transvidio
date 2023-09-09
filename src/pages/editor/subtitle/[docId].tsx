@@ -68,12 +68,125 @@ import { tooltipWrapped } from "~/components/ui/tooltip"
 
 const regexToSegementSentence = /[.!?)'"“”]+$/
 
+const ColorSelectPopover = (
+  props: {
+    color: string | undefined,
+    opacity: string | undefined,
+    onSelect: (v: string) => void
+  }
+) => {
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          className={cn("w-3 h-3", props.color ?? "text-white")}>
+          <Icons.rect
+            fillOpacity={props.opacity ? parseInt(props.opacity) / 100 : 100}
+          />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-fit text-sm text-gray-600">
+        <RadioGroup
+          defaultValue={props.color ?? "text-white"}
+          onValueChange={(v) => { props.onSelect(v) }}
+        >
+          {
+            [
+              "text-white",
+              "text-black",
+              "text-red-500",
+              "text-green-500",
+              "text-blue-500",
+              "text-yellow-500"
+            ].map(item => {
+              return (
+                <div key={item} className="flex items-center space-x-1">
+                  <RadioGroupItem value={item} />
+                  <Icons.rect className={`h-3 w-3 ${item}`}
+                  />
+                  <p className="ml-2">{item}</p>
+                </div>
+              )
+            })
+          }
+        </RadioGroup>
+      </PopoverContent>
+    </Popover>
+  )
+}
+
+const FontSizeSelectPopover = (
+  props: {
+    size: string | undefined,
+    onSelect: (v: string) => void
+  }
+) => {
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="w-3 h-3 text-gray-500 text-[11px]">
+          {
+            props.size ? (props.size.match(/\[(\d+)px\]/)?.[1] || "14") : "14"
+          }
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-fit text-sm">
+        <RadioGroup
+          defaultValue={props.size ?? "text-[14px]"}
+          onValueChange={(v) => { props.onSelect(v) }}
+        >
+          {
+            [
+              "text-[10px]",
+              "text-[11px]",
+              "text-[12px]",
+              "text-[13px]",
+              "text-[14px]",
+              "text-[15px]",
+              "text-[16px]",
+              "text-[17px]",
+              "text-[18px]",
+              "text-[19px]",
+              "text-[20px]",
+            ].map(item => {
+              return (
+                <div key={item} className="flex items-center space-x-1">
+                  <RadioGroupItem value={item} />
+                  <p className="ml-2">{item}</p>
+                </div>
+              )
+            })
+          }
+        </RadioGroup>
+      </PopoverContent>
+    </Popover>
+
+  )
+}
+
 const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentProps>(
   ({ srcJson, dstJson, handleChange, permission, setAutoFillInit }, ref) => {
     const reactPlayerRef = React.useRef<ReactPlayer>(null);
     const [progress, setProgress] = React.useState(0)
     const [captions, setCaptions] = React.useState({ src: "", dst: "" })
     const [ostIndexes, setOstIndexes] = React.useState<number[]>([])
+
+    const defaultValue: SubtitleType = {
+      videoUrl: "",
+      subtitle: [],
+      ost: []
+    }
+
+    let srcObj = defaultValue
+    let dstObj = defaultValue
+    if (srcJson) srcObj = srcJson as SubtitleType
+    if (dstJson) dstObj = dstJson as SubtitleType
 
     React.useImperativeHandle(ref, () => {
       return { autofillHandler: handleAutoFill }
@@ -82,16 +195,6 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
     React.useEffect(() => {
       if (setAutoFillInit) setAutoFillInit(true)
     }, [])
-
-    const defaultValue: SubtitleType = {
-      videoUrl: "",
-      subtitle: [],
-    }
-
-    let srcObj = defaultValue
-    let dstObj = defaultValue
-    if (srcJson) srcObj = srcJson as SubtitleType
-    if (dstJson) dstObj = dstJson as SubtitleType
 
     const handleAutoFill = async (aiParams?: ProjectAiParamters, abortCtrl?: AbortSignal) => {
       const aip: ProjectAiParamters = aiParams ? aiParams : {
@@ -195,19 +298,16 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
 
     return (
       <div className="pt-8 flex flex-col items-center lg:items-start lg:flex-row lg:space-x-2">
-        <div className="flex flex-col items-center space-y-2 mb-4 lg:order-last lg:mx-4">
-          <VideoPlayer
-            url={srcObj.videoUrl}
-            ref={reactPlayerRef}
-            caption={captions.dst}
-            ost={osts}
-            handleOstDragged={handleOstDragged}
-            handleProgress={(p: number) => setProgress(p)}
-          >
-          </VideoPlayer>
-          <p className="hidden text-lg w-[500px] text-center">{captions.dst}</p>
-          <p className="hidden text-sm w-[500px] text-center">{captions.src}</p>
-        </div>
+        <VideoPlayer
+          className="mb-4 lg:order-last lg:mx-4"
+          url={srcObj.videoUrl}
+          ref={reactPlayerRef}
+          caption={captions.dst}
+          ost={osts}
+          handleOstDragged={handleOstDragged}
+          handleProgress={(p: number) => setProgress(p)}
+        >
+        </VideoPlayer>
 
         <Tabs defaultValue="subtitle">
           <TabsList className="grid w-full grid-cols-2">
@@ -404,111 +504,42 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
                                 </>
                               )
                             }
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className={cn("w-3 h-3", ost.attr.color ?? "text-white")}>
-                                  <Icons.rect
-                                    fillOpacity={ost.attr.opacity ? parseInt(ost.attr.opacity) / 100 : 100}
-                                  />
-                                </Button>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-fit text-sm text-gray-600">
-                                <RadioGroup
-                                  defaultValue={ost.attr.color ?? "text-white"}
-                                  onValueChange={(v) => {
-                                    handleChange("dst", o => {
-                                      const d = clone(o ? (o as SubtitleType) : defaultValue)
-                                      const ost = d.ost
-                                      if (ost) {
-                                        const t = ost[index]
-                                        if (t) {
-                                          t.attr.color = v
-                                          return d
-                                        }
-                                      }
+                            <ColorSelectPopover
+                              onSelect={(v: string) => {
+                                handleChange("dst", o => {
+                                  const d = clone(o ? (o as SubtitleType) : defaultValue)
+                                  const ost = d.ost
+                                  if (ost) {
+                                    const t = ost[index]
+                                    if (t) {
+                                      t.attr.color = v
                                       return d
-                                    })
-                                  }}
-                                >
-                                  {
-                                    [
-                                      "text-white",
-                                      "text-black",
-                                      "text-red-500",
-                                      "text-green-500",
-                                      "text-blue-500",
-                                      "text-yellow-500"
-                                    ].map(item => {
-                                      return (
-                                        <div key={item} className="flex items-center space-x-1">
-                                          <RadioGroupItem value={item} />
-                                          <Icons.rect className={`h-3 w-3 ${item}`}
-                                          />
-                                          <p className="ml-2">{item}</p>
-                                        </div>
-                                      )
-                                    })
+                                    }
                                   }
-                                </RadioGroup>
-                              </PopoverContent>
-                            </Popover>
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="w-3 h-3 text-gray-500 text-[11px]">
-                                  {
-                                    ost.attr.size ? (ost.attr.size.match(/\[(\d+)px\]/)?.[1] || "14") : "14"
-                                  }
-                                </Button>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-fit text-sm">
-                                <RadioGroup
-                                  defaultValue={ost.attr.size ?? "text-[14px]"}
-                                  onValueChange={(v) => {
-                                    handleChange("dst", o => {
-                                      const d = clone(o ? (o as SubtitleType) : defaultValue)
-                                      const ost = d.ost
-                                      if (ost) {
-                                        const t = ost[index]
-                                        if (t) {
-                                          t.attr.size = v
-                                          return d
-                                        }
-                                      }
+                                  return d
+                                })
+                              }}
+                              color={ost.attr.color}
+                              opacity={ost.attr.opacity}
+                            />
+
+                            <FontSizeSelectPopover
+                              size={ost.attr.size}
+                              onSelect={(v) => {
+                                handleChange("dst", o => {
+                                  const d = clone(o ? (o as SubtitleType) : defaultValue)
+                                  const ost = d.ost
+                                  if (ost) {
+                                    const t = ost[index]
+                                    if (t) {
+                                      t.attr.size = v
                                       return d
-                                    })
-                                  }}
-                                >
-                                  {
-                                    [
-                                      "text-[10px]",
-                                      "text-[11px]",
-                                      "text-[12px]",
-                                      "text-[13px]",
-                                      "text-[14px]",
-                                      "text-[15px]",
-                                      "text-[16px]",
-                                      "text-[17px]",
-                                      "text-[18px]",
-                                      "text-[19px]",
-                                      "text-[20px]",
-                                    ].map(item => {
-                                      return (
-                                        <div key={item} className="flex items-center space-x-1">
-                                          <RadioGroupItem value={item} />
-                                          <p className="ml-2">{item}</p>
-                                        </div>
-                                      )
-                                    })
+                                    }
                                   }
-                                </RadioGroup>
-                              </PopoverContent>
-                            </Popover>
+                                  return d
+                                })
+                              }} />
+
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <Button
