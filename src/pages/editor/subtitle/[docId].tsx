@@ -71,9 +71,9 @@ const regexToSegementSentence = /[.!?)'"“”]+$/
 const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentProps>(
   ({ srcJson, dstJson, handleChange, permission, setAutoFillInit }, ref) => {
     const reactPlayerRef = React.useRef<ReactPlayer>(null);
+    const [progress, setProgress] = React.useState(0)
     const [captions, setCaptions] = React.useState({ src: "", dst: "" })
     const [ostIndexes, setOstIndexes] = React.useState<number[]>([])
-    const [focusedIndex, setFocusedIndex] = React.useState<number | null>(null)
 
     React.useImperativeHandle(ref, () => {
       return { autofillHandler: handleAutoFill }
@@ -129,61 +129,9 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
       })
     }
 
-    const getWholeSentenceOnFocus = () => {
-      let sentences: string[] = []
-      let dstSentences: string[] = []
-      let index = 0
-      const result: { text: string, duration: number } = { text: "", duration: 0 }
-      let focusedFound = false
-      let duration = 0
-      srcObj.subtitle.forEach(item => {
-        sentences.push(item.text)
-
-        const dstItem = dstObj.subtitle[index]
-        if (dstItem) dstSentences.push(dstItem.text)
-
-        const sentence = sentences.join(" ")
-        duration = duration + item.to - item.from
-
-        const dstSentence = dstSentences.join(" ")
-        if (index === focusedIndex) focusedFound = true
-        if (regexToSegementSentence.test(sentence.trim())) {
-          sentences = []
-          dstSentences = []
-          if (focusedFound) {
-            result.text = dstSentence
-            result.duration = duration
-            focusedFound = false
-          }
-          duration = 0
-        }
-        index = index + 1
-      })
-      return result
-    }
-
-    const [audioUrl, setAudioUrl] = React.useState<{ key: number, value: string } | null>(null)
-    const synthesizeAudio = async (text: string) => {
-      const apiUrl = `/api/synthesis?phrase=${encodeURIComponent(text)}`;
-      try {
-        const response = await fetch(apiUrl);
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
-        }
-        const audioBlob = await response.blob();
-        const audioDataUrl = URL.createObjectURL(audioBlob);
-        setAudioUrl(d => {
-          if (d) return { value: audioDataUrl, key: d.key + 1 }
-          else return { value: audioDataUrl, key: 0 }
-        });
-      } catch (error) {
-        console.error('Error fetching audio data:', error);
-      }
-    };
     let sentences: string[] = []
     let gray = false
     let turnColor = false
-    const focusedSentence = getWholeSentenceOnFocus()
     const osts: VideoOstType[] = []
     const dstObjOst = dstObj.ost
     if (dstObjOst) {
@@ -199,7 +147,7 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
       })
     }
 
-    const handleOstPosChanged = (index: number, position: RelativePositionType) => {
+    const handleOstDragged = (index: number, position: RelativePositionType) => {
       handleChange("dst", o => {
         const d = clone(o ? (o as SubtitleType) : defaultValue)
         const ost = d.ost
@@ -214,11 +162,11 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
       })
     }
 
-    const handleVideoProgress = (playedSeconds: number) => {
+    React.useEffect(() => {
       const index = srcObj.subtitle.findIndex(
         (item) =>
-          (playedSeconds * 1000 >= item.from) &&
-          (playedSeconds * 1000 <= item.to))
+          (progress * 1000 >= item.from) &&
+          (progress * 1000 <= item.to))
       if (index >= 0) {
         const srcItem = srcObj.subtitle[index]
         const dstItem = dstObj.subtitle[index]
@@ -235,15 +183,15 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
         let i = 0
         dstObj.ost.forEach(
           (item) => {
-            if ((playedSeconds * 1000 >= item.from) &&
-              (playedSeconds * 1000 <= item.to)) {
+            if ((progress * 1000 >= item.from) &&
+              (progress * 1000 <= item.to)) {
               osts.push(i)
             }
             i++
           })
         setOstIndexes(osts)
       }
-    }
+    }, [progress, srcObj, dstObj])
 
     return (
       <div className="pt-8 flex flex-col items-center lg:items-start lg:flex-row lg:space-x-2">
@@ -253,26 +201,12 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
             ref={reactPlayerRef}
             caption={captions.dst}
             ost={osts}
-            handleOstPosChanged={handleOstPosChanged}
-            handleProgress={handleVideoProgress}
+            handleOstDragged={handleOstDragged}
+            handleProgress={(p: number) => setProgress(p)}
           >
           </VideoPlayer>
           <p className="hidden text-lg w-[500px] text-center">{captions.dst}</p>
           <p className="hidden text-sm w-[500px] text-center">{captions.src}</p>
-          {
-            <Button className="hidden text-sm" variant="outline" onClick={async () => {
-              if (focusedSentence.text.length > 0) {
-                await synthesizeAudio(focusedSentence.text)
-              }
-            }}>Synthesize</Button>
-          }
-          <p className="hidden">{focusedSentence.text}</p>
-          <p className="hidden">{focusedSentence.duration} / unknown</p>
-          {audioUrl &&
-            <audio key={audioUrl.key} controls>
-              <source src={audioUrl.value} type="audio/mpeg" />
-            </audio>
-          }
         </div>
 
         <Tabs defaultValue="subtitle">
@@ -325,7 +259,6 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
                               if (reactPlayerRef.current) {
                                 const duration = reactPlayerRef.current.getDuration()
                                 reactPlayerRef.current.seekTo(item.from / 1000 / duration, "fraction")
-                                setFocusedIndex(index)
                               }
                             }}
                           />
@@ -351,7 +284,6 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
                               if (reactPlayerRef.current) {
                                 const duration = reactPlayerRef.current.getDuration()
                                 reactPlayerRef.current.seekTo(item.from / 1000 / duration * 1.001, "fraction")
-                                setFocusedIndex(index)
                               }
                             }}
                           />
@@ -458,7 +390,6 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
                               if (reactPlayerRef.current) {
                                 const duration = reactPlayerRef.current.getDuration()
                                 reactPlayerRef.current.seekTo(ost.from / 1000 / duration * 1.001, "fraction")
-                                setFocusedIndex(index)
                               }
                             }}
                           />

@@ -9,7 +9,7 @@ import { ArrowBigLeftDash, ArrowBigRightDash, Pause, Play } from "lucide-react"
 import type { OnScreenTextAttrType, RelativePositionType } from "~/types"
 import { clone } from "ramda"
 import { tooltipWrapped } from "~/components/ui/tooltip"
-import { Select, SelectTrigger, SelectItem, SelectContent, SelectValue, SelectLabel } from "~/components/ui/select"
+import { Select, SelectTrigger, SelectItem, SelectContent, SelectValue } from "~/components/ui/select"
 
 
 export interface VideoPlayerProps extends React.HTMLAttributes<HTMLVideoElement> {
@@ -18,7 +18,7 @@ export interface VideoPlayerProps extends React.HTMLAttributes<HTMLVideoElement>
   height?: string,
   caption?: string,
   ost?: VideoOstType[],
-  handleOstPosChanged?: (index: number, position: RelativePositionType) => void,
+  handleOstDragged?: (index: number, position: RelativePositionType) => void,
   handleProgress: (playedSeconds: number) => void,
 }
 
@@ -48,7 +48,7 @@ const defaultDndStateValue: DndStateType = {
 }
 
 const VideoPlayer = React.forwardRef<ReactPlayer, VideoPlayerProps & ReactPlayerProps>(
-  ({ className, url, handleProgress, handleOstPosChanged, ...props }, ref) => {
+  ({ className, url, handleProgress, handleOstDragged, ...props }, ref) => {
     const VIDEO_HEIGHT = 360
     const VIDEO_WIDTH = 640
     const ostWrapperRef = React.useRef<HTMLDivElement>(null)
@@ -73,10 +73,10 @@ const VideoPlayer = React.forwardRef<ReactPlayer, VideoPlayerProps & ReactPlayer
         return n
       }
       if (dndState.current.state === "dragging") {
-        if (handleOstPosChanged && ostWrapperRef.current) {
+        if (handleOstDragged && ostWrapperRef.current) {
           const rect = ostWrapperRef.current.getBoundingClientRect()
 
-          handleOstPosChanged(dndState.current.index,
+          handleOstDragged(dndState.current.index,
             {
               x_percent: normToPercent((ev.clientX - dndState.current.initDPos.x - rect.x) / VIDEO_WIDTH),
               y_percent: normToPercent((ev.clientY - dndState.current.initDPos.y - rect.y) / VIDEO_HEIGHT)
@@ -127,6 +127,9 @@ const VideoPlayer = React.forwardRef<ReactPlayer, VideoPlayerProps & ReactPlayer
               progressInterval={100}
               onReady={() => { setReady(true) }}
               onDuration={(duration) => { setDuration(duration) }}
+              onSeek={(p) => {
+                handleProgress(p)
+              }}
               onProgress={(state) => {
                 const p = state.playedSeconds / duration
                 setProgress(p >= 0 ? p : 0)
@@ -142,22 +145,27 @@ const VideoPlayer = React.forwardRef<ReactPlayer, VideoPlayerProps & ReactPlayer
             {
               props.ost && props.ost.length > 0 &&
               props.ost.map((item, i) => {
-                return (<div
-                  key={i}
-                  id={`${item.index}`}
-                  className={cn(
-                    "ost",
-                    "absolute select-none whitespace-pre",
-                    item.attr.color ?? "text-white",
-                    item.attr.size ?? "text-[14px]",
-                    item.attr.style ?? "",
-                    "opacity-100",
-                    !playing ? "cursor-pointer" : "cursor-default")}
-                  style={{
-                    transform: `translate(${item.attr.position.x_percent * VIDEO_WIDTH}px, ${item.attr.position.y_percent * VIDEO_HEIGHT}px)`,
-                    lineHeight: "1.3",
-                  }}
-                >{item.text}</div>)
+                return (
+                  <div
+                    key={i}
+                    id={`${item.index}`}
+                    className={cn(
+                      "ost",
+                      "absolute select-none whitespace-pre",
+                      item.attr.color ?? "text-white",
+                      item.attr.size ?? "text-[14px]",
+                      item.attr.style ?? "",
+                      "opacity-100",
+                      !playing ? "cursor-pointer outline-slate-300 outline-dotted outline-1 outline-offset-0" : "cursor-default")}
+                    style={{
+                      transform: `translate(${item.attr.position.x_percent * VIDEO_WIDTH}px, ${item.attr.position.y_percent * VIDEO_HEIGHT}px)`,
+                      lineHeight: "1.3",
+                    }}
+                  >
+                    {tooltipWrapped(
+                      <p>{item.text}</p>,
+                      <p>Drag to move its position</p>)}
+                  </div>)
               })
             }
           </div>

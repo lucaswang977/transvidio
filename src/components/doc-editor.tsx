@@ -266,7 +266,7 @@ export const DocumentEditor = (props: DocumentEditorProps) => {
                                 : <Bot className="h-4 w-4" />
                               }
                             </Button>
-                          </span>, filling ? "Cancel" : "Auto fill")
+                          </span>, <p>{filling ? "Cancel" : "Auto fill"}</p>)
                       }
                       {
                         tooltipWrapped(
@@ -281,7 +281,7 @@ export const DocumentEditor = (props: DocumentEditorProps) => {
                               }} >
                               <Save className="h-4 w-4" />
                             </Button>
-                          </span>, "Save"
+                          </span>, <p>Save</p>
                         )
                       }
                       {
@@ -309,7 +309,7 @@ export const DocumentEditor = (props: DocumentEditorProps) => {
                               }}>
                               <Undo className="w-4 h-4" />
                             </Button>
-                          </span>, "Undo"
+                          </span>, <p>Undo</p>
                         )
                       }
                       {
@@ -336,7 +336,7 @@ export const DocumentEditor = (props: DocumentEditorProps) => {
                               }}>
                               <Redo className="w-4 h-4" />
                             </Button>
-                          </span>, "Redo"
+                          </span>, <p>Redo</p>
                         )
                       }
                     </div>
