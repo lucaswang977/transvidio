@@ -22,13 +22,7 @@ import { api } from "~/utils/api"
 import { useToast } from "~/components/ui/use-toast"
 import { ConfirmDialogInDropdown } from "~/components/dialogs/confirm-dialog"
 import Link from "next/link"
-
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "~/components/ui/tooltip"
+import { tooltipWrapped } from "~/components/ui/tooltip"
 import { WordCountModifyDialog } from "~/components/dialogs/wordcount-modify-dialog"
 
 const CloseDialog = (props: { documentId: string, refetch: () => void }) => {
@@ -381,20 +375,16 @@ export const columns: ColumnDef<DocumentColumn>[] = [
       let avatarUI = <></>
       if (user) {
         avatarUI = (<div className="flex">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Avatar key={user.id} className="h-8 w-8">
-                  <AvatarImage src={user.image} alt={user.name} />
-                  <AvatarFallback>{extractLetters(user.name)}</AvatarFallback>
-                </Avatar>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>{user.name}</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-
+          {
+            tooltipWrapped(
+              <Avatar key={user.id} className="h-8 w-8">
+                <AvatarImage src={user.image} alt={user.name} />
+                <AvatarFallback>{extractLetters(user.name)}</AvatarFallback>
+              </Avatar>
+              ,
+              <p>{user.name}</p>
+            )
+          }
         </div>)
       }
       return <>
@@ -427,16 +417,11 @@ export const columns: ColumnDef<DocumentColumn>[] = [
           }
           {
             data.type === "ATTACHMENT" &&
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger>
-                  <Info className="text-gray-400 h-3 w-3" />
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Inaccurately estimated</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            tooltipWrapped(
+              <Info className="text-gray-400 h-3 w-3" />
+              ,
+              <p>Inaccurately estimated</p>
+            )
           }
         </div>
       )
@@ -476,24 +461,20 @@ export const columns: ColumnDef<DocumentColumn>[] = [
 
       return (
         <div className="flex space-x-1 place-items-center">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger>
-                {
-                  isOpenable ?
-                    <Link href={editorUrl} target="_blank">
-                      <ChevronRight className="mr-2 h-4 w-4" />
-                    </Link> :
-                    <ChevronRight className="mr-2 h-4 w-4 text-gray-300" />
-                }
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>{
-                  isOpenable ? "Open the document" : "Not claimed"
-                }</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          {
+            tooltipWrapped(
+              isOpenable ?
+                <Link href={editorUrl} target="_blank">
+                  <ChevronRight className="mr-2 h-4 w-4" />
+                </Link> :
+                <ChevronRight className="mr-2 h-4 w-4 text-gray-300" />
+              ,
+              <p>{
+                isOpenable ? "Open the document" : "Not claimed"
+              }</p>
+
+            )
+          }
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="h-8 w-8 p-0">

@@ -64,12 +64,7 @@ import {
 
 import { Icons } from "~/components/ui/icons"
 import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "~/components/ui/tooltip"
+import { tooltipWrapped } from "~/components/ui/tooltip"
 
 const regexToSegementSentence = /[.!?)'"“”]+$/
 
@@ -399,19 +394,16 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
                                 return d
                               })
                             }}>
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <div className="flex space-x-1 items-center">
-                                    <TimerReset className="h-3 w-3" />
-                                    <p>{timeFormat(ost.from)}</p>
-                                  </div>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>Use video position as the timestamp</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
+                            {
+                              tooltipWrapped(
+                                <div className="flex space-x-1 items-center">
+                                  <TimerReset className="h-3 w-3" />
+                                  <p>{timeFormat(ost.from)}</p>
+                                </div>
+                                ,
+                                <p>Use video position as the timestamp</p>
+                              )
+                            }
                           </Button>
                           <Button
                             size="sm"
@@ -431,19 +423,16 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
                                 return d
                               })
                             }}>
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <div className="flex space-x-1 items-center">
-                                    <TimerReset className="h-3 w-3" />
-                                    <p>{timeFormat(ost.to)}</p>
-                                  </div>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>Use video position as the timestamp</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
+                            {
+                              tooltipWrapped(
+                                <div className="flex space-x-1 items-center">
+                                  <TimerReset className="h-3 w-3" />
+                                  <p>{timeFormat(ost.to)}</p>
+                                </div>
+                                ,
+                                <p>Use video position as the timestamp</p>
+                              )
+                            }
                           </Button>
                         </div>
                         <div className="relative">
@@ -476,18 +465,13 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
                           <div className="flex space-x-2 absolute bottom-2 right-3">
                             {
                               /\n{2,}/.test(ost.text) &&
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <AlertTriangle className="h-3 w-3 text-red-400 mr-2" />
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p>Do not use consecutive line breaks for text layout,</p>
-                                    <p>create multiple On Screen Texts instead.</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-
+                              tooltipWrapped(
+                                <AlertTriangle className="h-3 w-3 text-red-400 mr-2" />,
+                                <>
+                                  <p>Do not use consecutive line breaks for text layout,</p>
+                                  <p>create multiple On Screen Texts instead.</p>
+                                </>
+                              )
                             }
                             <Popover>
                               <PopoverTrigger asChild>

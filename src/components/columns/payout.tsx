@@ -5,12 +5,7 @@ import { Checkbox } from "~/components/ui/checkbox"
 import type { Currency, PaymentMethod, PayoutStatus } from "@prisma/client"
 import { extractLetters, truncateString } from "~/utils/helper"
 import { Avatar, AvatarImage, AvatarFallback } from "~/components/ui/avatar"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "~/components/ui/tooltip"
+import { tooltipWrapped } from "~/components/ui/tooltip"
 import { Button } from "~/components/ui/button"
 import { Badge } from "~/components/ui/badge"
 import { UserIncomeDialog } from "~/components/dialogs/income-dialog"
@@ -73,19 +68,16 @@ export const columns: ColumnDef<PayoutColumn>[] = [
       let avatarUI = <></>
       if (user) {
         avatarUI = (<div className="flex">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Avatar key={user.id} className="h-8 w-8">
-                  <AvatarImage src={user.image} alt={user.name} />
-                  <AvatarFallback>{extractLetters(user.name)}</AvatarFallback>
-                </Avatar>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>{user.name}</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          {
+            tooltipWrapped(
+              <Avatar key={user.id} className="h-8 w-8">
+                <AvatarImage src={user.image} alt={user.name} />
+                <AvatarFallback>{extractLetters(user.name)}</AvatarFallback>
+              </Avatar>
+              ,
+              <p>{user.name}</p>
+            )
+          }
         </div>)
       }
       return <>

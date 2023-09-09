@@ -27,7 +27,7 @@ const TooltipContent = React.forwardRef<
 ))
 TooltipContent.displayName = TooltipPrimitive.Content.displayName
 
-const tooltipWrapped = (element: JSX.Element, tooltip: string) => {
+const tooltipWrapped = (element: JSX.Element, tooltip: JSX.Element) => {
   return (
     <TooltipProvider>
       <Tooltip>
@@ -35,7 +35,7 @@ const tooltipWrapped = (element: JSX.Element, tooltip: string) => {
           {element}
         </TooltipTrigger>
         <TooltipContent >
-          <p>{tooltip}</p>
+          {tooltip}
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
