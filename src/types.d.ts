@@ -50,7 +50,7 @@ export type SubtitleType = {
   videoUrl: string,
   subtitle: SubtitleItem[],
   ost?: OnScreenTextItem[],
-  audio?: AudioSynthesisType[],
+  dubbing?: DubbingItem[],
 }
 
 export type OnScreenTextItem = {
@@ -75,23 +75,16 @@ export type OnScreenTextAttrType = {
   font?: string,
 }
 
-export type AudioSynthesisParamsType = {
-  lang: string,
-  voice: string,
-  rate?: string,
-  role?: string,
-  style?: string,
-}
-
-export type AudioSynthesisType = {
-  subtitleItemIds: number[],
+export type DubbingItem = {
   from: number,
   to: number,
   text: string,
-  textDuration: number,
-  audioData: string,
-  audioDuration: number,
-  audioParams?: AudioSynthesisParamsType,
+  subIndexes: number[],
+}
+
+export type AudioSynthesisParamsType = {
+  lang: string,
+  voice: string,
 }
 
 export type QuizPromptItem = {

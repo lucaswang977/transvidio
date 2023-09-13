@@ -35,8 +35,6 @@ import { Textarea } from "~/components/ui/textarea"
 import type {
   SubtitleType,
   ProjectAiParamters,
-  AudioSynthesisType,
-  AudioSynthesisParamsType,
   RelativePositionType,
   OnScreenTextItem
 } from "~/types"
@@ -57,12 +55,15 @@ import {
 } from "~/components/ui/tabs"
 import {
   AlertTriangle,
+  ArrowBigDownDash,
   Copy,
   MoreHorizontal,
+  PlayCircle,
+  Plug2,
   PlusCircle,
+  SeparatorHorizontal,
   TimerReset,
   Trash,
-  PlayCircle,
 } from "lucide-react"
 
 import {
@@ -82,7 +83,7 @@ import { Icons } from "~/components/ui/icons"
 import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group"
 import { tooltipWrapped } from "~/components/ui/tooltip"
 
-const regexToSegementSentence = /[.!?)'"“”]+$/
+const regexToSegementSentence = /[。！]+$/
 
 const ColorSelectPopover = (
   props: {
@@ -186,6 +187,13 @@ const FontSizeSelectPopover = (
   )
 }
 
+type DubbingDataItem = {
+  from: number,
+  text: string,
+  audioBlob: Blob,
+  audioDuration: number,
+}
+
 const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentProps>(
   ({ srcJson, dstJson, handleChange, permission, setAutoFillInit }, ref) => {
     const reactPlayerRef = React.useRef<ReactPlayer>(null);
@@ -193,23 +201,24 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
     const [captions, setCaptions] = React.useState({ src: "", dst: "" })
     const [ostIndexes, setOstIndexes] = React.useState<number[]>([])
     const [focusedIndex, setFocusedIndex] = React.useState<number | null>(null)
-    const [currentItemIndex, setCurrentItemIndex] = React.useState(0)
-    const [currentAudioPlayPosition, setCurrentAudioPlayPostision] = React.useState(0)
+    const [dubbingData, setDubbingData] = React.useState<DubbingDataItem[]>([])
+    // const [currentItemIndex, setCurrentItemIndex] = React.useState(0)
+    // const [currentAudioPlayPosition, setCurrentAudioPlayPostision] = React.useState(0)
     const [isSynthAudioPlaying, setIsSynthAudioPlaying] = React.useState(false)
-    const [audioSynthParams, setAudioSynthParams] =
-      React.useState<AudioSynthesisParamsType | undefined>({
-        lang: "zh-CN",
-        voice: "zh-CN-YunjianNeural",
-        rate: "20%"
-      })
+    // const [audioSynthParams, setAudioSynthParams] =
+    //   React.useState<AudioSynthesisParamsType | undefined>({
+    //     lang: "zh-CN",
+    //     voice: "zh-CN-YunjianNeural",
+    //     rate: "20%"
+    //   })
     const audioRef = React.useRef(null);
-    const singleAudioRef = React.useRef(null);
+    // const singleAudioRef = React.useRef(null);
 
     const defaultValue: SubtitleType = {
       videoUrl: "",
       subtitle: [],
-      audio: [],
       ost: [],
+      dubbing: [],
     }
 
     let srcObj = defaultValue
@@ -261,6 +270,7 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
       })
     }
 
+    /*
     const base64ToBlob = (base64: string | undefined) => {
       if (base64) {
         const parts = base64.split(';base64,');
@@ -278,9 +288,27 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
       }
       return undefined
     }
+    */
+
+    const playSynthedAudio = async (index: number) => {
+      if (audioRef.current && reactPlayerRef.current) {
+        const audioElement = audioRef.current as HTMLAudioElement
+        const audioData = dubbingData.at(index)
+
+        if (audioData) {
+          reactPlayerRef.current.seekTo(audioData.from / 1000)
+          const audioUrl = URL.createObjectURL(audioData.audioBlob)
+          if (audioUrl) {
+            audioElement.src = audioUrl
+            await audioElement.play();
+          }
+        }
+      }
+    }
 
     const playAudio = async () => {
-      if (audioRef.current) {
+      /*
+      if (audioRef.current && audioData) {
         const audioElement = audioRef.current as HTMLAudioElement
 
         const currentAudioData = audioData[currentItemIndex]
@@ -293,11 +321,14 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
             currentItemIndex,
             currentAudioPlayPosition,
             currentAudioData?.from,
+            currentAudioData?.to,
+            currentAudioData?.audioDuration,
+            currentAudioData?.textDuration,
             pauseDuration)
 
-          await new Promise(resolve => setTimeout(resolve, pauseDuration));
+          if (pauseDuration > 0)
+            await new Promise(resolve => setTimeout(resolve, pauseDuration));
 
-          console.log("play audio")
           if (currentAudioUrl) {
             audioElement.src = currentAudioUrl
             await audioElement.play();
@@ -307,9 +338,9 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
             setCurrentItemIndex(currentItemIndex + 1);
             setCurrentAudioPlayPostision(v => {
               if (currentAudioData)
-                return v + currentAudioData.audioDuration + pauseDuration
+                return currentAudioData.to
               else
-                return v + pauseDuration
+                return v
             })
           } else {
             (audioRef.current as HTMLAudioElement).pause()
@@ -319,9 +350,35 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
           }
         }
       }
+      */
+    }
+
+    const synthText = async (text: string) => {
+      if (text.length > 0) {
+        const apiUrl = "/api/synthesis";
+        try {
+          const response = await fetch(apiUrl, {
+            method: "POST",
+            body: JSON.stringify({
+              phrase: text,
+            })
+          });
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
+          const durationStr = response.headers.get("Audio-Duration")
+          const audioDuration = Math.floor(parseFloat(durationStr ? durationStr : "0") * 1000)
+          const audioBlob = await response.blob();
+          console.log("audio synthesized: ", audioDuration)
+          return { blob: audioBlob, duration: audioDuration }
+        } catch (error) {
+          console.error('Error fetching audio data:', error);
+        }
+      }
     }
 
     const synthesizeAudio = async () => {
+      /*
       if (dstObj && dstObj.subtitle) {
         const emptyAudioSynthesisData: AudioSynthesisType = {
           subtitleItemIds: [],
@@ -334,17 +391,15 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
           audioParams: audioSynthParams,
         }
         const result: AudioSynthesisType[] = []
-        let srcSentences: string[] = []
         let dstSentences: string[] = []
         let subtitleItemIds: number[] = []
         let index = 0
         let data = emptyAudioSynthesisData
 
-        srcObj.subtitle.forEach(item => {
-          if (srcSentences.length === 0) {
+        dstObj.subtitle.forEach(item => {
+          if (dstSentences.length === 0) {
             data.from = item.from
           }
-          srcSentences.push(item.text)
 
           const dstItem = dstObj.subtitle[index]
           if (dstItem) {
@@ -352,12 +407,11 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
             subtitleItemIds.push(index)
           }
 
-          if (regexToSegementSentence.test(srcSentences.join(" ").trim())) {
+          if (regexToSegementSentence.test(dstSentences.join("").trim())) {
             data.text = dstSentences.join("")
             data.subtitleItemIds = [...subtitleItemIds]
             data.to = item.to
             data.textDuration = data.to - data.from
-            srcSentences = []
             dstSentences = []
             subtitleItemIds = []
             result.push({ ...data })
@@ -413,7 +467,15 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
           return { ...(dstObj as SubtitleType), audio: result }
         })
       }
-    };
+      */
+    }
+
+    const isGoogdAudioState = (textDuration: number, audioDuration: number) => {
+      return Math.abs(audioDuration - textDuration) <= 200
+    }
+
+
+    /*
     const audioData = dstObj.audio
 
     const getAudioDataByIndex = (index: number | null) => {
@@ -426,18 +488,9 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
       else return -1
     }
 
-    const isGoogdAudioState = (audioData: AudioSynthesisType | undefined) => {
-      return (audioData &&
-        audioData.textDuration > 0 &&
-        audioData.audioDuration > 0 &&
-        Math.abs(audioData.audioDuration - audioData.textDuration) <= 500)
-    }
-
     const focusedAudioData = audioData ? audioData[getAudioDataByIndex(focusedIndex)] : undefined
+    */
 
-    let sentences: string[] = []
-    let gray = false
-    let turnColor = false
     const osts: VideoOstType[] = []
     const dstObjOst = dstObj.ost
     if (dstObjOst) {
@@ -497,6 +550,8 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
           })
         setOstIndexes(osts)
       }
+
+      setFocusedIndex(index)
     }, [progress, srcObj, dstObj])
 
     return (
@@ -512,154 +567,82 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
             handleProgress={(p: number) => setProgress(p)}
           >
           </VideoPlayer>
-          {
-            <Button className="text-sm" variant="outline" onClick={async () => {
-              if (!isSynthAudioPlaying) {
-                if (reactPlayerRef.current) {
-                  reactPlayerRef.current.seekTo(0)
-                  reactPlayerRef.current.setState({ playing: true })
-                }
-                setIsSynthAudioPlaying(true);
-                await playAudio();
-              } else {
-                setIsSynthAudioPlaying(false);
-                setCurrentItemIndex(0)
-                setCurrentAudioPlayPostision(0)
-                if (audioRef.current) {
-                  (audioRef.current as HTMLAudioElement).pause()
-                }
-              }
-            }}>{!isSynthAudioPlaying ? "Play from beginning" : "Stop"}</Button>
-          }
-          <audio className="hidden" ref={audioRef} onEnded={playAudio} />
         </div>
 
         <Tabs defaultValue="subtitle">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="subtitle">Subtitle</TabsTrigger>
             <TabsTrigger value="ost">On Screen Text</TabsTrigger>
+            <TabsTrigger value="dubbing">Dubbing</TabsTrigger>
           </TabsList>
           <TabsContent value="subtitle">
-            <ScrollArea className="h-[60vh] lg:h-[90vh]">
+            <ScrollArea className="h-[60vh] lg:h-[85vh]">
               <div className="flex space-x-2 p-2">
                 <div className="flex flex-col">
                   {
                     srcObj.subtitle.map((item, index) => {
-                      if (dstObj && dstObj.subtitle && dstObj.subtitle[index]) {
-                        if (turnColor) {
-                          gray = !gray
-                          turnColor = false
-                        }
-                        sentences.push(item.text)
-                        const sentence = sentences.join(" ")
-                        if (regexToSegementSentence.test(sentence.trim())) {
-                          turnColor = true
-                          sentences = []
-                        }
-
-                        const dstItem = dstObj.subtitle[index] ? dstObj.subtitle[index] : {
-                          ...item,
-                          text: ""
-                        }
-
-                        const audioDataIndex = getAudioDataByIndex(index)
-                        const auData = audioData ? audioData[audioDataIndex] : undefined
-                        const goodState = isGoogdAudioState(auData)
-                        const diffPercent =
-                          auData && (auData.textDuration > 0) && (auData.audioDuration > 0) ?
-                            Math.floor((auData.textDuration - auData.audioDuration) /
-                              auData.audioDuration * 100)
-                            : 0
-
-                        return (
-                          <div
-                            key={`src-${index}`}
-                            className={`flex p-2 space-x-1 ${focusedIndex === index ? "border-red-100 border-2 rounded" : ""} ${gray ? "bg-gray-100 dark:bg-gray-900" : ""}`}>
-                            <div className="flex flex-col justify-between items-end pr-1">
-                              <div className="flex flex-col space-y-1 items-end">
-                                <p className="text-xs text-slate-300">{audioDataIndex})</p>
-                                <Label className="text-xs text-slate-300">{timeFormat(item.from)}</Label>
-                                <Label className="text-xs text-slate-300">{timeFormat(item.to)}</Label>
-                              </div>
-                              {
-                                auData && auData.audioDuration > 0 &&
-                                <div className="flex space-x-1 items-center">
-                                  {
-                                    (focusedIndex === index && focusedAudioData && focusedAudioData.audioData.length > 0) &&
-                                    <>
-                                      <audio ref={singleAudioRef} className="hidden" key={focusedAudioData.from} controls>
-                                        <source src={focusedAudioData.audioData} type="audio/mpeg" />
-                                      </audio>
-                                      <PlayCircle onClick={async () => {
-                                        if (singleAudioRef.current) {
-                                          const ref = singleAudioRef.current as HTMLAudioElement
-                                          await ref.play()
-                                        }
-                                      }} className="cursor-pointer h-3 w-3 text-slate-500" />
-                                    </>
-                                  }
-                                  {
-                                    !goodState && turnColor &&
-                                    <p className="text-xs text-red-500">
-                                      {diffPercent > 0 ? `+${diffPercent}%` : `${diffPercent}%`}
-                                    </p>
-                                  }
-                                </div>
-                              }
-                            </div>
-                            <Textarea
-                              disabled={!permission.srcWritable}
-                              id={`src.items.${index}`}
-                              value={item.text}
-                              className="overflow-hidden w-72"
-                              onChange={(event) => {
-                                const subtitles = [...srcObj.subtitle]
-                                const subtitle = subtitles[index]
-                                if (subtitle) {
-                                  subtitle.text = event.target.value
-                                  handleChange("src", { ...srcObj, subtitle: subtitles })
-                                }
-                              }}
-                              onFocus={() => {
-                                if (reactPlayerRef.current) {
-                                  const duration = reactPlayerRef.current.getDuration()
-                                  reactPlayerRef.current.seekTo(item.from / 1000 / duration, "fraction")
-                                  setFocusedIndex(index)
-                                }
-                              }}
-                            />
-                            <Textarea
-                              disabled={!permission.dstWritable}
-                              id={`dst.items.${index}`}
-                              value={dstItem?.text}
-                              className="overflow-hidden w-72"
-                              onBlur={async () => {
-                                await synthesizeAudio()
-                              }}
-                              onChange={(event) => {
-                                const subtitles = [...dstObj.subtitle]
-                                const subtitle = subtitles[index]
-                                if (subtitle) {
-                                  subtitle.text = event.target.value
-                                } else {
-                                  subtitles[index] = {
-                                    ...item,
-                                    text: event.target.value
-                                  }
-                                }
-                                handleChange("dst", { ...dstObj, subtitle: subtitles })
-                              }}
-                              onFocus={() => {
-                                if (reactPlayerRef.current) {
-                                  const duration = reactPlayerRef.current.getDuration()
-                                  reactPlayerRef.current.seekTo(item.from / 1000 / duration * 1.001, "fraction")
-                                  setFocusedIndex(index)
-                                }
-                              }}
-                            />
-                          </div>
-                        )
+                      const dstItem = dstObj.subtitle[index] ? dstObj.subtitle[index] : {
+                        ...item,
+                        text: ""
                       }
+
+                      return (
+                        <div
+                          key={`src-${index}`}
+                          className={`flex m-2 space-x-1 ${focusedIndex === index ? "border-red-200 border-l-4 pl-2" : "pl-3"}`}>
+                          <div className="flex flex-col justify-between items-end pr-1">
+                            <div className="flex flex-col space-y-1 items-end">
+                              <Label className="text-xs text-slate-300">{timeFormat(item.from)}</Label>
+                              <Label className="text-xs text-slate-300">{timeFormat(item.to)}</Label>
+                            </div>
+                          </div>
+                          <Textarea
+                            disabled={!permission.srcWritable}
+                            id={`src.items.${index}`}
+                            value={item.text}
+                            className="overflow-hidden w-72"
+                            onChange={(event) => {
+                              const subtitles = [...srcObj.subtitle]
+                              const subtitle = subtitles[index]
+                              if (subtitle) {
+                                subtitle.text = event.target.value
+                                handleChange("src", { ...srcObj, subtitle: subtitles })
+                              }
+                            }}
+                            onFocus={() => {
+                              if (reactPlayerRef.current) {
+                                const duration = reactPlayerRef.current.getDuration()
+                                reactPlayerRef.current.seekTo(item.from / 1000 / duration, "fraction")
+                              }
+                            }}
+                          />
+                          <Textarea
+                            disabled={!permission.dstWritable}
+                            id={`dst.items.${index}`}
+                            value={dstItem?.text}
+                            className="overflow-hidden w-72"
+                            onChange={(event) => {
+                              const subtitles = [...dstObj.subtitle]
+                              const subtitle = subtitles[index]
+                              if (subtitle) {
+                                subtitle.text = event.target.value
+                              } else {
+                                subtitles[index] = {
+                                  ...item,
+                                  text: event.target.value
+                                }
+                              }
+                              handleChange("dst", { ...dstObj, subtitle: subtitles })
+                            }}
+                            onFocus={() => {
+                              if (reactPlayerRef.current) {
+                                const duration = reactPlayerRef.current.getDuration()
+                                reactPlayerRef.current.seekTo(item.from / 1000 / duration * 1.001, "fraction")
+                              }
+                            }}
+                          />
+                        </div>
+                      )
                     })
                   }
                 </div>
@@ -668,7 +651,7 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
           </TabsContent>
 
           <TabsContent value="ost">
-            <ScrollArea className="h-[60vh] lg:h-[90vh]">
+            <ScrollArea className="h-[60vh] lg:h-[85vh]">
               <div className="flex flex-col space-y-2 pt-2 pr-1">
                 {
                   dstObj.ost && dstObj.ost.map((ost, index) => {
@@ -898,6 +881,196 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
                   <PlusCircle className="h-4 w-4 mr-1" />
                   New
                 </Button>
+              </div>
+            </ScrollArea>
+          </TabsContent>
+
+          <TabsContent value="dubbing">
+            <div className="flex space-x-2 items-center justify-center py-1">
+              <Button variant="outline" onClick={() => {
+                handleChange("dst", {
+                  ...dstObj, dubbing: dstObj.subtitle.map((item, i) => {
+                    return {
+                      from: item.from,
+                      to: item.to,
+                      text: item.text,
+                      subIndexes: [i]
+                    }
+                  })
+                })
+              }}>Reset to subtitle</Button>
+              <Button variant="outline" onClick={async () => {
+                await synthesizeAudio()
+              }}>Synthesize All</Button>
+              <Button className="text-sm" variant="outline" onClick={async () => {
+                if (!isSynthAudioPlaying) {
+                  if (reactPlayerRef.current) {
+                    reactPlayerRef.current.setState({ playing: true })
+                  }
+                  setIsSynthAudioPlaying(true);
+                  await playAudio();
+                } else {
+                  setIsSynthAudioPlaying(false);
+                  // setCurrentItemIndex(0)
+                  // setCurrentAudioPlayPostision(0)
+                  if (audioRef.current) {
+                    (audioRef.current as HTMLAudioElement).pause()
+                  }
+                }
+              }}>{!isSynthAudioPlaying ? "Play with synth audio" : "Stop"}</Button>
+              <audio className="hidden" ref={audioRef} onEnded={playAudio} />
+            </div>
+
+
+            <ScrollArea className="h-[60vh] lg:h-[80vh]">
+              <div className="flex flex-col space-y-2 pt-2 pr-1">
+                {
+                  dstObj && dstObj.dubbing &&
+                  dstObj.dubbing.map((item, index) => {
+                    const dubbingText = dstObj.dubbing?.at(index)
+                    const dubbingAudio = dubbingData.at(index)
+
+                    return (
+                      <div
+                        key={`dubbing-${index}`}
+                        className={`flex m-2 space-x-1 ${focusedIndex != null && dubbingText?.subIndexes.includes(focusedIndex) ? "border-red-200 border-l-4 pl-2" : "pl-3"}`}>
+                        <div className="flex flex-col justify-between items-end pr-1">
+                          <div className="flex flex-col space-y-1 items-end">
+                            <Label className="text-xs text-slate-300">{timeFormat(item.from)}</Label>
+                            <Label className="text-xs text-slate-300">{((item.to - item.from) / 1000).toFixed(1)}s</Label>
+                            <Label className={isGoogdAudioState((dubbingText?.to ?? 0) - (dubbingText?.from ?? 0), dubbingAudio?.audioDuration ?? 0) ? "text-xs text-slate-300" : "text-xs text-red-500"}>
+                              {(dubbingAudio &&
+                                dubbingAudio.text === dubbingText?.text) ?
+                                ((dubbingAudio.audioDuration ?? 0) / 1000).toFixed(1)
+                                : "0"
+                              }s
+                            </Label>
+                            <div className="flex space-x-1">
+                              <Button variant="ghost" className="p-0 h-4 w-4"
+                                onClick={async () => {
+                                  const text = dstObj.dubbing?.at(index)?.text
+                                  const from = dstObj.dubbing?.at(index)?.from
+                                  if (text && from !== undefined) {
+                                    const result = await synthText(text)
+                                    if (result) {
+                                      setDubbingData(data => {
+                                        const newData = clone(data)
+                                        newData[index] = {
+                                          from: from,
+                                          text: text,
+                                          audioBlob: result.blob,
+                                          audioDuration: result.duration,
+                                        }
+                                        return (newData)
+                                      })
+                                    }
+                                  }
+                                }}
+                              ><Plug2 className="h-3 w-3" /></Button>
+                              <Button variant="ghost" className="p-0 h-4 w-4"
+                                onClick={async () => {
+                                  const blob = dubbingData.at(index)?.audioBlob
+                                  const from = dubbingData.at(index)?.from
+                                  if (blob && from !== undefined) {
+                                    await playSynthedAudio(index)
+                                  }
+                                }}
+                              ><PlayCircle className="h-3 w-3" /></Button>
+                            </div>
+                          </div>
+                        </div>
+                        <Textarea
+                          disabled={!permission.dstWritable}
+                          id={`dubbing.items.${index}`}
+                          value={item.text}
+                          className="overflow-hidden w-[500px]"
+                          onChange={(event) => {
+                            if (dstObj.dubbing) {
+                              const subtitles = [...dstObj.dubbing]
+                              const subtitle = subtitles[index]
+                              if (subtitle) {
+                                subtitle.text = event.target.value
+                              } else {
+                                subtitles[index] = {
+                                  ...item,
+                                  text: event.target.value
+                                }
+                              }
+                              handleChange("dst", { ...dstObj, dubbing: subtitles })
+                            }
+                          }}
+                          onFocus={() => {
+                            if (reactPlayerRef.current) {
+                              const duration = reactPlayerRef.current.getDuration()
+                              reactPlayerRef.current.seekTo(item.from / 1000 / duration * 1.001, "fraction")
+                            }
+                          }}
+                        />
+                        <div className="flex flex-col space-y-1">
+                          <Button
+                            variant="ghost" size="icon"
+                            disabled={dstObj.dubbing?.at(index)?.subIndexes.length == 1}
+                            onClick={() => {
+                              if (dstObj.dubbing) {
+                                const dubs = [...dstObj.dubbing]
+                                const dub = dubs[index]
+                                if (dub) {
+                                  let k = 1
+                                  dub.subIndexes.forEach(i => {
+                                    const sub = dstObj.subtitle[i]
+                                    if (sub) {
+                                      dubs.splice(index + k, 0, {
+                                        from: sub.from,
+                                        to: sub.to,
+                                        text: sub.text,
+                                        subIndexes: [i]
+                                      })
+                                      k = k + 1
+                                    }
+                                  })
+                                  dubs.splice(index, 1)
+                                }
+                                handleChange("dst", { ...dstObj, dubbing: dubs })
+                              }
+                            }}
+                          >
+                            {
+                              tooltipWrapped(
+                                <SeparatorHorizontal className="h-4 w-4" />,
+                                <p>Unmerge all</p>
+                              )
+                            }
+                          </Button>
+
+                          <Button variant="ghost" size="icon"
+                            disabled={!dstObj.dubbing?.at(index + 1)}
+                            onClick={() => {
+                              if (dstObj.dubbing) {
+                                const dubs = [...dstObj.dubbing]
+                                const dub = dubs[index]
+                                const nextDub = dubs[index + 1]
+                                if (dub && nextDub) {
+                                  dub.to = nextDub.to
+                                  dub.text = `${dub.text} ${nextDub.text}`
+                                  dub.subIndexes.push(...nextDub.subIndexes)
+                                }
+                                dubs.splice(index + 1, 1)
+                                handleChange("dst", { ...dstObj, dubbing: dubs })
+                              }
+                            }}
+                          >
+                            {
+                              tooltipWrapped(
+                                <ArrowBigDownDash className="h-4 w-4" />,
+                                <p>Merge down</p>
+                              )
+                            }
+                          </Button>
+                        </div>
+                      </div>
+                    )
+                  })
+                }
               </div>
             </ScrollArea>
           </TabsContent>
