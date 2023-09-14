@@ -80,6 +80,12 @@ export type DubbingItem = {
   to: number,
   text: string,
   subIndexes: number[],
+  params: DubbingItemParams,
+}
+
+export type DubbingItemParams = {
+  voice: string,
+  rate: number,
 }
 
 export type AudioSynthesisParamsType = {

@@ -36,7 +36,8 @@ import type {
   SubtitleType,
   ProjectAiParamters,
   RelativePositionType,
-  OnScreenTextItem
+  OnScreenTextItem,
+  DubbingItemParams
 } from "~/types"
 import { ScrollArea } from "~/components/ui/scroll-area"
 
@@ -192,6 +193,7 @@ type DubbingDataItem = {
   text: string,
   audioBlob: Blob,
   audioDuration: number,
+  params: DubbingItemParams,
 }
 
 const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentProps>(
@@ -203,7 +205,7 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
     const [ostIndexes, setOstIndexes] = React.useState<number[]>([])
     const [focusedIndex, setFocusedIndex] = React.useState<number | null>(null)
     const [dubbingData, setDubbingData] = React.useState<DubbingDataItem[]>([])
-    const [isVideoMuted, setIsVideoMuted] = React.useState(false)
+    const [dubbingPlaying, setDubbingPlaying] = React.useState(false)
     const [videoDuration, setVideoDuration] = React.useState<number>()
     const [mergedDubbingData, setMergedDubbingData] = React.useState<DubbingDataItem>()
     const audioRef = React.useRef(null);
@@ -275,7 +277,7 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
             reactPlayerRef.current.seekTo(audioData.from / 1000)
             const audioUrl = URL.createObjectURL(audioData.audioBlob)
             if (audioUrl) {
-              setIsVideoMuted(true)
+              setDubbingPlaying(true)
               setPlaying(true)
 
               audioElement.src = audioUrl
@@ -287,7 +289,7 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
             reactPlayerRef.current.seekTo(0)
             const audioUrl = URL.createObjectURL(mergedDubbingData.audioBlob)
             if (audioUrl) {
-              setIsVideoMuted(true)
+              setDubbingPlaying(true)
               setPlaying(true)
 
               audioElement.src = audioUrl
@@ -296,6 +298,11 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
           }
         }
       }
+    }
+
+    const generateSynthText = (text: string, params: DubbingItemParams) => {
+      const result = `<voice name="${params.voice}"><mstts:silence type="Tailing-exact" value="0ms" />${text}</voice>`
+      return result
     }
 
     const synthText = async (text: string) => {
@@ -329,8 +336,9 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
           for (const data of dstObj.dubbing) {
             const text = data.text
             const from = data.from
+            const params = { ...data.params }
             if (text && from !== undefined) {
-              const result = await synthText(text)
+              const result = await synthText(generateSynthText(text, params))
               if (result) {
                 setDubbingData(data => {
                   const newData = clone(data)
@@ -339,6 +347,7 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
                     text: text,
                     audioBlob: result.blob,
                     audioDuration: result.duration,
+                    params: params,
                   }
                   return (newData)
                 })
@@ -351,8 +360,9 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
       } else {
         const text = dstObj.dubbing?.at(index)?.text
         const from = dstObj.dubbing?.at(index)?.from
-        if (text && from !== undefined) {
-          const result = await synthText(text)
+        const params = dstObj.dubbing?.at(index)?.params
+        if (text && from !== undefined && params) {
+          const result = await synthText(generateSynthText(text, params))
           if (result) {
             setDubbingData(data => {
               const newData = clone(data)
@@ -361,6 +371,7 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
                 text: text,
                 audioBlob: result.blob,
                 audioDuration: result.duration,
+                params: { ...params },
               }
               return (newData)
             })
@@ -443,12 +454,22 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
             url={srcObj.videoUrl}
             ref={reactPlayerRef}
             caption={captions.dst}
-            volume={isVideoMuted ? 0.01 : 1}
+            volume={dubbingPlaying ? 0.1 : 1}
             ost={osts}
             playing={playing}
             handleOstDragged={handleOstDragged}
             handleProgress={(p: number) => setProgress(p)}
-            handlePlay={(p: boolean) => setPlaying(p)}
+            handlePlay={(p: boolean) => {
+              setPlaying(p)
+              if (!p && dubbingPlaying) {
+                if (audioRef.current) {
+                  const audioElement = audioRef.current as HTMLAudioElement
+                  audioElement.pause()
+                }
+
+                setDubbingPlaying(false)
+              }
+            }}
             handleDuration={(d: number) => setVideoDuration(d)}
           >
           </VideoPlayer>
@@ -779,7 +800,11 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
                       from: item.from,
                       to: item.to,
                       text: item.text,
-                      subIndexes: [i]
+                      subIndexes: [i],
+                      params: {
+                        voice: "zh-CN-YunjianNeural",
+                        rate: 1,
+                      }
                     }
                   })
                 })
@@ -797,7 +822,7 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
                       dubbing.push(`<voice name="zh-CN-YunjianNeural"><break time="${pause}ms" /></voice>`)
                     }
 
-                    dubbing.push(item.text)
+                    dubbing.push(generateSynthText(item.text, item.params))
                     lastTo = item.to
                   })
                   const result = await synthText(dubbing.join("\n"))
@@ -806,7 +831,11 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
                       from: 0,
                       text: "",
                       audioDuration: result.duration,
-                      audioBlob: result.blob
+                      audioBlob: result.blob,
+                      params: {
+                        voice: "",
+                        rate: 0,
+                      }
                     })
                   }
                 }
@@ -817,7 +846,7 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
               }}>Play Entire</Button>
 
               <audio className="hidden" ref={audioRef} onEnded={() => {
-                setIsVideoMuted(false)
+                setDubbingPlaying(false)
                 setPlaying(false)
               }} />
             </div>
@@ -913,7 +942,11 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
                                         from: sub.from,
                                         to: sub.to,
                                         text: sub.text,
-                                        subIndexes: [i]
+                                        subIndexes: [i],
+                                        params: {
+                                          voice: dub.params.voice,
+                                          rate: dub.params.rate,
+                                        }
                                       })
                                       k = k + 1
                                     }
