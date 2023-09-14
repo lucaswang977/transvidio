@@ -196,23 +196,17 @@ type DubbingDataItem = {
 
 const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentProps>(
   ({ srcJson, dstJson, handleChange, permission, setAutoFillInit }, ref) => {
-    const reactPlayerRef = React.useRef<ReactPlayer>(null);
+    const reactPlayerRef = React.useRef<ReactPlayer>(null)
+    const [playing, setPlaying] = React.useState(false)
     const [progress, setProgress] = React.useState(0)
     const [captions, setCaptions] = React.useState({ src: "", dst: "" })
     const [ostIndexes, setOstIndexes] = React.useState<number[]>([])
     const [focusedIndex, setFocusedIndex] = React.useState<number | null>(null)
     const [dubbingData, setDubbingData] = React.useState<DubbingDataItem[]>([])
-    // const [currentItemIndex, setCurrentItemIndex] = React.useState(0)
-    // const [currentAudioPlayPosition, setCurrentAudioPlayPostision] = React.useState(0)
-    const [isSynthAudioPlaying, setIsSynthAudioPlaying] = React.useState(false)
-    // const [audioSynthParams, setAudioSynthParams] =
-    //   React.useState<AudioSynthesisParamsType | undefined>({
-    //     lang: "zh-CN",
-    //     voice: "zh-CN-YunjianNeural",
-    //     rate: "20%"
-    //   })
+    const [isVideoMuted, setIsVideoMuted] = React.useState(false)
+    const [videoDuration, setVideoDuration] = React.useState<number>()
+    const [mergedDubbingData, setMergedDubbingData] = React.useState<DubbingDataItem>()
     const audioRef = React.useRef(null);
-    // const singleAudioRef = React.useRef(null);
 
     const defaultValue: SubtitleType = {
       videoUrl: "",
@@ -270,87 +264,38 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
       })
     }
 
-    /*
-    const base64ToBlob = (base64: string | undefined) => {
-      if (base64) {
-        const parts = base64.split(';base64,');
-        if (parts[0] && parts[1]) {
-          const mimeType = parts[0].split(':')[1];
-          const raw = window.atob(parts[1]);
-          const rawLength = raw.length;
-          const uInt8Array = new Uint8Array(rawLength);
-
-          for (let i = 0; i < rawLength; ++i) {
-            uInt8Array[i] = raw.charCodeAt(i);
-          }
-          return new Blob([uInt8Array], { type: mimeType });
-        }
-      }
-      return undefined
-    }
-    */
-
-    const playSynthedAudio = async (index: number) => {
+    const playSynthedAudio = async (index?: number) => {
       if (audioRef.current && reactPlayerRef.current) {
         const audioElement = audioRef.current as HTMLAudioElement
-        const audioData = dubbingData.at(index)
 
-        if (audioData) {
-          reactPlayerRef.current.seekTo(audioData.from / 1000)
-          const audioUrl = URL.createObjectURL(audioData.audioBlob)
-          if (audioUrl) {
-            audioElement.src = audioUrl
-            await audioElement.play();
+        if (index !== undefined) {
+          const audioData = dubbingData.at(index)
+
+          if (audioData) {
+            reactPlayerRef.current.seekTo(audioData.from / 1000)
+            const audioUrl = URL.createObjectURL(audioData.audioBlob)
+            if (audioUrl) {
+              setIsVideoMuted(true)
+              setPlaying(true)
+
+              audioElement.src = audioUrl
+              await audioElement.play();
+            }
+          }
+        } else {
+          if (mergedDubbingData) {
+            reactPlayerRef.current.seekTo(0)
+            const audioUrl = URL.createObjectURL(mergedDubbingData.audioBlob)
+            if (audioUrl) {
+              setIsVideoMuted(true)
+              setPlaying(true)
+
+              audioElement.src = audioUrl
+              await audioElement.play();
+            }
           }
         }
       }
-    }
-
-    const playAudio = async () => {
-      /*
-      if (audioRef.current && audioData) {
-        const audioElement = audioRef.current as HTMLAudioElement
-
-        const currentAudioData = audioData[currentItemIndex]
-        const blob = base64ToBlob(currentAudioData?.audioData)
-        if (blob) {
-          const currentAudioUrl = URL.createObjectURL(blob)
-          let pauseDuration = currentAudioData ? currentAudioData.from - currentAudioPlayPosition : 0
-          if (pauseDuration < 0) pauseDuration = 0
-          console.log("audio:",
-            currentItemIndex,
-            currentAudioPlayPosition,
-            currentAudioData?.from,
-            currentAudioData?.to,
-            currentAudioData?.audioDuration,
-            currentAudioData?.textDuration,
-            pauseDuration)
-
-          if (pauseDuration > 0)
-            await new Promise(resolve => setTimeout(resolve, pauseDuration));
-
-          if (currentAudioUrl) {
-            audioElement.src = currentAudioUrl
-            await audioElement.play();
-          }
-
-          if (currentItemIndex < audioData.length) {
-            setCurrentItemIndex(currentItemIndex + 1);
-            setCurrentAudioPlayPostision(v => {
-              if (currentAudioData)
-                return currentAudioData.to
-              else
-                return v
-            })
-          } else {
-            (audioRef.current as HTMLAudioElement).pause()
-            setCurrentItemIndex(0)
-            setCurrentAudioPlayPostision(0)
-            setIsSynthAudioPlaying(false)
-          }
-        }
-      }
-      */
     }
 
     const synthText = async (text: string) => {
@@ -377,119 +322,56 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
       }
     }
 
-    const synthesizeAudio = async () => {
-      /*
-      if (dstObj && dstObj.subtitle) {
-        const emptyAudioSynthesisData: AudioSynthesisType = {
-          subtitleItemIds: [],
-          from: 0,
-          to: 0,
-          text: "",
-          textDuration: 0,
-          audioData: "",
-          audioDuration: 0,
-          audioParams: audioSynthParams,
-        }
-        const result: AudioSynthesisType[] = []
-        let dstSentences: string[] = []
-        let subtitleItemIds: number[] = []
-        let index = 0
-        let data = emptyAudioSynthesisData
-
-        dstObj.subtitle.forEach(item => {
-          if (dstSentences.length === 0) {
-            data.from = item.from
-          }
-
-          const dstItem = dstObj.subtitle[index]
-          if (dstItem) {
-            dstSentences.push(dstItem.text)
-            subtitleItemIds.push(index)
-          }
-
-          if (regexToSegementSentence.test(dstSentences.join("").trim())) {
-            data.text = dstSentences.join("")
-            data.subtitleItemIds = [...subtitleItemIds]
-            data.to = item.to
-            data.textDuration = data.to - data.from
-            dstSentences = []
-            subtitleItemIds = []
-            result.push({ ...data })
-            data = emptyAudioSynthesisData
-          }
-          index = index + 1
-        })
-
-        const origData = dstObj.audio
-        for (const item of result) {
-          const origItem = origData ?
-            origData.find(i => i.from === item.from && i.to === item.to)
-            : undefined
-
-          if (origItem && origItem.text === item.text) {
-            item.audioData = origItem.audioData
-            item.audioDuration = origItem.audioDuration
-          } else {
-            const text = item.text
-            if (text.length > 0) {
-              const apiUrl = "/api/synthesis";
-              try {
-                const response = await fetch(apiUrl, {
-                  method: "POST",
-                  body: JSON.stringify({
-                    phrase: text,
-                    params: item.audioParams
-                  })
-                });
-                if (!response.ok) {
-                  throw new Error('Network response was not ok');
-                }
-                const durationStr = response.headers.get("Audio-Duration")
-                item.audioDuration = Math.floor(parseFloat(durationStr ? durationStr : "0") * 1000)
-                const audioBlob = await response.blob();
-                item.audioData = await (new Promise((resolve, reject) => {
-                  const reader = new FileReader();
-                  reader.onloadend = function() {
-                    resolve(reader.result as string);
+    const synthDubbingData = async (index?: number) => {
+      if (index === undefined) {
+        if (dstObj.dubbing) {
+          let index = 0
+          for (const data of dstObj.dubbing) {
+            const text = data.text
+            const from = data.from
+            if (text && from !== undefined) {
+              const result = await synthText(text)
+              if (result) {
+                setDubbingData(data => {
+                  const newData = clone(data)
+                  newData[index] = {
+                    from: from,
+                    text: text,
+                    audioBlob: result.blob,
+                    audioDuration: result.duration,
                   }
-                  reader.onerror = reject;
-                  reader.readAsDataURL(audioBlob);
-                }))
-                console.log("audio synthesized: ", item)
-              } catch (error) {
-                console.error('Error fetching audio data:', error);
+                  return (newData)
+                })
               }
             }
+
+            index++
           }
         }
-
-        handleChange("dst", dstObj => {
-          return { ...(dstObj as SubtitleType), audio: result }
-        })
-      }
-      */
-    }
-
-    const isGoogdAudioState = (textDuration: number, audioDuration: number) => {
-      return Math.abs(audioDuration - textDuration) <= 200
-    }
-
-
-    /*
-    const audioData = dstObj.audio
-
-    const getAudioDataByIndex = (index: number | null) => {
-      if (audioData)
-        return audioData.findIndex(item => {
-          if (index !== null && item.subtitleItemIds.includes(index)) {
-            return item
+      } else {
+        const text = dstObj.dubbing?.at(index)?.text
+        const from = dstObj.dubbing?.at(index)?.from
+        if (text && from !== undefined) {
+          const result = await synthText(text)
+          if (result) {
+            setDubbingData(data => {
+              const newData = clone(data)
+              newData[index] = {
+                from: from,
+                text: text,
+                audioBlob: result.blob,
+                audioDuration: result.duration,
+              }
+              return (newData)
+            })
           }
-        })
-      else return -1
+        }
+      }
     }
 
-    const focusedAudioData = audioData ? audioData[getAudioDataByIndex(focusedIndex)] : undefined
-    */
+    const isGoodAudioState = (textDuration: number, audioDuration: number) => {
+      return textDuration - audioDuration <= 100 && textDuration - audioDuration >= 0
+    }
 
     const osts: VideoOstType[] = []
     const dstObjOst = dstObj.ost
@@ -561,10 +443,13 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
             url={srcObj.videoUrl}
             ref={reactPlayerRef}
             caption={captions.dst}
-            muted={isSynthAudioPlaying}
+            volume={isVideoMuted ? 0.01 : 1}
             ost={osts}
+            playing={playing}
             handleOstDragged={handleOstDragged}
             handleProgress={(p: number) => setProgress(p)}
+            handlePlay={(p: boolean) => setPlaying(p)}
+            handleDuration={(d: number) => setVideoDuration(d)}
           >
           </VideoPlayer>
         </div>
@@ -900,25 +785,45 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
                 })
               }}>Reset to subtitle</Button>
               <Button variant="outline" onClick={async () => {
-                await synthesizeAudio()
+                await synthDubbingData()
               }}>Synthesize All</Button>
               <Button className="text-sm" variant="outline" onClick={async () => {
-                if (!isSynthAudioPlaying) {
-                  if (reactPlayerRef.current) {
-                    reactPlayerRef.current.setState({ playing: true })
-                  }
-                  setIsSynthAudioPlaying(true);
-                  await playAudio();
-                } else {
-                  setIsSynthAudioPlaying(false);
-                  // setCurrentItemIndex(0)
-                  // setCurrentAudioPlayPostision(0)
-                  if (audioRef.current) {
-                    (audioRef.current as HTMLAudioElement).pause()
+                if (dstObj.dubbing && dstObj.dubbing.length > 0) {
+                  const dubbing: string[] = []
+                  let lastTo = 0
+                  dstObj.dubbing.forEach((item) => {
+                    const pause = item.from - lastTo
+                    if (pause > 0) {
+                      dubbing.push(`<voice name="zh-CN-YunjianNeural"><break time="${pause}ms" /></voice>`)
+                    }
+
+                    dubbing.push(item.text)
+                    lastTo = item.to
+                  })
+                  const result = await synthText(dubbing.join("\n"))
+                  if (result) {
+                    setMergedDubbingData({
+                      from: 0,
+                      text: "",
+                      audioDuration: result.duration,
+                      audioBlob: result.blob
+                    })
                   }
                 }
-              }}>{!isSynthAudioPlaying ? "Play with synth audio" : "Stop"}</Button>
-              <audio className="hidden" ref={audioRef} onEnded={playAudio} />
+              }}>Synthesize Entire</Button>
+
+              <Button variant="outline" onClick={async () => {
+                await playSynthedAudio()
+              }}>Play Entire</Button>
+
+              <audio className="hidden" ref={audioRef} onEnded={() => {
+                setIsVideoMuted(false)
+                setPlaying(false)
+              }} />
+            </div>
+            <div className="flex space-x-1 justify-center items-center w-full">
+              <Label className="text-xs text-gray-300">{mergedDubbingData ? (mergedDubbingData.audioDuration / 1000).toFixed(3) : 0} / </Label>
+              <Label className="text-xs text-gray-300">{videoDuration !== undefined && videoDuration.toFixed(3)}</Label>
             </div>
 
 
@@ -937,34 +842,19 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
                         <div className="flex flex-col justify-between items-end pr-1">
                           <div className="flex flex-col space-y-1 items-end">
                             <Label className="text-xs text-slate-300">{timeFormat(item.from)}</Label>
-                            <Label className="text-xs text-slate-300">{((item.to - item.from) / 1000).toFixed(1)}s</Label>
-                            <Label className={isGoogdAudioState((dubbingText?.to ?? 0) - (dubbingText?.from ?? 0), dubbingAudio?.audioDuration ?? 0) ? "text-xs text-slate-300" : "text-xs text-red-500"}>
+                            <Label className="text-xs text-slate-300">{timeFormat(item.to)}</Label>
+                            <Label className="text-xs text-slate-300">{((item.to - item.from) / 1000).toFixed(3)}s</Label>
+                            <Label className={isGoodAudioState((dubbingText?.to ?? 0) - (dubbingText?.from ?? 0), dubbingAudio?.audioDuration ?? 0) ? "text-xs text-slate-300" : "text-xs text-red-500"}>
                               {(dubbingAudio &&
                                 dubbingAudio.text === dubbingText?.text) ?
-                                ((dubbingAudio.audioDuration ?? 0) / 1000).toFixed(1)
+                                ((dubbingAudio.audioDuration ?? 0) / 1000).toFixed(3)
                                 : "0"
                               }s
                             </Label>
                             <div className="flex space-x-1">
                               <Button variant="ghost" className="p-0 h-4 w-4"
                                 onClick={async () => {
-                                  const text = dstObj.dubbing?.at(index)?.text
-                                  const from = dstObj.dubbing?.at(index)?.from
-                                  if (text && from !== undefined) {
-                                    const result = await synthText(text)
-                                    if (result) {
-                                      setDubbingData(data => {
-                                        const newData = clone(data)
-                                        newData[index] = {
-                                          from: from,
-                                          text: text,
-                                          audioBlob: result.blob,
-                                          audioDuration: result.duration,
-                                        }
-                                        return (newData)
-                                      })
-                                    }
-                                  }
+                                  await synthDubbingData(index)
                                 }}
                               ><Plug2 className="h-3 w-3" /></Button>
                               <Button variant="ghost" className="p-0 h-4 w-4"

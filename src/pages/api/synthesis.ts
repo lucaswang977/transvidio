@@ -27,7 +27,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       env.AZURE_SPEECH_KEY, env.AZURE_SPEECH_REGION);
     speechConfig.speechSynthesisOutputFormat = 5 // mp3
     const voiceLang = params ? params.lang : "zh-CN"
-    const voiceName = params ? params.voice : "zh-CN-YunjianNeural"
 
     const synthesizer = new sdk.SpeechSynthesizer(speechConfig);
     synthesizer.synthesisCompleted = async function(_s, e) {
@@ -40,9 +39,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         xmlns="http://www.w3.org/2001/10/synthesis" 
         xmlns:mstts="https://www.w3.org/2001/mstts" 
         xml:lang="${voiceLang}">
-       <voice name="${voiceName}"> 
-          ${phrase}
-       </voice>
+        ${phrase}
        </speak>`
     console.log(ssml)
 
@@ -59,9 +56,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 this.push(null)
               }
             }))
-            .audioFilters([
-              'silenceremove=stop_periods=1:stop_duration=0.4:stop_threshold=0:detection=peak'
-            ])
+            // .audioFilters([
+            //   'silenceremove=stop_periods=1:stop_duration=0.4:stop_threshold=0:detection=peak'
+            // ])
             .output("/tmp/output.mp3")
             .on('end', async () => {
               const dataView = new Uint8Array(fs.readFileSync("/tmp/output.mp3"))

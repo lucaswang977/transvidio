@@ -84,7 +84,6 @@ export type DubbingItem = {
 
 export type AudioSynthesisParamsType = {
   lang: string,
-  voice: string,
 }
 
 export type QuizPromptItem = {

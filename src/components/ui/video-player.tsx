@@ -18,8 +18,11 @@ export interface VideoPlayerProps extends React.HTMLAttributes<HTMLVideoElement>
   height?: string,
   caption?: string,
   ost?: VideoOstType[],
+  playing: boolean,
   handleOstDragged?: (index: number, position: RelativePositionType) => void,
   handleProgress: (playedSeconds: number) => void,
+  handlePlay: (playing: boolean) => void,
+  handleDuration?: (duration: number) => void,
 }
 
 export type VideoOstType = {
@@ -48,13 +51,20 @@ const defaultDndStateValue: DndStateType = {
 }
 
 const VideoPlayer = React.forwardRef<ReactPlayer, VideoPlayerProps & ReactPlayerProps>(
-  ({ className, url, handleProgress, handleOstDragged, ...props }, ref) => {
+  ({
+    className,
+    url,
+    playing,
+    handleProgress,
+    handleOstDragged,
+    handlePlay,
+    handleDuration,
+    ...props }, ref) => {
     const VIDEO_HEIGHT = 360
     const VIDEO_WIDTH = 640
     const ostWrapperRef = React.useRef<HTMLDivElement>(null)
     const dndState = React.useRef<DndStateType>(clone(defaultDndStateValue))
     const [ready, setReady] = React.useState(false)
-    const [playing, setPlaying] = React.useState(false)
     const [progress, setProgress] = React.useState(0)
     const [duration, setDuration] = React.useState(-1)
     const [playbackRate, setPlaybackRate] = React.useState(1)
@@ -126,7 +136,10 @@ const VideoPlayer = React.forwardRef<ReactPlayer, VideoPlayerProps & ReactPlayer
               playbackRate={playbackRate}
               progressInterval={100}
               onReady={() => { setReady(true) }}
-              onDuration={(duration) => { setDuration(duration) }}
+              onDuration={(duration) => {
+                setDuration(duration)
+                if (handleDuration) handleDuration(duration)
+              }}
               onSeek={(p) => {
                 handleProgress(p)
               }}
@@ -135,8 +148,8 @@ const VideoPlayer = React.forwardRef<ReactPlayer, VideoPlayerProps & ReactPlayer
                 setProgress(p >= 0 ? p : 0)
                 handleProgress(state.playedSeconds)
               }}
-              onPlay={() => { setPlaying(true) }}
-              onPause={() => { setPlaying(false) }}
+              onPlay={() => { handlePlay(true) }}
+              onPause={() => { handlePlay(false) }}
               {...props}
             >
             </ReactPlayer>
@@ -224,7 +237,7 @@ const VideoPlayer = React.forwardRef<ReactPlayer, VideoPlayerProps & ReactPlayer
               {
                 tooltipWrapped(
                   <Button
-                    onClick={() => { setPlaying(!playing) }}
+                    onClick={() => { handlePlay(!playing) }}
                     disabled={!ready}
                     size="icon"
                     variant="outline">
