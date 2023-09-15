@@ -5,9 +5,9 @@ import { authOptions } from "~/server/auth";
 import { getServerSession } from "next-auth/next"
 import { cLog, LogLevels } from "~/utils/helper"
 import type { NextApiRequest, NextApiResponse } from 'next';
-import Ffmpeg from 'fluent-ffmpeg'
-import * as fs from "fs"
-import { Readable } from 'stream'
+// import Ffmpeg from 'fluent-ffmpeg'
+// import * as fs from "fs"
+// import { Readable } from 'stream'
 import type { AudioSynthesisParamsType } from '~/types';
 
 const LOG_RANGE = "SPEECH"
@@ -46,52 +46,53 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return new Promise<void>(resolve => {
       synthesizer.speakSsmlAsync(
         ssml,
-        (result) => {
+        async (result) => {
           const { audioData } = result;
 
-          Ffmpeg()
-            .input(new Readable({
-              read() {
-                this.push(Buffer.from(audioData))
-                this.push(null)
-              }
-            }))
-            // .audioFilters([
-            //   'silenceremove=stop_periods=1:stop_duration=0.4:stop_threshold=0:detection=peak'
-            // ])
-            .output("/tmp/output.mp3")
-            .on('end', async () => {
-              const dataView = new Uint8Array(fs.readFileSync("/tmp/output.mp3"))
-              const metadata = await mm.parseBuffer(dataView, 'audio/mpeg', { duration: true });
+          // Ffmpeg()
+          //   .input(new Readable({
+          //     read() {
+          //       this.push(Buffer.from(audioData))
+          //       this.push(null)
+          //     }
+          //   }))
+          //   .audioFilters([
+          //     'silenceremove=stop_periods=1:stop_duration=0.4:stop_threshold=0:detection=peak'
+          //   ])
+          //   .output("/tmp/output.mp3")
+          //   .on('end', async () => {
+          // const dataView = new Uint8Array(fs.readFileSync("/tmp/output.mp3"))
+          const dataView = new Uint8Array(audioData)
+          const metadata = await mm.parseBuffer(dataView, 'audio/mpeg', { duration: true });
 
-              res.writeHead(200, {
-                'Content-Type': 'audio/mpeg',
-                'Transfer-Encoding': 'chunked',
-                'Audio-Duration': metadata.format.duration
-              })
+          res.writeHead(200, {
+            'Content-Type': 'audio/mpeg',
+            'Transfer-Encoding': 'chunked',
+            'Audio-Duration': metadata.format.duration
+          })
 
-              let chunkIndex = 0;
+          let chunkIndex = 0;
 
-              function pushNextChunk() {
-                const chunk = dataView.subarray(chunkIndex, chunkIndex + 1024)
-                chunkIndex += chunk.length
+          function pushNextChunk() {
+            const chunk = dataView.subarray(chunkIndex, chunkIndex + 1024)
+            chunkIndex += chunk.length
 
-                if (chunk.length > 0) {
-                  res.write(chunk)
-                }
+            if (chunk.length > 0) {
+              res.write(chunk)
+            }
 
-                if (chunkIndex >= dataView.length) {
-                  res.end()
-                  synthesizer.close()
-                  resolve()
-                } else {
-                  setTimeout(pushNextChunk, 0)
-                }
-              }
+            if (chunkIndex >= dataView.length) {
+              res.end()
+              synthesizer.close()
+              resolve()
+            } else {
+              setTimeout(pushNextChunk, 0)
+            }
+          }
 
-              pushNextChunk();
-            })
-            .run()
+          pushNextChunk();
+          // })
+          // .run()
         },
         (error) => {
           console.log(error)
