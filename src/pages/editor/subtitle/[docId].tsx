@@ -57,6 +57,7 @@ import {
 import {
   AlertTriangle,
   ArrowBigDownDash,
+  Brackets,
   Copy,
   FlagTriangleRight,
   MoreHorizontal,
@@ -869,13 +870,13 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
                 {
                   dstObj && dstObj.dubbing &&
                   dstObj.dubbing.map((item, index) => {
-                    console.log(item)
                     const dubbingText = dstObj.dubbing?.at(index)
                     const nextDubbingText = dstObj.dubbing?.at(index + 1)
                     const dubbingAudio = dubbingData.at(index)
                     const rateHint = dubbingAudio ? (dubbingAudio.audioDuration / (item.to - item.from) - 1) : 0
                     const goodState = isGoodAudioState((dubbingText?.to ?? 0) - (dubbingText?.from ?? 0), dubbingAudio?.audioDuration ?? 0)
                     const focusedIncludedInDubbing = focusedIndex != null && dubbingText && dubbingText.subIndexes && dubbingText.subIndexes.includes(focusedIndex)
+                    const audioReady = (dubbingAudio && dubbingAudio.text === dubbingText?.text)
 
                     return (
                       <div
@@ -887,14 +888,9 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
                           <div className="flex flex-col justify-between items-end pr-1">
                             <div className="flex flex-col space-y-1 items-end">
                               <Label className="text-xs text-slate-300">{timeFormat(item.from)}</Label>
-                              <Label className="text-xs text-slate-300">{timeFormat(item.to)}</Label>
                               <Label className="text-xs text-slate-300">{((item.to - item.from) / 1000).toFixed(3)}s</Label>
                               <Label className={goodState ? "text-xs text-slate-300" : "text-xs text-red-500"}>
-                                {(dubbingAudio &&
-                                  dubbingAudio.text === dubbingText?.text) ?
-                                  ((dubbingAudio.audioDuration ?? 0) / 1000).toFixed(3)
-                                  : "0"
-                                }s
+                                {audioReady ? ((dubbingAudio.audioDuration ?? 0) / 1000).toFixed(3) : "0"}s
                               </Label>
 
                               <div className="flex items-center justify-center space-x-1">
@@ -942,19 +938,24 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
                                         tooltipWrapped(
                                           (<AlertTriangle className="w-3 h-3 text-red-300" />),
                                           (<><p>Rate ({(rateHint * 100).toFixed(0)}%) is not good for synthesize. </p>
-                                            <p>Consider modify the content, merge the lines, or add breaks.</p></>)
+                                            <p>Consider modifying the content, merging the lines, or adding breaks.</p></>)
                                         )
                                     )
                                 }
                               </div>
 
                               <div className="flex space-x-1">
-                                <Button variant="ghost" className="p-0 h-4 w-4"
+                                <Button
+                                  variant="ghost"
+                                  className="p-0 h-4 w-4"
                                   onClick={async () => {
                                     await synthDubbingData(index)
                                   }}
                                 ><Plug2 className="h-3 w-3" /></Button>
-                                <Button variant="ghost" className="p-0 h-4 w-4"
+                                <Button
+                                  variant="ghost"
+                                  className="p-0 h-4 w-4"
+                                  disabled={!audioReady}
                                   onClick={async () => {
                                     const blob = dubbingData.at(index)?.audioBlob
                                     const from = dubbingData.at(index)?.from
@@ -968,7 +969,7 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
                           </div>
                           <Textarea
                             disabled={!permission.dstWritable}
-                            id={`dubbing.items.${index}`}
+                            id={`dubbing.textarea.${index}`}
                             value={item.text}
                             className="overflow-hidden w-[500px]"
                             onChange={(event) => {
@@ -993,9 +994,36 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
                               }
                             }}
                           />
-                          <div className="flex flex-col space-y-1">
+                          <div className="flex flex-col space-y-2">
+                            <Button variant="outline"
+                              className="h-5 w-5 p-0 rounded-sm"
+                              onClick={() => {
+                                if (dstObj.dubbing) {
+                                  const dubs = [...dstObj.dubbing]
+                                  const dub = dubs[index]
+                                  if (dub) {
+                                    const element = document.getElementById(`dubbing.textarea.${index}`) as HTMLTextAreaElement
+                                    if (element) {
+                                      const pos = element.selectionStart
+                                      dub.text = `${dub.text.slice(0, pos)}<break time="100ms" />${dub.text.slice(pos)}`
+                                      element.focus()
+                                    }
+                                  }
+                                  handleChange("dst", { ...dstObj, dubbing: dubs })
+                                }
+                              }}
+                            >
+                              {
+                                tooltipWrapped(
+                                  <Brackets className="h-4 w-4" />,
+                                  <p>Insert a break at current position</p>
+                                )
+                              }
+                            </Button>
+
                             <Button
-                              variant="ghost" size="icon"
+                              variant="outline"
+                              className="h-5 w-5 p-0 rounded-sm"
                               disabled={dstObj.dubbing?.at(index)?.subIndexes.length == 1}
                               onClick={() => {
                                 if (dstObj.dubbing) {
@@ -1016,6 +1044,7 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
                                             rate: dub.params.rate,
                                           }
                                         })
+                                        // TODO: Unmerge to insert empty items to hold the positions.
                                         k = k + 1
                                       }
                                     })
@@ -1033,20 +1062,25 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
                               }
                             </Button>
 
-                            <Button variant="ghost" size="icon"
+                            <Button variant="outline"
+                              className="h-5 w-5 p-0 rounded-sm"
                               disabled={!dstObj.dubbing?.at(index + 1)}
                               onClick={() => {
                                 if (dstObj.dubbing) {
-                                  const dubs = [...dstObj.dubbing]
-                                  const dub = dubs[index]
-                                  const nextDub = dubs[index + 1]
-                                  if (dub && nextDub) {
-                                    dub.to = nextDub.to
-                                    dub.text = `${dub.text} ${nextDub.text}`
-                                    dub.subIndexes.push(...nextDub.subIndexes)
+                                  const dubTexts = [...dstObj.dubbing]
+                                  const dubText = dubTexts[index]
+                                  const nextDubText = dubTexts[index + 1]
+                                  if (dubText && nextDubText) {
+                                    dubText.to = nextDubText.to
+                                    dubText.text = `${dubText.text} ${nextDubText.text}`
+                                    dubText.subIndexes.push(...nextDubText.subIndexes)
                                   }
-                                  dubs.splice(index + 1, 1)
-                                  handleChange("dst", { ...dstObj, dubbing: dubs })
+                                  dubTexts.splice(index + 1, 1)
+
+                                  if (dubbingData && dubbingData.at(index) && dubbingData.at(index + 1)) {
+                                    setDubbingData([...dubbingData.splice(index + 1, 1)])
+                                  }
+                                  handleChange("dst", { ...dstObj, dubbing: dubTexts })
                                 }
                               }}
                             >
@@ -1057,6 +1091,7 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
                                 )
                               }
                             </Button>
+
                           </div>
                         </div>
                         {
