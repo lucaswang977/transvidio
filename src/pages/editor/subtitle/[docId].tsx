@@ -58,6 +58,7 @@ import {
   AlertTriangle,
   ArrowBigDownDash,
   Copy,
+  FlagTriangleRight,
   MoreHorizontal,
   PlayCircle,
   Plug2,
@@ -65,6 +66,7 @@ import {
   SeparatorHorizontal,
   TimerReset,
   Trash,
+  X,
 } from "lucide-react"
 
 import {
@@ -387,7 +389,7 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
     }
 
     const isGoodAudioState = (textDuration: number, audioDuration: number) => {
-      return textDuration - audioDuration <= 100 && textDuration - audioDuration >= 0
+      return Math.abs(textDuration - audioDuration) <= 100
     }
 
     const osts: VideoOstType[] = []
@@ -867,10 +869,13 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
                 {
                   dstObj && dstObj.dubbing &&
                   dstObj.dubbing.map((item, index) => {
+                    console.log(item)
                     const dubbingText = dstObj.dubbing?.at(index)
                     const nextDubbingText = dstObj.dubbing?.at(index + 1)
                     const dubbingAudio = dubbingData.at(index)
-                    const rateHint = dubbingAudio ? (dubbingAudio.audioDuration / (item.to - item.from) - 1) * 100 : dubbingText ? dubbingText.params.rate : 0
+                    const rateHint = dubbingAudio ? (dubbingAudio.audioDuration / (item.to - item.from) - 1) : 0
+                    const goodState = isGoodAudioState((dubbingText?.to ?? 0) - (dubbingText?.from ?? 0), dubbingAudio?.audioDuration ?? 0)
+                    const focusedIncludedInDubbing = focusedIndex != null && dubbingText && dubbingText.subIndexes && dubbingText.subIndexes.includes(focusedIndex)
 
                     return (
                       <div
@@ -878,19 +883,71 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
                         key={`dubbing-${index}`}
                       >
                         <div
-                          className={`flex m-2 space-x-1 ${focusedIndex != null && dubbingText?.subIndexes.includes(focusedIndex) ? "border-red-200 border-l-4 pl-2" : "pl-3"}`}>
+                          className={`flex m-2 space-x-1 ${focusedIncludedInDubbing ? "border-red-200 border-l-4 pl-2" : "pl-3"}`}>
                           <div className="flex flex-col justify-between items-end pr-1">
                             <div className="flex flex-col space-y-1 items-end">
                               <Label className="text-xs text-slate-300">{timeFormat(item.from)}</Label>
                               <Label className="text-xs text-slate-300">{timeFormat(item.to)}</Label>
                               <Label className="text-xs text-slate-300">{((item.to - item.from) / 1000).toFixed(3)}s</Label>
-                              <Label className={isGoodAudioState((dubbingText?.to ?? 0) - (dubbingText?.from ?? 0), dubbingAudio?.audioDuration ?? 0) ? "text-xs text-slate-300" : "text-xs text-red-500"}>
+                              <Label className={goodState ? "text-xs text-slate-300" : "text-xs text-red-500"}>
                                 {(dubbingAudio &&
                                   dubbingAudio.text === dubbingText?.text) ?
                                   ((dubbingAudio.audioDuration ?? 0) / 1000).toFixed(3)
                                   : "0"
                                 }s
                               </Label>
+
+                              <div className="flex items-center justify-center space-x-1">
+                                <Label className="text-xs text-slate-300">{(item.params.rate * 100).toFixed(0)}%</Label>
+                                {
+                                  item.params.rate !== 0 ?
+                                    <Button variant="ghost" className="p-0 h-4 w-4" onClick={async () => {
+                                      if (dstObj.dubbing) {
+                                        const dubs = [...dstObj.dubbing]
+                                        const dub = dubs[index]
+                                        if (dub) {
+                                          dub.params.rate = 0
+                                        }
+                                        handleChange("dst", { ...dstObj, dubbing: dubs })
+                                        await synthDubbingData(index)
+                                      }
+
+                                    }}>
+                                      <X className="w-3 h-3 text-slate-300" />
+                                    </Button>
+                                    :
+                                    (!goodState && dubbingAudio) &&
+                                    (
+                                      (rateHint < 0.2 && rateHint > 0) ?
+                                        <Button variant="ghost" className="p-0 h-4 w-4" onClick={async () => {
+                                          if (dstObj.dubbing) {
+                                            const dubs = [...dstObj.dubbing]
+                                            const dub = dubs[index]
+                                            if (dub) {
+                                              dub.params.rate = rateHint
+                                            }
+                                            handleChange("dst", { ...dstObj, dubbing: dubs })
+                                            await synthDubbingData(index)
+                                          }
+
+                                        }}>
+                                          {
+                                            tooltipWrapped(
+                                              <FlagTriangleRight className="w-3 h-3" />,
+                                              <p>Set to {(rateHint * 100).toFixed(0)}%</p>
+                                            )
+                                          }
+                                        </Button>
+                                        :
+                                        tooltipWrapped(
+                                          (<AlertTriangle className="w-3 h-3 text-red-300" />),
+                                          (<><p>Rate ({(rateHint * 100).toFixed(0)}%) is not good for synthesize. </p>
+                                            <p>Consider modify the content, merge the lines, or add breaks.</p></>)
+                                        )
+                                    )
+                                }
+                              </div>
+
                               <div className="flex space-x-1">
                                 <Button variant="ghost" className="p-0 h-4 w-4"
                                   onClick={async () => {
@@ -1000,29 +1057,6 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
                                 )
                               }
                             </Button>
-                            <Button variant="ghost" size="icon"
-                              onClick={() => {
-                                if (dstObj.dubbing) {
-                                  const dubs = [...dstObj.dubbing]
-                                  const dub = dubs[index]
-                                  const dubAudio = dubbingData.at(index)
-                                  let rh = rateHint
-                                  if (dubAudio && dubAudio.params.rate !== 0) rh = 0
-                                  if (dub) {
-                                    dub.params.rate = rh / 100
-                                  }
-                                  handleChange("dst", { ...dstObj, dubbing: dubs })
-                                }
-                              }}
-                            >
-                              {
-                                tooltipWrapped(
-                                  <p>{rateHint.toFixed(0)}%</p>,
-                                  <p>Set rate</p>
-                                )
-                              }
-                            </Button>
-
                           </div>
                         </div>
                         {
