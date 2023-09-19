@@ -16,12 +16,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const session = await getServerSession(req, res, authOptions)
 
   if (req.method === "POST") {
-    const { phrase, params } = JSON.parse(req.body as string) as { phrase: string, params?: AudioSynthesisParamsType }
-    if (!phrase) {
+    const { voices, params } = JSON.parse(req.body as string) as { voices: string, params?: AudioSynthesisParamsType }
+    if (!voices) {
       return res.end({ status: 500 })
     }
 
-    await cLog(LogLevels.INFO, LOG_RANGE, session ? session.user.id : "unknown", `synthesis() called: ${phrase}.`)
+    await cLog(LogLevels.INFO, LOG_RANGE, session ? session.user.id : "unknown", `synthesis() called: ${voices.length}.`)
 
     const speechConfig = sdk.SpeechConfig.fromSubscription(
       env.AZURE_SPEECH_KEY, env.AZURE_SPEECH_REGION);
@@ -39,7 +39,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         xmlns="http://www.w3.org/2001/10/synthesis" 
         xmlns:mstts="https://www.w3.org/2001/mstts" 
         xml:lang="${voiceLang}">
-        ${phrase}
+        ${voices}
        </speak>`
     console.log(ssml)
 
@@ -62,35 +62,40 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           //   .output("/tmp/output.mp3")
           //   .on('end', async () => {
           // const dataView = new Uint8Array(fs.readFileSync("/tmp/output.mp3"))
-          const dataView = new Uint8Array(audioData)
-          const metadata = await mm.parseBuffer(dataView, 'audio/mpeg', { duration: true });
+          if (audioData) {
+            const dataView = new Uint8Array(audioData)
+            const metadata = await mm.parseBuffer(dataView, 'audio/mpeg', { duration: true });
 
-          res.writeHead(200, {
-            'Content-Type': 'audio/mpeg',
-            'Transfer-Encoding': 'chunked',
-            'Audio-Duration': metadata.format.duration
-          })
+            res.writeHead(200, {
+              'Content-Type': 'audio/mpeg',
+              'Transfer-Encoding': 'chunked',
+              'Audio-Duration': metadata.format.duration
+            })
 
-          let chunkIndex = 0;
+            let chunkIndex = 0;
 
-          function pushNextChunk() {
-            const chunk = dataView.subarray(chunkIndex, chunkIndex + 1024)
-            chunkIndex += chunk.length
+            function pushNextChunk() {
+              const chunk = dataView.subarray(chunkIndex, chunkIndex + 1024)
+              chunkIndex += chunk.length
 
-            if (chunk.length > 0) {
-              res.write(chunk)
+              if (chunk.length > 0) {
+                res.write(chunk)
+              }
+
+              if (chunkIndex >= dataView.length) {
+                res.end()
+                synthesizer.close()
+                resolve()
+              } else {
+                setTimeout(pushNextChunk, 0)
+              }
             }
 
-            if (chunkIndex >= dataView.length) {
-              res.end()
-              synthesizer.close()
-              resolve()
-            } else {
-              setTimeout(pushNextChunk, 0)
-            }
+            pushNextChunk();
+
+          } else {
+            console.log(result)
           }
-
-          pushNextChunk();
           // })
           // .run()
         },

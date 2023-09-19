@@ -25,6 +25,8 @@
 //   ]
 // }
 
+// TODO: 
+// 1. We have to split ssml to deal with more than 50 voices limitation
 import * as React from "react"
 import { useRouter } from "next/router"
 
@@ -321,7 +323,7 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
           const response = await fetch(apiUrl, {
             method: "POST",
             body: JSON.stringify({
-              phrase: text,
+              voices: text,
             })
           });
           if (!response.ok) {
@@ -912,7 +914,7 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
                     const rateHint = dubbingAudio ? (dubbingAudio.audioDuration / (item.to - item.from) - 1) : 0
                     const goodState = isGoodAudioState((dubbingText?.to ?? 0) - (dubbingText?.from ?? 0), dubbingAudio?.audioDuration ?? 0)
                     const focusedIncludedInDubbing = focusedIndex != null && dubbingText && dubbingText.subIndexes && dubbingText.subIndexes.includes(focusedIndex)
-                    const audioReady = (dubbingAudio && dubbingAudio.text === dubbingText?.text)
+                    const audioReady = (dubbingAudio && dubbingAudio.audioBlob && dubbingAudio.text === dubbingText?.text)
 
                     return (
                       <div
@@ -1077,10 +1079,9 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
                                           subIndexes: [i],
                                           params: {
                                             voice: dub.params.voice,
-                                            rate: dub.params.rate,
+                                            rate: 0,
                                           }
                                         })
-                                        // TODO: Unmerge to insert empty items to hold the positions.
                                         k = k + 1
                                       }
                                     })
