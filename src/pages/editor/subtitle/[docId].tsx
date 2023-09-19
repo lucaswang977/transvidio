@@ -194,7 +194,7 @@ const FontSizeSelectPopover = (
 type DubbingDataItem = {
   from: number,
   text: string,
-  audioBlob: Blob,
+  audioBlob: Blob | undefined,
   audioDuration: number,
   params: DubbingItemParams,
 }
@@ -276,7 +276,7 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
         if (index !== undefined) {
           const audioData = dubbingData.at(index)
 
-          if (audioData) {
+          if (audioData && audioData.audioBlob) {
             reactPlayerRef.current.seekTo(audioData.from / 1000)
             const audioUrl = URL.createObjectURL(audioData.audioBlob)
             if (audioUrl) {
@@ -288,7 +288,7 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
             }
           }
         } else {
-          if (mergedDubbingData) {
+          if (mergedDubbingData && mergedDubbingData.audioBlob) {
             reactPlayerRef.current.seekTo(0)
             const audioUrl = URL.createObjectURL(mergedDubbingData.audioBlob)
             if (audioUrl) {
@@ -347,6 +347,13 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
             const from = data.from
             const params = { ...data.params }
             if (text && from !== undefined) {
+              if (dubbingData) {
+                const dubItem = dubbingData.at(index)
+                if (dubItem && dubItem.audioBlob) {
+                  index++
+                  continue
+                }
+              }
               const result = await synthText(generateSynthText(text, params))
               if (result) {
                 setDubbingData(data => {
@@ -455,6 +462,35 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
 
       setFocusedIndex(index)
     }, [progress, srcObj, dstObj])
+
+    React.useEffect(() => {
+      if (dstObj.dubbing && dubbingData) {
+        const newDubbingData: DubbingDataItem[] = []
+        dstObj.dubbing.forEach((item, index) => {
+          const dubItem = dubbingData.find(i => {
+            if (i.from === item.from && i.text === item.text &&
+              (i.params.voice === item.params.voice
+                && i.params.rate === item.params.rate)) {
+              return i
+            }
+          })
+          if (dubItem) {
+            newDubbingData[index] = dubItem
+          } else {
+            newDubbingData[index] = {
+              from: item.from,
+              text: item.text,
+              params: { ...item.params },
+              audioBlob: undefined,
+              audioDuration: 0,
+            }
+          }
+        })
+
+        setDubbingData(newDubbingData)
+        console.log(newDubbingData)
+      }
+    }, [dstObj.dubbing])
 
     return (
       <div className="pt-8 flex flex-col items-center lg:items-start lg:flex-row lg:space-x-2">
@@ -1077,9 +1113,6 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
                                   }
                                   dubTexts.splice(index + 1, 1)
 
-                                  if (dubbingData && dubbingData.at(index) && dubbingData.at(index + 1)) {
-                                    setDubbingData([...dubbingData.splice(index + 1, 1)])
-                                  }
                                   handleChange("dst", { ...dstObj, dubbing: dubTexts })
                                 }
                               }}
