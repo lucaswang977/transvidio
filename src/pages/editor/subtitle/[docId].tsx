@@ -88,6 +88,7 @@ import {
 import { Icons } from "~/components/ui/icons"
 import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group"
 import { tooltipWrapped } from "~/components/ui/tooltip"
+import audioBufferToWav from 'audiobuffer-to-wav'
 
 const regexToSegementSentence = /[。！]+$/
 
@@ -196,7 +197,7 @@ const FontSizeSelectPopover = (
 type DubbingDataItem = {
   from: number,
   text: string,
-  audioBlob: Blob | undefined,
+  audioData: ArrayBuffer | undefined,
   audioDuration: number,
   params: DubbingItemParams,
 }
@@ -278,29 +279,39 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
         if (index !== undefined) {
           const audioData = dubbingData.at(index)
 
-          if (audioData && audioData.audioBlob) {
-            reactPlayerRef.current.seekTo(audioData.from / 1000)
-            const audioUrl = URL.createObjectURL(audioData.audioBlob)
-            if (audioUrl) {
-              setDubbingPlaying(true)
-              setPlaying(true)
+          if (audioData && audioData.audioData) {
+            const data = audioData.audioData
+            reactPlayerRef.current.seekTo(audioData.from / 1000, "seconds")
 
-              audioElement.src = audioUrl
-              await audioElement.play();
+            const audioContext = new (window.AudioContext)();
+            const audioBuffer = audioContext.createBuffer(1, data.byteLength, 16000);
+            const channelData = audioBuffer.getChannelData(0);
+            const dataView = new DataView(data);
+            for (let i = 0; i < data.byteLength; i++) {
+              const pcmData = dataView.getUint16(i, true)
+              channelData[i] = pcmData / 32768.0
             }
+
+            const source = audioContext.createBufferSource();
+            source.buffer = audioBuffer;
+            const mediaElementSource = audioContext.createMediaElementSource(audioElement)
+            source.connect(mediaElementSource)
+            setDubbingPlaying(true)
+            setPlaying(true)
+            await audioElement.play();
           }
         } else {
-          if (mergedDubbingData && mergedDubbingData.audioBlob) {
-            reactPlayerRef.current.seekTo(0)
-            const audioUrl = URL.createObjectURL(mergedDubbingData.audioBlob)
-            if (audioUrl) {
-              setDubbingPlaying(true)
-              setPlaying(true)
-
-              audioElement.src = audioUrl
-              await audioElement.play();
-            }
-          }
+          // if (mergedDubbingData && mergedDubbingData.audioBlob) {
+          //   reactPlayerRef.current.seekTo(0)
+          //   const audioUrl = URL.createObjectURL(mergedDubbingData.audioBlob)
+          //   if (audioUrl) {
+          //     setDubbingPlaying(true)
+          //     setPlaying(true)
+          //
+          //     audioElement.src = audioUrl
+          //     await audioElement.play();
+          //   }
+          // }
         }
       }
     }
@@ -329,15 +340,73 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
           if (!response.ok) {
             throw new Error('Network response was not ok');
           }
-          const durationStr = response.headers.get("Audio-Duration")
-          const audioDuration = Math.floor(parseFloat(durationStr ? durationStr : "0") * 1000)
-          const audioBlob = await response.blob();
-          console.log("audio synthesized: ", audioDuration)
-          return { blob: audioBlob, duration: audioDuration }
+          const audioData = await response.arrayBuffer()
+          const audioDuration = audioData.byteLength / (16000 * 16 * 1 / 8) * 1000
+          return { data: audioData, duration: audioDuration }
         } catch (error) {
           console.error('Error fetching audio data:', error);
         }
       }
+    }
+
+    const generateWavBlankAudio = (durationInMs: number) => {
+      const audioContext = new (window.AudioContext)();
+
+      const sampleRate = 16000
+      const duration = durationInMs / 1000;
+      const numChannels = 1
+      const bufferSize = duration * sampleRate;
+      const audioBuffer = audioContext.createBuffer(numChannels, bufferSize, sampleRate);
+
+      for (let channel = 0; channel < numChannels; channel++) {
+        const channelData = audioBuffer.getChannelData(channel);
+        for (let i = 0; i < audioBuffer.length; i++) {
+          channelData[i] = Math.random() * 2 - 1
+        }
+      }
+      const wavData = audioBufferToWav(audioBuffer)
+
+      const blob = new Blob([wavData], { type: 'audio/wav' });
+      return blob
+    }
+
+    const downloadBlobAsWav = (blob: Blob) => {
+      const downloadLink = document.createElement('a');
+      const blobUrl = URL.createObjectURL(blob)
+      downloadLink.href = blobUrl;
+      downloadLink.download = 'audio.wav';
+      downloadLink.click()
+      URL.revokeObjectURL(blobUrl)
+    }
+
+    const mergeSynthedVoices = () => {
+      // let duration = 0
+      // const blob: Blob[] = []
+      //
+      // if (dubbingData) {
+      //   dubbingData.forEach((item, index) => {
+      //     if (item.audioBlob) {
+      //       duration += item.audioDuration
+      //       blob.push(item.audioBlob)
+      //
+      //       if (dstObj.dubbing) {
+      //         const dubbingLastItem = dstObj.dubbing[index - 1]
+      //         const dubbingCurrentItem = dstObj.dubbing[index]
+      //         if (dubbingCurrentItem && dubbingLastItem) {
+      //           const blankDuration = dubbingCurrentItem.from - dubbingLastItem.to
+      //           if (blankDuration > 0) {
+      //             const blankBlob = generateWavBlankAudio(blankDuration)
+      //             if (blankBlob) {
+      //               blob.push(blankBlob)
+      //             }
+      //           }
+      //         }
+      //       }
+      //     }
+      //   })
+      // }
+      // const merged = new Blob(blob, { type: "audio/wav" })
+      // return { duration: duration, blob: merged }
     }
 
     const synthDubbingData = async (index?: number) => {
@@ -351,7 +420,7 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
             if (text && from !== undefined) {
               if (dubbingData) {
                 const dubItem = dubbingData.at(index)
-                if (dubItem && dubItem.audioBlob) {
+                if (dubItem && dubItem.audioData) {
                   index++
                   continue
                 }
@@ -363,7 +432,7 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
                   newData[index] = {
                     from: from,
                     text: text,
-                    audioBlob: result.blob,
+                    audioData: result.data,
                     audioDuration: result.duration,
                     params: params,
                   }
@@ -387,7 +456,7 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
               newData[index] = {
                 from: from,
                 text: text,
-                audioBlob: result.blob,
+                audioData: result.data,
                 audioDuration: result.duration,
                 params: { ...params },
               }
@@ -430,6 +499,31 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
         }
         return d
       })
+    }
+
+    const getDubbingAudioDuration = () => {
+      const sum = dubbingData ? dubbingData.reduce((sum, item) => sum + item.audioDuration, 0) : 0
+      console.log("audio duration: ", sum)
+      return sum
+    }
+
+    const getDubbingBreakDuration = () => {
+      let sum = 0
+      const dubbing = dstObj.dubbing
+      if (dubbing) {
+        const firstItem = dubbing[0]
+        if (firstItem) sum += firstItem.from
+
+        dubbing.slice(1).forEach((item, index) => {
+          const lastItem = dubbing[index]
+          if (lastItem) {
+            sum += item.from - lastItem.to
+          }
+        })
+      }
+
+      console.log("break duration: ", sum)
+      return sum
     }
 
     React.useEffect(() => {
@@ -483,14 +577,13 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
               from: item.from,
               text: item.text,
               params: { ...item.params },
-              audioBlob: undefined,
+              audioData: undefined,
               audioDuration: 0,
             }
           }
         })
 
         setDubbingData(newDubbingData)
-        console.log(newDubbingData)
       }
     }, [dstObj.dubbing])
 
@@ -522,7 +615,9 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
           </VideoPlayer>
         </div>
 
-        <Tabs defaultValue="subtitle">
+        <Tabs
+          // Subtitle Tab
+          defaultValue="subtitle">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="subtitle">Subtitle</TabsTrigger>
             <TabsTrigger value="ost">On Screen Text</TabsTrigger>
@@ -603,7 +698,9 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
             </ScrollArea>
           </TabsContent>
 
-          <TabsContent value="ost">
+          <TabsContent
+            // On Screen Text Tab
+            value="ost">
             <ScrollArea className="h-[60vh] lg:h-[85vh]">
               <div className="flex flex-col space-y-2 pt-2 pr-1">
                 {
@@ -838,7 +935,9 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
             </ScrollArea>
           </TabsContent>
 
-          <TabsContent value="dubbing">
+          <TabsContent
+            // Dubbing Tab
+            value="dubbing">
             <div className="flex space-x-2 items-center justify-center py-1">
               <Button variant="outline" onClick={() => {
                 handleChange("dst", {
@@ -859,33 +958,22 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
               <Button variant="outline" onClick={async () => {
                 await synthDubbingData()
               }}>Synthesize All</Button>
-              <Button className="text-sm" variant="outline" onClick={async () => {
-                if (dstObj.dubbing && dstObj.dubbing.length > 0) {
-                  const dubbing: string[] = []
-                  let lastTo = 0
-                  dstObj.dubbing.forEach((item) => {
-                    const pause = item.from - lastTo
-                    if (pause > 0) {
-                      dubbing.push(`<voice name="zh-CN-YunjianNeural"><break time="${pause}ms" /></voice>`)
-                    }
-
-                    dubbing.push(generateSynthText(item.text, item.params))
-                    lastTo = item.to
-                  })
-                  const result = await synthText(dubbing.join("\n"))
-                  if (result) {
-                    setMergedDubbingData({
-                      from: 0,
-                      text: "",
-                      audioDuration: result.duration,
-                      audioBlob: result.blob,
-                      params: {
-                        voice: "",
-                        rate: 0,
-                      }
-                    })
-                  }
-                }
+              <Button className="text-sm" variant="outline" onClick={() => {
+                // const result = mergeSynthedVoices()
+                // if (result) {
+                //   console.log("merrged: ", result)
+                //   downloadBlobAsWav(result.blob)
+                //   setMergedDubbingData({
+                //     from: 0,
+                //     text: "",
+                //     audioDuration: result.duration,
+                //     audioBlob: result.blob,
+                //     params: {
+                //       voice: "",
+                //       rate: 0,
+                //     }
+                //   })
+                // }
               }}>Synthesize Entire</Button>
 
               <Button variant="outline" onClick={async () => {
@@ -898,10 +986,11 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
               }} />
             </div>
             <div className="flex space-x-1 justify-center items-center w-full">
-              <Label className="text-xs text-gray-300">{mergedDubbingData ? (mergedDubbingData.audioDuration / 1000).toFixed(3) : 0} / </Label>
+              <Label className="text-xs text-gray-300">{
+                ((getDubbingAudioDuration() + getDubbingBreakDuration()) / 1000).toFixed(3)
+              } / </Label>
               <Label className="text-xs text-gray-300">{videoDuration !== undefined && videoDuration.toFixed(3)}</Label>
             </div>
-
 
             <ScrollArea className="h-[60vh] lg:h-[80vh]">
               <div className="flex flex-col space-y-1 pr-1">
@@ -914,7 +1003,7 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
                     const rateHint = dubbingAudio ? (dubbingAudio.audioDuration / (item.to - item.from) - 1) : 0
                     const goodState = isGoodAudioState((dubbingText?.to ?? 0) - (dubbingText?.from ?? 0), dubbingAudio?.audioDuration ?? 0)
                     const focusedIncludedInDubbing = focusedIndex != null && dubbingText && dubbingText.subIndexes && dubbingText.subIndexes.includes(focusedIndex)
-                    const audioReady = (dubbingAudio && dubbingAudio.audioBlob && dubbingAudio.text === dubbingText?.text)
+                    const audioReady = (dubbingAudio && dubbingAudio.audioData && dubbingAudio.text === dubbingText?.text)
 
                     return (
                       <div
@@ -995,9 +1084,9 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
                                   className="p-0 h-4 w-4"
                                   disabled={!audioReady}
                                   onClick={async () => {
-                                    const blob = dubbingData.at(index)?.audioBlob
+                                    const data = dubbingData.at(index)?.audioData
                                     const from = dubbingData.at(index)?.from
-                                    if (blob && from !== undefined) {
+                                    if (data && from !== undefined) {
                                       await playSynthedAudio(index)
                                     }
                                   }}

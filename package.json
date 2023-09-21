@@ -49,6 +49,7 @@
     "@types/fluent-ffmpeg": "^2.1.21",
     "@vercel/edge-config": "^0.2.1",
     "@vercel/kv": "^0.2.2",
+    "audiobuffer-to-wav": "^1.0.0",
     "bcryptjs": "^2.4.3",
     "class-variance-authority": "^0.6.1",
     "clsx": "^1.2.1",
@@ -79,6 +80,7 @@
   },
   "devDependencies": {
     "@aws-sdk/lib-storage": "^3.391.0",
+    "@types/audiobuffer-to-wav": "^1.0.2",
     "@types/bcryptjs": "^2.4.2",
     "@types/eslint": "^8.44.2",
     "@types/node": "^20.5.0",

@@ -107,6 +107,9 @@ dependencies:
   '@vercel/kv':
     specifier: ^0.2.2
     version: 0.2.2
+  audiobuffer-to-wav:
+    specifier: ^1.0.0
+    version: 1.0.0
   bcryptjs:
     specifier: ^2.4.3
     version: 2.4.3
@@ -193,6 +196,9 @@ devDependencies:
   '@aws-sdk/lib-storage':
     specifier: ^3.391.0
     version: 3.391.0(@aws-sdk/client-s3@3.391.0)
+  '@types/audiobuffer-to-wav':
+    specifier: ^1.0.2
+    version: 1.0.2
   '@types/bcryptjs':
     specifier: ^2.4.2
     version: 2.4.2
@@ -2806,6 +2812,10 @@ packages:
     resolution: {integrity: sha512-r3VeA319/braYMBIzj+XLgLKQ9lJSVglvPvP9HUv4kr5w6Y5grQMxMcExhTiZWltE9bnSJHKtBBzHafOo7KC8A==}
     dev: false
 
+  /@types/audiobuffer-to-wav@1.0.2:
+    resolution: {integrity: sha512-bWEtCSS7ywZUyb0qIxR+MR0lqq9tJIcAJfC3rJLw/HTKqfNZ6suKbIqFja7YQObSWAJA0lRTTxTzTqUwgEFPog==}
+    dev: true
+
   /@types/bcryptjs@2.4.2:
     resolution: {integrity: sha512-LiMQ6EOPob/4yUL66SZzu6Yh77cbzJFYll+ZfaPiPPFswtIlA/Fs1MzdKYA7JApHU49zQTbJGX3PDmCpIdDBRQ==}
     dev: true
@@ -3256,6 +3266,10 @@ packages:
 
   /asynckit@0.4.0:
     resolution: {integrity: sha512-Oei9OH4tRh0YqU3GxhX79dM/mwVgvbZJaSNaRk+bshkj0S5cfHcgYakreBjrHwatXKbz+IoIdYLxrKim2MjW0Q==}
+
+  /audiobuffer-to-wav@1.0.0:
+    resolution: {integrity: sha512-CAoir4NRrAzAgYo20tEMiKZR84coE8bq/L+H2kwAaULVY4+0xySsEVtNT5raqpzmH6y0pqzY6EmoViLd9W8F/w==}
+    dev: false
 
   /autoprefixer@10.4.15(postcss@8.4.28):
     resolution: {integrity: sha512-KCuPB8ZCIqFdA4HwKXsvz7j6gvSDNhDP7WnUjBleRkKjPdvCmHFuQ77ocavI8FT6NdvlBnE2UFr2H4Mycn8Vew==}
