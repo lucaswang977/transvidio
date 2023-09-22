@@ -25,8 +25,6 @@
 //   ]
 // }
 
-// TODO: 
-// 1. We have to split ssml to deal with more than 50 voices limitation
 import * as React from "react"
 import { useRouter } from "next/router"
 
@@ -88,7 +86,6 @@ import {
 import { Icons } from "~/components/ui/icons"
 import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group"
 import { tooltipWrapped } from "~/components/ui/tooltip"
-import audioBufferToWav from 'audiobuffer-to-wav'
 
 const regexToSegementSentence = /[。！]+$/
 
@@ -205,16 +202,15 @@ type DubbingDataItem = {
 const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentProps>(
   ({ srcJson, dstJson, handleChange, permission, setAutoFillInit }, ref) => {
     const reactPlayerRef = React.useRef<ReactPlayer>(null)
+
     const [playing, setPlaying] = React.useState(false)
     const [progress, setProgress] = React.useState(0)
     const [captions, setCaptions] = React.useState({ src: "", dst: "" })
     const [ostIndexes, setOstIndexes] = React.useState<number[]>([])
     const [focusedIndex, setFocusedIndex] = React.useState<number | null>(null)
     const [dubbingData, setDubbingData] = React.useState<DubbingDataItem[]>([])
-    const [dubbingPlaying, setDubbingPlaying] = React.useState(false)
+    const [dubbingPlayingContext, setDubbingPlayingContext] = React.useState<AudioContext | undefined>()
     const [videoDuration, setVideoDuration] = React.useState<number>()
-    const [mergedDubbingData, setMergedDubbingData] = React.useState<DubbingDataItem>()
-    const audioRef = React.useRef(null);
 
     const defaultValue: SubtitleType = {
       videoUrl: "",
@@ -272,48 +268,41 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
       })
     }
 
-    const playSynthedAudio = async (index?: number) => {
-      if (audioRef.current && reactPlayerRef.current) {
-        const audioElement = audioRef.current as HTMLAudioElement
+    const getAudioContext = () => {
+      return new window.AudioContext()
+    }
 
-        if (index !== undefined) {
-          const audioData = dubbingData.at(index)
+    const playAudio = (audioBuffer: AudioBuffer, onPlayEnd?: () => void) => {
+      const audioContext = getAudioContext()
+      const source = audioContext.createBufferSource();
+      source.buffer = audioBuffer;
 
-          if (audioData && audioData.audioData) {
-            const data = audioData.audioData
-            reactPlayerRef.current.seekTo(audioData.from / 1000, "seconds")
-
-            const audioContext = new (window.AudioContext)();
-            const audioBuffer = audioContext.createBuffer(1, data.byteLength, 16000);
-            const channelData = audioBuffer.getChannelData(0);
-            const dataView = new DataView(data);
-            for (let i = 0; i < data.byteLength; i++) {
-              const pcmData = dataView.getUint16(i, true)
-              channelData[i] = pcmData / 32768.0
-            }
-
-            const source = audioContext.createBufferSource();
-            source.buffer = audioBuffer;
-            const mediaElementSource = audioContext.createMediaElementSource(audioElement)
-            source.connect(mediaElementSource)
-            setDubbingPlaying(true)
-            setPlaying(true)
-            await audioElement.play();
-          }
-        } else {
-          // if (mergedDubbingData && mergedDubbingData.audioBlob) {
-          //   reactPlayerRef.current.seekTo(0)
-          //   const audioUrl = URL.createObjectURL(mergedDubbingData.audioBlob)
-          //   if (audioUrl) {
-          //     setDubbingPlaying(true)
-          //     setPlaying(true)
-          //
-          //     audioElement.src = audioUrl
-          //     await audioElement.play();
-          //   }
-          // }
-        }
+      if (onPlayEnd) {
+        source.onended = () => {
+          console.log("play end")
+          onPlayEnd()
+        };
       }
+
+      source.connect(audioContext.destination);
+
+      const startTime = audioContext.currentTime;
+      source.start(startTime);
+      source.stop(startTime + audioBuffer.duration);
+
+      return audioContext
+    }
+
+    const pcmArrayBufferToAudioBuffer = (data: ArrayBuffer) => {
+      const audioContext = getAudioContext()
+      const audioBuffer = audioContext.createBuffer(1, data.byteLength / 2, 16000);
+      const channelData = audioBuffer.getChannelData(0);
+      const dataView = new DataView(data);
+      for (let i = 0; i < data.byteLength / 2; i++) {
+        const pcmData = dataView.getInt16(i * 2, true)
+        channelData[i] = pcmData / 32768.0
+      }
+      return audioBuffer
     }
 
     const generateSynthText = (text: string, params: DubbingItemParams) => {
@@ -329,6 +318,7 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
 
     const synthText = async (text: string) => {
       if (text.length > 0) {
+        console.log("Synthesize: ", text)
         const apiUrl = "/api/synthesis";
         try {
           const response = await fetch(apiUrl, {
@@ -342,6 +332,7 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
           }
           const audioData = await response.arrayBuffer()
           const audioDuration = audioData.byteLength / (16000 * 16 * 1 / 8) * 1000
+          console.log("syntheize complete")
           return { data: audioData, duration: audioDuration }
         } catch (error) {
           console.error('Error fetching audio data:', error);
@@ -349,120 +340,89 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
       }
     }
 
-    const generateWavBlankAudio = (durationInMs: number) => {
-      const audioContext = new (window.AudioContext)();
-
+    const generateBlankAudioArrayBuffer = (durationInMs: number) => {
       const sampleRate = 16000
       const duration = durationInMs / 1000;
       const numChannels = 1
-      const bufferSize = duration * sampleRate;
-      const audioBuffer = audioContext.createBuffer(numChannels, bufferSize, sampleRate);
+      const numSamples = Math.ceil(duration * sampleRate * numChannels)
 
-      for (let channel = 0; channel < numChannels; channel++) {
-        const channelData = audioBuffer.getChannelData(channel);
-        for (let i = 0; i < audioBuffer.length; i++) {
-          channelData[i] = Math.random() * 2 - 1
-        }
+      const data = new Int16Array(numSamples)
+
+      for (let i = 0; i < numSamples; i++) {
+        data[i] = 0
       }
-      const wavData = audioBufferToWav(audioBuffer)
 
-      const blob = new Blob([wavData], { type: 'audio/wav' });
-      return blob
+      return data.buffer
     }
 
-    const downloadBlobAsWav = (blob: Blob) => {
-      const downloadLink = document.createElement('a');
-      const blobUrl = URL.createObjectURL(blob)
-      downloadLink.href = blobUrl;
-      downloadLink.download = 'audio.wav';
-      downloadLink.click()
-      URL.revokeObjectURL(blobUrl)
+    const concatenateTwoArrayBuffers = (b1: ArrayBuffer, b2: ArrayBuffer) => {
+      const combinedBuffer = new ArrayBuffer(b1.byteLength + b2.byteLength)
+      const dataView = new DataView(combinedBuffer)
+      for (let i = 0; i < b1.byteLength; i++) {
+        dataView.setUint8(i, new DataView(b1).getUint8(i));
+      }
+      for (let i = 0; i < b2.byteLength; i++) {
+        dataView.setUint8(b1.byteLength + i, new DataView(b2).getUint8(i));
+      }
+
+      return combinedBuffer
+    }
+
+    const getAudioDurationInMs = (data: ArrayBuffer) => {
+      return data.byteLength / (16000 * 16 / 8 * 1) * 1000
     }
 
     const mergeSynthedVoices = () => {
-      // let duration = 0
-      // const blob: Blob[] = []
-      //
-      // if (dubbingData) {
-      //   dubbingData.forEach((item, index) => {
-      //     if (item.audioBlob) {
-      //       duration += item.audioDuration
-      //       blob.push(item.audioBlob)
-      //
-      //       if (dstObj.dubbing) {
-      //         const dubbingLastItem = dstObj.dubbing[index - 1]
-      //         const dubbingCurrentItem = dstObj.dubbing[index]
-      //         if (dubbingCurrentItem && dubbingLastItem) {
-      //           const blankDuration = dubbingCurrentItem.from - dubbingLastItem.to
-      //           if (blankDuration > 0) {
-      //             const blankBlob = generateWavBlankAudio(blankDuration)
-      //             if (blankBlob) {
-      //               blob.push(blankBlob)
-      //             }
-      //           }
-      //         }
-      //       }
-      //     }
-      //   })
-      // }
-      // const merged = new Blob(blob, { type: "audio/wav" })
-      // return { duration: duration, blob: merged }
-    }
+      let mergedBuffer: ArrayBuffer = new ArrayBuffer(0)
 
-    const synthDubbingData = async (index?: number) => {
-      if (index === undefined) {
-        if (dstObj.dubbing) {
-          let index = 0
-          for (const data of dstObj.dubbing) {
-            const text = data.text
-            const from = data.from
-            const params = { ...data.params }
-            if (text && from !== undefined) {
-              if (dubbingData) {
-                const dubItem = dubbingData.at(index)
-                if (dubItem && dubItem.audioData) {
-                  index++
-                  continue
-                }
-              }
-              const result = await synthText(generateSynthText(text, params))
-              if (result) {
-                setDubbingData(data => {
-                  const newData = clone(data)
-                  newData[index] = {
-                    from: from,
-                    text: text,
-                    audioData: result.data,
-                    audioDuration: result.duration,
-                    params: params,
-                  }
-                  return (newData)
-                })
+      if (dubbingData) {
+        dubbingData.forEach((item, index) => {
+          if (index === 0 && item.from > 0) {
+            const blankBuffer = generateBlankAudioArrayBuffer(item.from)
+            mergedBuffer = concatenateTwoArrayBuffers(mergedBuffer, blankBuffer)
+            console.log("merged blank:", item.from, mergedBuffer.byteLength)
+          }
+          if (item.audioData && dstObj.dubbing) {
+            const dubbingLastItem = dstObj.dubbing[index - 1]
+            const dubbingCurrentItem = dstObj.dubbing[index]
+            if (dubbingCurrentItem && dubbingLastItem) {
+              const blankDuration = dubbingCurrentItem.from - dubbingLastItem.to +
+                (dubbingCurrentItem.to - dubbingCurrentItem.from - getAudioDurationInMs(item.audioData))
+              if (blankDuration > 0) {
+                const blankBuffer = generateBlankAudioArrayBuffer(blankDuration)
+                mergedBuffer = concatenateTwoArrayBuffers(mergedBuffer, blankBuffer)
+                console.log("merged blank:", blankDuration, mergedBuffer.byteLength)
               }
             }
 
-            index++
+            mergedBuffer = concatenateTwoArrayBuffers(mergedBuffer, item.audioData)
+            console.log("merged:", item.text, mergedBuffer.byteLength)
           }
-        }
-      } else {
-        const text = dstObj.dubbing?.at(index)?.text
-        const from = dstObj.dubbing?.at(index)?.from
-        const params = dstObj.dubbing?.at(index)?.params
-        if (text && from !== undefined && params) {
-          const result = await synthText(generateSynthText(text, params))
-          if (result) {
-            setDubbingData(data => {
-              const newData = clone(data)
-              newData[index] = {
-                from: from,
-                text: text,
-                audioData: result.data,
-                audioDuration: result.duration,
-                params: { ...params },
-              }
-              return (newData)
-            })
-          }
+        })
+      }
+      console.log("merged length: ", getAudioDurationInMs(mergedBuffer))
+
+      return mergedBuffer
+    }
+
+    const synthDubbingData = async (index: number) => {
+      const text = dstObj.dubbing?.at(index)?.text
+      const from = dstObj.dubbing?.at(index)?.from
+      const params = dstObj.dubbing?.at(index)?.params
+      if (text && from !== undefined && params) {
+        const result = await synthText(generateSynthText(text, params))
+        if (result) {
+          setDubbingData(data => {
+            const newData = clone(data)
+            newData[index] = {
+              from: from,
+              text: text,
+              audioData: result.data,
+              audioDuration: result.duration,
+              params: { ...params },
+            }
+            return (newData)
+          })
         }
       }
     }
@@ -503,7 +463,6 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
 
     const getDubbingAudioDuration = () => {
       const sum = dubbingData ? dubbingData.reduce((sum, item) => sum + item.audioDuration, 0) : 0
-      console.log("audio duration: ", sum)
       return sum
     }
 
@@ -522,7 +481,6 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
         })
       }
 
-      console.log("break duration: ", sum)
       return sum
     }
 
@@ -594,20 +552,16 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
             url={srcObj.videoUrl}
             ref={reactPlayerRef}
             caption={captions.dst}
-            volume={dubbingPlaying ? 0.1 : 1}
+            volume={dubbingPlayingContext ? 0.1 : 1}
             ost={osts}
             playing={playing}
             handleOstDragged={handleOstDragged}
             handleProgress={(p: number) => setProgress(p)}
-            handlePlay={(p: boolean) => {
+            handlePlay={async (p: boolean) => {
               setPlaying(p)
-              if (!p && dubbingPlaying) {
-                if (audioRef.current) {
-                  const audioElement = audioRef.current as HTMLAudioElement
-                  audioElement.pause()
-                }
-
-                setDubbingPlaying(false)
+              if (p == false && dubbingPlayingContext) {
+                await dubbingPlayingContext.suspend()
+                setDubbingPlayingContext(undefined)
               }
             }}
             handleDuration={(d: number) => setVideoDuration(d)}
@@ -956,34 +910,39 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
                 })
               }}>Reset to subtitle</Button>
               <Button variant="outline" onClick={async () => {
-                await synthDubbingData()
+                if (dstObj.dubbing) {
+                  let i = 0
+                  for (const obj of dstObj.dubbing) {
+                    const item = dubbingData.at(i)
+                    if (obj.text && (!item || !item.audioData || item.audioDuration == 0)) {
+                      await synthDubbingData(i)
+                    }
+                    i++
+                  }
+                }
               }}>Synthesize All</Button>
-              <Button className="text-sm" variant="outline" onClick={() => {
-                // const result = mergeSynthedVoices()
-                // if (result) {
-                //   console.log("merrged: ", result)
-                //   downloadBlobAsWav(result.blob)
-                //   setMergedDubbingData({
-                //     from: 0,
-                //     text: "",
-                //     audioDuration: result.duration,
-                //     audioBlob: result.blob,
-                //     params: {
-                //       voice: "",
-                //       rate: 0,
-                //     }
-                //   })
-                // }
-              }}>Synthesize Entire</Button>
+              <Button
+                variant="outline"
+                disabled={!dubbingData ||
+                  dubbingData.find(item =>
+                    (item.audioData === undefined || item.audioDuration === 0)) !== undefined}
+                onClick={() => {
+                  const mergedBuffer = mergeSynthedVoices()
+                  if (mergedBuffer) {
+                    if (reactPlayerRef.current) {
+                      reactPlayerRef.current.seekTo(0, "seconds")
+                    }
+                    const audioBuffer = pcmArrayBufferToAudioBuffer(mergedBuffer)
+                    const audioContext = playAudio(audioBuffer, () => {
+                      setDubbingPlayingContext(undefined)
+                      setPlaying(false)
+                    })
 
-              <Button variant="outline" onClick={async () => {
-                await playSynthedAudio()
-              }}>Play Entire</Button>
+                    setDubbingPlayingContext(audioContext)
+                    setPlaying(true)
+                  }
 
-              <audio className="hidden" ref={audioRef} onEnded={() => {
-                setDubbingPlaying(false)
-                setPlaying(false)
-              }} />
+                }}>Play Entire</Button>
             </div>
             <div className="flex space-x-1 justify-center items-center w-full">
               <Label className="text-xs text-gray-300">{
@@ -1083,11 +1042,23 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
                                   variant="ghost"
                                   className="p-0 h-4 w-4"
                                   disabled={!audioReady}
-                                  onClick={async () => {
+                                  onClick={() => {
                                     const data = dubbingData.at(index)?.audioData
                                     const from = dubbingData.at(index)?.from
                                     if (data && from !== undefined) {
-                                      await playSynthedAudio(index)
+                                      if (data) {
+                                        if (reactPlayerRef.current) {
+                                          reactPlayerRef.current.seekTo(from / 1000, "seconds")
+                                        }
+                                        const audioBuffer = pcmArrayBufferToAudioBuffer(data)
+                                        const audioContext = playAudio(audioBuffer, () => {
+                                          setDubbingPlayingContext(undefined)
+                                          setPlaying(false)
+                                        })
+
+                                        setDubbingPlayingContext(audioContext)
+                                        setPlaying(true)
+                                      }
                                     }
                                   }}
                                 ><PlayCircle className="h-3 w-3" /></Button>
