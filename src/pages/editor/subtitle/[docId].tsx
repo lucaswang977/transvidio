@@ -22,6 +22,18 @@
 //       }
 //     },
 //     ...
+//   ],
+//   dubbing : [
+//     {
+//       from: 11.22,
+//       to: 22.33,
+//       text: "wowowow",
+//       subIndexes: [0],
+//       params: {
+//         voice: "",
+//         rate: 0
+//       }
+//     }
 //   ]
 // }
 
@@ -484,6 +496,25 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
       return sum
     }
 
+    const resetDubbingToSubtitles = () => {
+      if (dstObj && dstObj.subtitle) {
+        handleChange("dst", {
+          ...dstObj, dubbing: dstObj.subtitle.map((item, i) => {
+            return {
+              from: item.from,
+              to: item.to,
+              text: item.text,
+              subIndexes: [i],
+              params: {
+                voice: "zh-CN-YunjianNeural",
+                rate: 0,
+              }
+            }
+          })
+        })
+      }
+    }
+
     React.useEffect(() => {
       const index = srcObj.subtitle.findIndex(
         (item) =>
@@ -892,312 +923,310 @@ const SubtitleEditor = React.forwardRef<AutofillHandler | null, EditorComponentP
           <TabsContent
             // Dubbing Tab
             value="dubbing">
-            <div className="flex space-x-2 items-center justify-center py-1">
-              <Button variant="outline" onClick={() => {
-                handleChange("dst", {
-                  ...dstObj, dubbing: dstObj.subtitle.map((item, i) => {
-                    return {
-                      from: item.from,
-                      to: item.to,
-                      text: item.text,
-                      subIndexes: [i],
-                      params: {
-                        voice: "zh-CN-YunjianNeural",
-                        rate: 0,
-                      }
-                    }
-                  })
-                })
-              }}>Reset to subtitle</Button>
-              <Button variant="outline" onClick={async () => {
-                if (dstObj.dubbing) {
-                  let i = 0
-                  for (const obj of dstObj.dubbing) {
-                    const item = dubbingData.at(i)
-                    if (obj.text && (!item || !item.audioData || item.audioDuration == 0)) {
-                      await synthDubbingData(i)
-                    }
-                    i++
-                  }
-                }
-              }}>Synthesize All</Button>
-              <Button
-                variant="outline"
-                disabled={!dubbingData ||
-                  dubbingData.find(item =>
-                    (item.audioData === undefined || item.audioDuration === 0)) !== undefined}
-                onClick={() => {
-                  const mergedBuffer = mergeSynthedVoices()
-                  if (mergedBuffer) {
-                    if (reactPlayerRef.current) {
-                      reactPlayerRef.current.seekTo(0, "seconds")
-                    }
-                    const audioBuffer = pcmArrayBufferToAudioBuffer(mergedBuffer)
-                    const audioContext = playAudio(audioBuffer, () => {
-                      setDubbingPlayingContext(undefined)
-                      setPlaying(false)
-                    })
+            {
+              (dstObj && dstObj.dubbing) ?
+                (
+                  <>
+                    <div className="flex space-x-2 items-center justify-center py-1">
+                      <Button variant="outline" onClick={() => {
+                        resetDubbingToSubtitles()
+                      }}>Reset to subtitle</Button>
+                      <Button variant="outline" onClick={async () => {
+                        if (dstObj.dubbing) {
+                          let i = 0
+                          for (const obj of dstObj.dubbing) {
+                            const item = dubbingData.at(i)
+                            if (obj.text && (!item || !item.audioData || item.audioDuration == 0)) {
+                              await synthDubbingData(i)
+                            }
+                            i++
+                          }
+                        }
+                      }}>Synthesize All</Button>
+                      <Button
+                        variant="outline"
+                        disabled={!dubbingData ||
+                          dubbingData.find(item =>
+                            (item.audioData === undefined || item.audioDuration === 0)) !== undefined}
+                        onClick={() => {
+                          const mergedBuffer = mergeSynthedVoices()
+                          if (mergedBuffer) {
+                            if (reactPlayerRef.current) {
+                              reactPlayerRef.current.seekTo(0, "seconds")
+                            }
+                            const audioBuffer = pcmArrayBufferToAudioBuffer(mergedBuffer)
+                            const audioContext = playAudio(audioBuffer, () => {
+                              setDubbingPlayingContext(undefined)
+                              setPlaying(false)
+                            })
 
-                    setDubbingPlayingContext(audioContext)
-                    setPlaying(true)
-                  }
+                            setDubbingPlayingContext(audioContext)
+                            setPlaying(true)
+                          }
 
-                }}>Play Entire</Button>
-            </div>
-            <div className="flex space-x-1 justify-center items-center w-full">
-              <Label className="text-xs text-gray-300">{
-                ((getDubbingAudioDuration() + getDubbingBreakDuration()) / 1000).toFixed(3)
-              } / </Label>
-              <Label className="text-xs text-gray-300">{videoDuration !== undefined && videoDuration.toFixed(3)}</Label>
-            </div>
+                        }}>Play Entire</Button>
+                    </div>
+                    <div className="flex space-x-1 justify-center items-center w-full">
+                      <Label className="text-xs text-gray-300">{
+                        ((getDubbingAudioDuration() + getDubbingBreakDuration()) / 1000).toFixed(3)
+                      } / </Label>
+                      <Label className="text-xs text-gray-300">{videoDuration !== undefined && videoDuration.toFixed(3)}</Label>
+                    </div>
 
-            <ScrollArea className="h-[60vh] lg:h-[80vh]">
-              <div className="flex flex-col space-y-1 pr-1">
-                {
-                  dstObj && dstObj.dubbing &&
-                  dstObj.dubbing.map((item, index) => {
-                    const dubbingText = dstObj.dubbing?.at(index)
-                    const nextDubbingText = dstObj.dubbing?.at(index + 1)
-                    const dubbingAudio = dubbingData.at(index)
-                    const rateHint = dubbingAudio ? (dubbingAudio.audioDuration / (item.to - item.from) - 1) : 0
-                    const goodState = isGoodAudioState((dubbingText?.to ?? 0) - (dubbingText?.from ?? 0), dubbingAudio?.audioDuration ?? 0)
-                    const focusedIncludedInDubbing = focusedIndex != null && dubbingText && dubbingText.subIndexes && dubbingText.subIndexes.includes(focusedIndex)
-                    const audioReady = (dubbingAudio && dubbingAudio.audioData && dubbingAudio.text === dubbingText?.text)
-
-                    return (
-                      <div
-                        className="flex flex-col w-fit items-center"
-                        key={`dubbing-${index}`}
-                      >
-                        <div
-                          className={`flex m-2 space-x-1 ${focusedIncludedInDubbing ? "border-red-200 border-l-4 pl-2" : "pl-3"}`}>
-                          <div className="flex flex-col justify-between items-end pr-1">
-                            <div className="flex flex-col space-y-1 items-end">
-                              <Label className="text-xs text-slate-300">{timeFormat(item.from)}</Label>
-                              <Label className="text-xs text-slate-300">{((item.to - item.from) / 1000).toFixed(3)}s</Label>
-                              <Label className={goodState ? "text-xs text-slate-300" : "text-xs text-red-500"}>
-                                {audioReady ? ((dubbingAudio.audioDuration ?? 0) / 1000).toFixed(3) : "0"}s
-                              </Label>
-
-                              <div className="flex items-center justify-center space-x-1">
-                                <Label className="text-xs text-slate-300">{(item.params.rate * 100).toFixed(0)}%</Label>
-                                {
-                                  item.params.rate !== 0 ?
-                                    <Button variant="ghost" className="p-0 h-4 w-4" onClick={async () => {
-                                      if (dstObj.dubbing) {
-                                        const dubs = [...dstObj.dubbing]
-                                        const dub = dubs[index]
-                                        if (dub) {
-                                          dub.params.rate = 0
-                                        }
-                                        handleChange("dst", { ...dstObj, dubbing: dubs })
-                                        await synthDubbingData(index)
-                                      }
-
-                                    }}>
-                                      <X className="w-3 h-3 text-slate-300" />
-                                    </Button>
-                                    :
-                                    (!goodState && dubbingAudio) &&
-                                    (
-                                      (rateHint < 0.2 && rateHint > 0) ?
-                                        <Button variant="ghost" className="p-0 h-4 w-4" onClick={async () => {
-                                          if (dstObj.dubbing) {
-                                            const dubs = [...dstObj.dubbing]
-                                            const dub = dubs[index]
-                                            if (dub) {
-                                              dub.params.rate = rateHint
-                                            }
-                                            handleChange("dst", { ...dstObj, dubbing: dubs })
-                                            await synthDubbingData(index)
-                                          }
-
-                                        }}>
-                                          {
-                                            tooltipWrapped(
-                                              <FlagTriangleRight className="w-3 h-3" />,
-                                              <p>Set to {(rateHint * 100).toFixed(0)}%</p>
-                                            )
-                                          }
-                                        </Button>
-                                        :
-                                        tooltipWrapped(
-                                          (<AlertTriangle className="w-3 h-3 text-red-300" />),
-                                          (<><p>Rate ({(rateHint * 100).toFixed(0)}%) is not good for synthesize. </p>
-                                            <p>Consider modifying the content, merging the lines, or adding breaks.</p></>)
-                                        )
-                                    )
-                                }
-                              </div>
-
-                              <div className="flex space-x-1">
-                                <Button
-                                  variant="ghost"
-                                  className="p-0 h-4 w-4"
-                                  onClick={async () => {
-                                    await synthDubbingData(index)
-                                  }}
-                                ><Plug2 className="h-3 w-3" /></Button>
-                                <Button
-                                  variant="ghost"
-                                  className="p-0 h-4 w-4"
-                                  disabled={!audioReady}
-                                  onClick={() => {
-                                    const data = dubbingData.at(index)?.audioData
-                                    const from = dubbingData.at(index)?.from
-                                    if (data && from !== undefined) {
-                                      if (data) {
-                                        if (reactPlayerRef.current) {
-                                          reactPlayerRef.current.seekTo(from / 1000, "seconds")
-                                        }
-                                        const audioBuffer = pcmArrayBufferToAudioBuffer(data)
-                                        const audioContext = playAudio(audioBuffer, () => {
-                                          setDubbingPlayingContext(undefined)
-                                          setPlaying(false)
-                                        })
-
-                                        setDubbingPlayingContext(audioContext)
-                                        setPlaying(true)
-                                      }
-                                    }
-                                  }}
-                                ><PlayCircle className="h-3 w-3" /></Button>
-                              </div>
-                            </div>
-                          </div>
-                          <Textarea
-                            disabled={!permission.dstWritable}
-                            id={`dubbing.textarea.${index}`}
-                            value={item.text}
-                            className="overflow-hidden w-[500px]"
-                            onChange={(event) => {
-                              if (dstObj.dubbing) {
-                                const subtitles = [...dstObj.dubbing]
-                                const subtitle = subtitles[index]
-                                if (subtitle) {
-                                  subtitle.text = event.target.value
-                                } else {
-                                  subtitles[index] = {
-                                    ...item,
-                                    text: event.target.value
-                                  }
-                                }
-                                handleChange("dst", { ...dstObj, dubbing: subtitles })
-                              }
-                            }}
-                            onFocus={() => {
-                              if (reactPlayerRef.current) {
-                                const duration = reactPlayerRef.current.getDuration()
-                                reactPlayerRef.current.seekTo(item.from / 1000 / duration * 1.001, "fraction")
-                              }
-                            }}
-                          />
-                          <div className="flex flex-col space-y-2">
-                            <Button variant="outline"
-                              className="h-5 w-5 p-0 rounded-sm"
-                              onClick={() => {
-                                if (dstObj.dubbing) {
-                                  const dubs = [...dstObj.dubbing]
-                                  const dub = dubs[index]
-                                  if (dub) {
-                                    const element = document.getElementById(`dubbing.textarea.${index}`) as HTMLTextAreaElement
-                                    if (element) {
-                                      const pos = element.selectionStart
-                                      dub.text = `${dub.text.slice(0, pos)}<break time="100ms" />${dub.text.slice(pos)}`
-                                      element.focus()
-                                    }
-                                  }
-                                  handleChange("dst", { ...dstObj, dubbing: dubs })
-                                }
-                              }}
-                            >
-                              {
-                                tooltipWrapped(
-                                  <Brackets className="h-4 w-4" />,
-                                  <p>Insert a break at current position</p>
-                                )
-                              }
-                            </Button>
-
-                            <Button
-                              variant="outline"
-                              className="h-5 w-5 p-0 rounded-sm"
-                              disabled={dstObj.dubbing?.at(index)?.subIndexes.length == 1}
-                              onClick={() => {
-                                if (dstObj.dubbing) {
-                                  const dubs = [...dstObj.dubbing]
-                                  const dub = dubs[index]
-                                  if (dub) {
-                                    let k = 1
-                                    dub.subIndexes.forEach(i => {
-                                      const sub = dstObj.subtitle[i]
-                                      if (sub) {
-                                        dubs.splice(index + k, 0, {
-                                          from: sub.from,
-                                          to: sub.to,
-                                          text: sub.text,
-                                          subIndexes: [i],
-                                          params: {
-                                            voice: dub.params.voice,
-                                            rate: 0,
-                                          }
-                                        })
-                                        k = k + 1
-                                      }
-                                    })
-                                    dubs.splice(index, 1)
-                                  }
-                                  handleChange("dst", { ...dstObj, dubbing: dubs })
-                                }
-                              }}
-                            >
-                              {
-                                tooltipWrapped(
-                                  <SeparatorHorizontal className="h-4 w-4" />,
-                                  <p>Unmerge all</p>
-                                )
-                              }
-                            </Button>
-
-                            <Button variant="outline"
-                              className="h-5 w-5 p-0 rounded-sm"
-                              disabled={!dstObj.dubbing?.at(index + 1)}
-                              onClick={() => {
-                                if (dstObj.dubbing) {
-                                  const dubTexts = [...dstObj.dubbing]
-                                  const dubText = dubTexts[index]
-                                  const nextDubText = dubTexts[index + 1]
-                                  if (dubText && nextDubText) {
-                                    dubText.to = nextDubText.to
-                                    dubText.text = `${dubText.text} ${nextDubText.text}`
-                                    dubText.subIndexes.push(...nextDubText.subIndexes)
-                                  }
-                                  dubTexts.splice(index + 1, 1)
-
-                                  handleChange("dst", { ...dstObj, dubbing: dubTexts })
-                                }
-                              }}
-                            >
-                              {
-                                tooltipWrapped(
-                                  <ArrowBigDownDash className="h-4 w-4" />,
-                                  <p>Merge down</p>
-                                )
-                              }
-                            </Button>
-
-                          </div>
-                        </div>
+                    <ScrollArea className="h-[60vh] lg:h-[80vh]">
+                      <div className="flex flex-col space-y-1 pr-1">
                         {
-                          dubbingText && nextDubbingText && nextDubbingText.from - dubbingText.to > 0 &&
-                          <p className="text-xs text-slate-300">{nextDubbingText.from - dubbingText.to}ms</p>
+                          dstObj.dubbing.map((item, index) => {
+                            const dubbingText = dstObj.dubbing?.at(index)
+                            const nextDubbingText = dstObj.dubbing?.at(index + 1)
+                            const dubbingAudio = dubbingData.at(index)
+                            const rateHint = dubbingAudio ? (dubbingAudio.audioDuration / (item.to - item.from) - 1) : 0
+                            const goodState = isGoodAudioState((dubbingText?.to ?? 0) - (dubbingText?.from ?? 0), dubbingAudio?.audioDuration ?? 0)
+                            const focusedIncludedInDubbing = focusedIndex != null && dubbingText && dubbingText.subIndexes && dubbingText.subIndexes.includes(focusedIndex)
+                            const audioReady = (dubbingAudio && dubbingAudio.audioData && dubbingAudio.text === dubbingText?.text)
+
+                            return (
+                              <div
+                                className="flex flex-col w-fit items-center"
+                                key={`dubbing-${index}`}
+                              >
+                                <div
+                                  className={`flex m-2 space-x-1 ${focusedIncludedInDubbing ? "border-red-200 border-l-4 pl-2" : "pl-3"}`}>
+                                  <div className="flex flex-col justify-between items-end pr-1">
+                                    <div className="flex flex-col space-y-1 items-end">
+                                      <Label className="text-xs text-slate-300">{timeFormat(item.from)}</Label>
+                                      <Label className="text-xs text-slate-300">{((item.to - item.from) / 1000).toFixed(3)}s</Label>
+                                      <Label className={goodState ? "text-xs text-slate-300" : "text-xs text-red-500"}>
+                                        {audioReady ? ((dubbingAudio.audioDuration ?? 0) / 1000).toFixed(3) : "0"}s
+                                      </Label>
+
+                                      <div className="flex items-center justify-center space-x-1">
+                                        <Label className="text-xs text-slate-300">{(item.params.rate * 100).toFixed(0)}%</Label>
+                                        {
+                                          item.params.rate !== 0 ?
+                                            <Button variant="ghost" className="p-0 h-4 w-4" onClick={async () => {
+                                              if (dstObj.dubbing) {
+                                                const dubs = [...dstObj.dubbing]
+                                                const dub = dubs[index]
+                                                if (dub) {
+                                                  dub.params.rate = 0
+                                                }
+                                                handleChange("dst", { ...dstObj, dubbing: dubs })
+                                                await synthDubbingData(index)
+                                              }
+
+                                            }}>
+                                              <X className="w-3 h-3 text-slate-300" />
+                                            </Button>
+                                            :
+                                            (!goodState && dubbingAudio) &&
+                                            (
+                                              (rateHint < 0.2 && rateHint > 0) ?
+                                                <Button variant="ghost" className="p-0 h-4 w-4" onClick={async () => {
+                                                  if (dstObj.dubbing) {
+                                                    const dubs = [...dstObj.dubbing]
+                                                    const dub = dubs[index]
+                                                    if (dub) {
+                                                      dub.params.rate = rateHint
+                                                    }
+                                                    handleChange("dst", { ...dstObj, dubbing: dubs })
+                                                    await synthDubbingData(index)
+                                                  }
+
+                                                }}>
+                                                  {
+                                                    tooltipWrapped(
+                                                      <FlagTriangleRight className="w-3 h-3" />,
+                                                      <p>Set to {(rateHint * 100).toFixed(0)}%</p>
+                                                    )
+                                                  }
+                                                </Button>
+                                                :
+                                                tooltipWrapped(
+                                                  (<AlertTriangle className="w-3 h-3 text-red-300" />),
+                                                  (<><p>Rate ({(rateHint * 100).toFixed(0)}%) is not good for synthesize. </p>
+                                                    <p>Consider modifying the content, merging the lines, or adding breaks.</p></>)
+                                                )
+                                            )
+                                        }
+                                      </div>
+
+                                      <div className="flex space-x-1">
+                                        <Button
+                                          variant="ghost"
+                                          className="p-0 h-4 w-4"
+                                          onClick={async () => {
+                                            await synthDubbingData(index)
+                                          }}
+                                        ><Plug2 className="h-3 w-3" /></Button>
+                                        <Button
+                                          variant="ghost"
+                                          className="p-0 h-4 w-4"
+                                          disabled={!audioReady}
+                                          onClick={() => {
+                                            const data = dubbingData.at(index)?.audioData
+                                            const from = dubbingData.at(index)?.from
+                                            if (data && from !== undefined) {
+                                              if (data) {
+                                                if (reactPlayerRef.current) {
+                                                  reactPlayerRef.current.seekTo(from / 1000, "seconds")
+                                                }
+                                                const audioBuffer = pcmArrayBufferToAudioBuffer(data)
+                                                const audioContext = playAudio(audioBuffer, () => {
+                                                  setDubbingPlayingContext(undefined)
+                                                  setPlaying(false)
+                                                })
+
+                                                setDubbingPlayingContext(audioContext)
+                                                setPlaying(true)
+                                              }
+                                            }
+                                          }}
+                                        ><PlayCircle className="h-3 w-3" /></Button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <Textarea
+                                    disabled={!permission.dstWritable}
+                                    id={`dubbing.textarea.${index}`}
+                                    value={item.text}
+                                    className="overflow-hidden w-[500px]"
+                                    onChange={(event) => {
+                                      if (dstObj.dubbing) {
+                                        const subtitles = [...dstObj.dubbing]
+                                        const subtitle = subtitles[index]
+                                        if (subtitle) {
+                                          subtitle.text = event.target.value
+                                        } else {
+                                          subtitles[index] = {
+                                            ...item,
+                                            text: event.target.value
+                                          }
+                                        }
+                                        handleChange("dst", { ...dstObj, dubbing: subtitles })
+                                      }
+                                    }}
+                                    onFocus={() => {
+                                      if (reactPlayerRef.current) {
+                                        const duration = reactPlayerRef.current.getDuration()
+                                        reactPlayerRef.current.seekTo(item.from / 1000 / duration * 1.001, "fraction")
+                                      }
+                                    }}
+                                  />
+                                  <div className="flex flex-col space-y-2">
+                                    <Button variant="outline"
+                                      className="h-5 w-5 p-0 rounded-sm"
+                                      onClick={() => {
+                                        if (dstObj.dubbing) {
+                                          const dubs = [...dstObj.dubbing]
+                                          const dub = dubs[index]
+                                          if (dub) {
+                                            const element = document.getElementById(`dubbing.textarea.${index}`) as HTMLTextAreaElement
+                                            if (element) {
+                                              const pos = element.selectionStart
+                                              dub.text = `${dub.text.slice(0, pos)}<break time="100ms" />${dub.text.slice(pos)}`
+                                              element.focus()
+                                            }
+                                          }
+                                          handleChange("dst", { ...dstObj, dubbing: dubs })
+                                        }
+                                      }}
+                                    >
+                                      {
+                                        tooltipWrapped(
+                                          <Brackets className="h-4 w-4" />,
+                                          <p>Insert a break at current position</p>
+                                        )
+                                      }
+                                    </Button>
+
+                                    <Button
+                                      variant="outline"
+                                      className="h-5 w-5 p-0 rounded-sm"
+                                      disabled={dstObj.dubbing?.at(index)?.subIndexes.length == 1}
+                                      onClick={() => {
+                                        if (dstObj.dubbing) {
+                                          const dubs = [...dstObj.dubbing]
+                                          const dub = dubs[index]
+                                          if (dub) {
+                                            let k = 1
+                                            dub.subIndexes.forEach(i => {
+                                              const sub = dstObj.subtitle[i]
+                                              if (sub) {
+                                                dubs.splice(index + k, 0, {
+                                                  from: sub.from,
+                                                  to: sub.to,
+                                                  text: sub.text,
+                                                  subIndexes: [i],
+                                                  params: {
+                                                    voice: dub.params.voice,
+                                                    rate: 0,
+                                                  }
+                                                })
+                                                k = k + 1
+                                              }
+                                            })
+                                            dubs.splice(index, 1)
+                                          }
+                                          handleChange("dst", { ...dstObj, dubbing: dubs })
+                                        }
+                                      }}
+                                    >
+                                      {
+                                        tooltipWrapped(
+                                          <SeparatorHorizontal className="h-4 w-4" />,
+                                          <p>Unmerge all</p>
+                                        )
+                                      }
+                                    </Button>
+
+                                    <Button variant="outline"
+                                      className="h-5 w-5 p-0 rounded-sm"
+                                      disabled={!dstObj.dubbing?.at(index + 1)}
+                                      onClick={() => {
+                                        if (dstObj.dubbing) {
+                                          const dubTexts = [...dstObj.dubbing]
+                                          const dubText = dubTexts[index]
+                                          const nextDubText = dubTexts[index + 1]
+                                          if (dubText && nextDubText) {
+                                            dubText.to = nextDubText.to
+                                            dubText.text = `${dubText.text} ${nextDubText.text}`
+                                            dubText.subIndexes.push(...nextDubText.subIndexes)
+                                          }
+                                          dubTexts.splice(index + 1, 1)
+
+                                          handleChange("dst", { ...dstObj, dubbing: dubTexts })
+                                        }
+                                      }}
+                                    >
+                                      {
+                                        tooltipWrapped(
+                                          <ArrowBigDownDash className="h-4 w-4" />,
+                                          <p>Merge down</p>
+                                        )
+                                      }
+                                    </Button>
+
+                                  </div>
+                                </div>
+                                {
+                                  dubbingText && nextDubbingText && nextDubbingText.from - dubbingText.to > 0 &&
+                                  <p className="text-xs text-slate-300">{nextDubbingText.from - dubbingText.to}ms</p>
+                                }
+                              </div>
+                            )
+                          })
                         }
                       </div>
-                    )
-                  })
-                }
-              </div>
-            </ScrollArea>
+                    </ScrollArea>
+                  </>)
+                :
+                <div className="w-[600px] flex justify-center items-center pt-2">
+                  <Button variant="outline" onClick={() => {
+                    resetDubbingToSubtitles()
+                  }}>Start create dubbing</Button>
+                </div>
+            }
           </TabsContent>
         </Tabs>
       </div >

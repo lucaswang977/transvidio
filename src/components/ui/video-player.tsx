@@ -169,7 +169,7 @@ const VideoPlayer = React.forwardRef<ReactPlayer, VideoPlayerProps & ReactPlayer
                       item.attr.size ?? "text-[14px]",
                       item.attr.style ?? "",
                       "opacity-100",
-                      !playing ? "cursor-pointer outline-slate-300 outline-dotted outline-1 outline-offset-0" : "cursor-default")}
+                      !playing ? "cursor-grab outline-slate-300 outline-dotted outline-1 outline-offset-0" : "cursor-default")}
                     style={{
                       transform: `translate(${item.attr.position.x_percent * VIDEO_WIDTH}px, ${item.attr.position.y_percent * VIDEO_HEIGHT}px)`,
                       lineHeight: "1.3",
