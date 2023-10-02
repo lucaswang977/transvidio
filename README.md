@@ -1,5 +1,4 @@
 # Transvid.io
-
 An online translation collaborative platform which enables project-based translation management, it supports different editors which can deal with video subtitle, structured data, attachment file etc.
 
 ## Fundamental functions
@@ -12,7 +11,9 @@ An online translation collaborative platform which enables project-based transla
   - Video subtitle
   - Attachment
   - Quiz
-- AI powered auto translation(auto filling)
+- Document editing undo / redo
+- OpenAI powered auto translation(auto fill)
+- Azure natural synthesized voice dubbing
 - Payout management for translators
 
 ## Functions to be implemented
@@ -22,7 +23,7 @@ An online translation collaborative platform which enables project-based transla
   - [ ] Activity history
 - [ ] User related
   - [ ] Password reset
-  - [ ] User profile(avatar, payment method)
+  - [x] User profile(avatar, payment method)
   - [ ] Block user login / invalidate token
 - [x] AI integration for productivity
   - [x] Prompt template
@@ -35,7 +36,7 @@ An online translation collaborative platform which enables project-based transla
   - [x] Exchange rate support based on USD
   - [x] Auto generate income records on documents
   - [x] Auto generate payout records on projects
-- [ ] AI dubbing
-  - [ ] Voice synthesis based on translated subtitles
-  - [ ] Voice duration indicator based on the segment length 
-  - [ ] Synced synthesized voice & original video playback
+- [x] AI dubbing
+  - [x] Voice synthesis based on translated subtitles
+  - [x] Voice duration indicator based on the segment length 
+  - [x] Synced synthesized voice & original video playback
