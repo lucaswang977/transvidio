@@ -1,24 +1,3 @@
-// TODO: 
-// 1. User management & user role
-//  1.1 (OK) User registeration time should be recorded.
-//  1.2 (OK) User can assign a name for himself when signing up.
-// 2. Document and project management
-//  2.1 (OK) Project & document & user data schema definition.
-//  2.2 (OK) Project creation & management & permission control
-//  2.3 Document creation & management & claim / permission control / state control
-//  2.4 Document editors: intro, curriculum, quiz, doc support
-// 3. File upload support
-//  3.1 Attachment editor
-// 4. File import & auto transcript/translate
-//  4.1 Course intro, curriculum, supplement list import
-// 5. Video player & subtitle editor
-// 6. Test & optimize
-// 7. First version release
-// 8. Database migrate test
-// 9. Reset / change password
-// 10. Activities on Dashboard
-// 11. Logging on vercel
-
 import { useRouter } from "next/router"
 import { useSession } from "next-auth/react";
 import { Button } from "~/components/ui/button"
@@ -56,7 +35,7 @@ const Home: NextPageWithLayout = () => {
         }
       </div>
       <footer className="flex space-x-2 items-center">
-        <Label className="text-xs text-gray-500 italic">v0.1.11</Label>
+        <Label className="text-xs text-gray-500 italic">v0.1.12</Label>
         <Separator orientation="vertical" />
         <Label className="text-xs text-gray-500">&copy;&nbsp;Transvid.io 2023-2024</Label>
       </footer>
