@@ -10,6 +10,7 @@
 		"ghcr.io/robbert229/devcontainer-features/postgresql-client:1": {}
 	},
 	"postCreateCommand": "zsh .devcontainer/post-create.sh",
+	"postStartCommand": "zsh .devcontainer/post-start.sh",
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	// "features": {},
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
