@@ -1,6 +1,15 @@
 # Transvid.io
 An online translation collaborative platform which enables project-based translation management, it supports different editors which can deal with video subtitle, structured data, attachment file etc.
 
+## Stack used
+- React.js
+- Next.js
+- T3Stack(tRPC)
+- Shadcn/ui
+- Prisma
+- NextAuth
+- PostgreSQL
+
 ## Fundamental functions
 - User registration with email & google account
 - Role based (admin, editor) user management
@@ -40,3 +49,21 @@ An online translation collaborative platform which enables project-based transla
   - [x] Voice synthesis based on translated subtitles
   - [x] Voice duration indicator based on the segment length 
   - [x] Synced synthesized voice & original video playback
+
+## Screenshots
+- Document list
+
+![document list](https://github.com/lucaswang977/transvidio/blob/main/screenshots/document-list.jpg?raw=true)
+
+- Editor on Introduction
+
+![editor on introduction](https://github.com/lucaswang977/transvidio/blob/main/screenshots/editor-intro.jpg?raw=true)
+
+- Editor on Subtitle
+
+![editor on subtitle](https://github.com/lucaswang977/transvidio/blob/main/screenshots/editor-subtitle.jpg?raw=true)
+
+- My revenue list
+
+![revenue](https://github.com/lucaswang977/transvidio/blob/main/screenshots/payout.jpg?raw=true)
+
